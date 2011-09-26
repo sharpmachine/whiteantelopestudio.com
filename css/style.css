@@ -1,0 +1,11 @@
+article, aside, figure, footer, header, hgroup, menu, nav, section { display: block; }
+body { background: url(../images/bg.jpg) no-repeat top left #ededed; }
+section#page {
+  width: 920px;
+  padding: 20px;
+  margin: 0 auto;
+}
+section#page img {
+  display: block;
+  margin: 0 auto;
+}

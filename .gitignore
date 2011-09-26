@@ -1,0 +1,5 @@
+wp-config.php
+/misc
+/wp-content/themes/whiteantelope/js/hashgrid.js
+/wp-content/themes/whiteantelope/css/hashgrid.css
+.htaccess
