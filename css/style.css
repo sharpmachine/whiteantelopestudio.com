@@ -1,5 +1,8 @@
 article, aside, figure, footer, header, hgroup, menu, nav, section { display: block; }
-body { background: url(../images/bg.jpg) no-repeat top left #ededed; }
+body {
+  background: url(../images/bg.jpg) no-repeat top left #ededed;
+  font-family: Helvetica, Arial, sans-serif;
+}
 section#page {
   width: 920px;
   padding: 20px;
@@ -8,4 +11,9 @@ section#page {
 section#page img {
   display: block;
   margin: 0 auto;
+}
+section#page .mailchimp {
+  width: 500px;
+  margin: 40px auto;
+  text-align: center;
 }
