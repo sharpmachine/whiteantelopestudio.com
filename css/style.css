@@ -64,7 +64,10 @@ section#page .mailchimp {
   margin: 40px auto;
   text-align: center;
 }
-section#page p { text-align: justify; }
+section#page p {
+  text-align: justify;
+  margin-bottom: 20px;
+}
 section#page h1 {
   text-align: center;
   text-transform: uppercase;
