@@ -1,0 +1,59 @@
+/* 1.6.3 */
+#icon-options-ie6w {
+	background: transparent url(../img/icon.png) no-repeat scroll 0px 0px;
+}
+#tabs ul {
+	white-space: nowrap;
+	margin-top: 0.6em;
+	margin-left: 0.8em;
+}
+#tabs li {
+	display: inline;
+	list-style-type: none;
+}
+#tabs li a {
+	text-decoration: none;
+	font-size: 11px;
+	padding-right: 0.2em;
+	padding-left: 0.2em;
+}
+#tabs li.ui-tabs-selected a {
+	font-weight: bold;
+	color: #000000;
+}
+td>select {
+	width: 100px;
+}
+input.opera {
+	background-image:url(../img/opera.gif);
+	background-repeat:no-repeat;
+	padding-left:34px;
+	background-position:3px center;
+}
+input.firefox {
+	background-image:url(../img/firefox.gif);
+	background-repeat:no-repeat;
+	padding-left:34px;
+	background-position:3px center;
+}
+input.chrome {
+	background-image:url(../img/chrome.gif);
+	background-repeat:no-repeat;
+	padding-left:34px;
+	background-position:3px center;
+}
+input.safari {
+	background-image:url(../img/safari.gif);
+	background-repeat:no-repeat;
+	padding-left:34px;
+	background-position:3px center;
+}
+input.ie {
+	background-image:url(../img/ie.gif);
+	background-repeat:no-repeat;
+	padding-left:34px;
+	background-position:3px center;
+}
+span#ie6w_crashmode_txt {
+	color: #FF0000;
+}

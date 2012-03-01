@@ -1,0 +1,5 @@
+/*.......................................................media queries for handheld devices*/
+@media only screen and (max-width: 480px), only screen and (max-device-width: 480px) {
+	.container, #content-container {width: 100%; float: none;}
+	#sidebar {display: none;}
+}

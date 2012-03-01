@@ -1,5 +1,11 @@
 wp-config.php
 /misc
-/wp-content/themes/whiteantelope/js/hashgrid.js
-/wp-content/themes/whiteantelope/css/hashgrid.css
+/wp-content/themes/white-antelope/js/hashgrid.js
+/wp-content/themes/white-antelope/css/hashgrid.css
+/wp-content/themes/white-antelope/included/
+/wp-content/uploads/_wpremote_backups/
+/wp-content/w3tc/
+/wp-content/backup-db/
 .htaccess
+sitemap.xml
+sitemap.xml.gz

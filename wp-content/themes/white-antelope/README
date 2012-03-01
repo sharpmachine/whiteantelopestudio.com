@@ -1,0 +1,24 @@
+Set at 950px
+
+Thank you for using the SMM Fixed Width Wordpress Framework.  The following are just some reminders that should be done at the very beginning:
+
+1. Rename the theme folder from SMM Fixed Framework to a theme name that relates to the project.
+
+2. Edit the style.css file within the theme directory to relate the project.
+
+3. Edit the .gitignore file lines 3, 4 & 5.  "project-theme" needs to be changed to whatever you renamed the theme name to in step 1.  Also uncomment line 5.
+
+4. Using Boks, create your Blueprint files and replace them in the css directory.  You only need to do this if your grid settings are different then the default.
+
+5. Once you've updated your Blueprint framework files you'll need to change the hashgrid.css file to reflect those changes so your grid lines will line up properly.
+
+6. In the admin area of WordPress, create a page (Pages>Add New) and title it "Typography".  In the WYSIWYG editor click the HTML tab.  Copy everything in the typography.html file in the includes directory and paste it into the WYSIWYG editor and publish it.  
+
+7. Now just import the dummy-content.xml file in the includes directory and you'll have dummy content to work with.
+
+8. Lastly, don't forget to set up your 503.php file on line 35.  
+
+DELETE BEFORE PRODUCTION
+1.  css/grid.png
+2. css/hashgrid.css
+3. js/hashgrid.js

@@ -1,0 +1,320 @@
+
+@import url('less.less'); /* LESS colors, font families, mixins and variables */
+article, aside, figure, footer, header, hgroup, 
+menu, nav, section { display: block; }
+html { overflow-y: scroll; } /* force scrollbar */
+html, body { height: 100%; }
+.screen-reader-text { position: absolute; left: -9000px; } /* Text meant only for screen readers */
+#wrapper { min-height: 100%; margin: 0 auto -235px; } /* To always force footer to bottom.  Needs to minus whatever height your footer is set too */
+.container { padding: 0 20px; }
+
+/*.......................................................the usual*/
+body
+{
+	
+}
+
+h1
+{
+	
+}
+
+h2
+{
+	
+}
+
+h3
+{
+	
+}
+
+h4
+{
+	
+}
+
+h5
+{
+	
+}
+
+h6
+{
+	
+}
+
+a
+{
+	
+	:link
+	{
+		
+	}
+	
+	:visited
+	{
+		
+	}
+	
+	:hover
+	{
+		
+	}
+	
+	:active
+	{
+		
+	}
+}
+
+/*.......................................................the header*/
+header
+{
+	width: 950px;
+	margin: 0 auto;
+}
+
+/*.......................................................the navigation*/
+nav
+{
+	background: #ddd;
+	display: block;
+	float: left;
+	margin: 0 auto;
+	width: 940px;
+	
+	.menu-header, div.menu
+	{
+		font-size: 13px;
+		margin-left: 12px;
+		width: 928px;
+		
+		ul
+		{
+			list-style: none;
+			margin: 0;
+			padding-left: 0;
+		}
+		
+		li
+		{
+			float: left;
+			position: relative;
+		}
+	}
+	
+	a
+	{
+		color: #666;
+		display: block;
+		line-height: 38px;
+		padding: 0 10px;
+		text-decoration: none;
+	}
+	
+	ul ul
+	{
+		display: none;
+		position: absolute;
+		top: 38px;
+		left: 0;
+		float: left;
+		width: 180px;
+		z-index: 99999;
+		
+		li
+		{
+			min-width: 180px;
+		}
+		
+		ul
+		{
+			left: 100%;
+			top: 0;
+		}
+		
+		a
+		{
+			background: #333;
+			line-height: 1em;
+			padding: 10px;
+			width: 160px;
+			height: auto;
+		}
+	}
+	
+	li:hover > a, ul ul :hover > a
+	{
+		background: #333;
+		color: #fff;
+	}
+	
+	ul li:hover > ul
+	{
+		display: block;
+	}
+	
+	ul li.current_page_item > a,
+	ul li.current-menu-ancestor > a,
+	ul li.current-menu-item > a,
+	ul li.current-menu-parent > a 
+	{
+		color: #000;
+	}
+}
+
+* html nav ul li.current_page_item a,
+* html nav ul li.current-menu-ancestor a,
+* html nav ul li.current-menu-item a,
+* html nav ul li.current-menu-parent a,
+* html nav ul li a:hover {
+	color: #000;
+}
+
+/*.......................................................the sidebar*/
+#sidebar
+{
+	
+}
+
+/*.......................................................the footer*/
+footer, .footer-push
+{
+	height: 235px;
+}
+
+footer
+{
+	width: 950px;
+	margin: 0 auto;
+	clear: both;
+}
+
+/*.......................................................the pagination*/
+.wp-paginate
+{
+	padding: 0;
+	margin: 0;
+	
+	li
+	{
+		display: inline;
+		list-style: none;
+	}
+	
+	a
+	{
+		background: #ddd; 
+		border: 1px solid #ccc; 
+		color: #666; 
+		margin-right: 4px; 
+		padding: 3px 6px;
+		text-align: center; 
+		text-decoration: none;
+		
+		:hover, :active
+		{
+			background: #ccc; 
+			color: #888;
+		}
+	}
+	
+	.title
+	{
+		color: #555; 
+		margin-right: 4px;
+	}
+	
+	.gap
+	{
+		color: #999; 
+		margin-right: 4px;
+	}
+	
+	.current
+	{
+		color: #fff; 
+		background: #5f87ae; 
+		border: 1px solid #89adcf; 
+		margin-right: 4px; 
+		padding: 3px 6px;
+	}
+}
+
+/*.......................................................the forms*/
+
+
+/*.......................................................the images*/
+img.size-auto,
+img.size-full,
+img.size-large,
+img.size-medium,
+.attachment img 
+{
+	max-width: 100%; /* When images are too wide for containing element, force them to fit. */
+	height: auto; /* Override height to match resized width for correct aspect ratio. */
+}
+
+.alignleft,
+img.alignleft 
+{
+	display: inline;
+	float: left;
+	margin-right: 24px;
+	margin-top: 4px;
+}
+
+.alignright,
+img.alignright 
+{
+	display: inline;
+	float: right;
+	margin-left: 24px;
+	margin-top: 4px;
+}
+
+.aligncenter,
+img.aligncenter 
+{
+	clear: both;
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+img.alignleft,
+img.alignright,
+img.aligncenter 
+{
+	margin-bottom: 12px;
+}
+
+.wp-caption 
+{
+	background: #f1f1f1;
+	line-height: 18px;
+	margin-bottom: 20px;
+	max-width: 632px !important; /* prevent too-wide images from breaking layout */
+	padding: 4px;
+	text-align: center;
+	
+	img
+	{
+		margin: 5px 5px 0;
+	}
+	
+	p.wp-caption-text 
+	{
+		color: #888;
+		font-size: 12px;
+		margin: 5px;
+	}
+}
+
+.wp-smiley 
+{
+	margin: 0;
+}
+
+/*.......................................................the misc*/

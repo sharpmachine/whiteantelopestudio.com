@@ -1,0 +1,251 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: shockingly-big-ie6-warning\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2009-07-27 20:29-0300\n"
+"PO-Revision-Date: \n"
+"Last-Translator: matias s. <matias@incerteza.org>\n"
+"Language-Team: matias s. <matias@incerteza.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Portuguese\n"
+"X-Poedit-Country: BRAZIL\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SearchPath-0: ..\n"
+
+#: ../shockingly-big-ie6-warning.php:302
+msgid "Shockingly Big IE6 Warning Options"
+msgstr "Opções Shockingly Big IE6 Warning"
+
+#: ../shockingly-big-ie6-warning.php:302
+msgid "S. Big IE6 Warning"
+msgstr "S. Big IE6 Warning"
+
+#: ../shockingly-big-ie6-warning.php:343
+msgid "Settings saved."
+msgstr "Opções salvas."
+
+#: ../shockingly-big-ie6-warning.php:348
+msgid "Default options loaded."
+msgstr "Opções padrão carregadas."
+
+#: ../shockingly-big-ie6-warning.php:353
+msgid "Options deleted."
+msgstr "Opções removidas."
+
+#: ../shockingly-big-ie6-warning.php:357
+msgid "Attention: JavaScript Test is On, but Test Mode is Off, JavaScript Test will not work."
+msgstr "Atenção: Teste de JavaScript está Ligado , mas Modo de Teste está Desligado, Teste de JavaScript não ira funcionar."
+
+#: ../shockingly-big-ie6-warning.php:363
+msgid "Shockingly Big IE6 Warning Settings"
+msgstr "Opções Shockingly Big IE6 Warning"
+
+#: ../shockingly-big-ie6-warning.php:366
+msgid "Options"
+msgstr "Opções"
+
+#: ../shockingly-big-ie6-warning.php:367
+msgid "Message"
+msgstr "Mensagem"
+
+#: ../shockingly-big-ie6-warning.php:368
+msgid "Advanced"
+msgstr "Avançado"
+
+#: ../shockingly-big-ie6-warning.php:369
+msgid "Registry"
+msgstr "Registro"
+
+#: ../shockingly-big-ie6-warning.php:376
+#: ../shockingly-big-ie6-warning.php:507
+#: ../shockingly-big-ie6-warning.php:529
+#: ../shockingly-big-ie6-warning.php:551
+msgid "Settings"
+msgstr "Configurações"
+
+#: ../shockingly-big-ie6-warning.php:378
+#: ../shockingly-big-ie6-warning.php:509
+#: ../shockingly-big-ie6-warning.php:531
+#: ../shockingly-big-ie6-warning.php:553
+msgid "Description"
+msgstr "Descrição"
+
+#: ../shockingly-big-ie6-warning.php:382
+msgid "Warning Type"
+msgstr "Tipo de Aviso"
+
+#: ../shockingly-big-ie6-warning.php:385
+#: ../shockingly-big-ie6-warning.php:403
+#: ../shockingly-big-ie6-warning.php:516
+#: ../shockingly-big-ie6-warning.php:560
+#: ../shockingly-big-ie6-warning.php:572
+msgid "Off"
+msgstr "Desligado"
+
+#: ../shockingly-big-ie6-warning.php:388
+msgid "Top"
+msgstr "Topo"
+
+#: ../shockingly-big-ie6-warning.php:391
+msgid "Center"
+msgstr "Central"
+
+#: ../shockingly-big-ie6-warning.php:394
+msgid "Crash"
+msgstr "Travar"
+
+#: ../shockingly-big-ie6-warning.php:397
+msgid "The warnings: <strong>Top</strong>, the discreet top bar. <strong>Center</strong>, the full screen one. <strong>Crash</strong>, the mean option."
+msgstr "Os avisos: <strong>Topo</strong>, uma discreta barra no topo. <strong>Central</strong>, um aviso de tela cheia. <strong>Travar</strong>, a opção malvada."
+
+#: ../shockingly-big-ie6-warning.php:400
+msgid "Test Mode"
+msgstr "Modo de Teste"
+
+#: ../shockingly-big-ie6-warning.php:406
+#: ../shockingly-big-ie6-warning.php:519
+#: ../shockingly-big-ie6-warning.php:563
+#: ../shockingly-big-ie6-warning.php:575
+msgid "On"
+msgstr "Ligado"
+
+#: ../shockingly-big-ie6-warning.php:409
+msgid "Turn this <strong>On</strong> if you want to test the Warnings in any browser."
+msgstr "Selecione <strong>Ligado</strong> se você quer testar o aviso em qualquer navegador."
+
+#: ../shockingly-big-ie6-warning.php:413
+msgid "Browsers"
+msgstr "Navegadores"
+
+#: ../shockingly-big-ie6-warning.php:415
+msgid "URL"
+msgstr "URL"
+
+#: ../shockingly-big-ie6-warning.php:422
+#: ../shockingly-big-ie6-warning.php:434
+#: ../shockingly-big-ie6-warning.php:446
+#: ../shockingly-big-ie6-warning.php:458
+#: ../shockingly-big-ie6-warning.php:470
+msgid "Show"
+msgstr "Mostrar"
+
+#: ../shockingly-big-ie6-warning.php:425
+#: ../shockingly-big-ie6-warning.php:437
+#: ../shockingly-big-ie6-warning.php:449
+#: ../shockingly-big-ie6-warning.php:461
+#: ../shockingly-big-ie6-warning.php:473
+msgid "Hide"
+msgstr "Esconder"
+
+#: ../shockingly-big-ie6-warning.php:484
+#: ../shockingly-big-ie6-warning.php:592
+msgid "Field"
+msgstr "Campo"
+
+#: ../shockingly-big-ie6-warning.php:485
+#: ../shockingly-big-ie6-warning.php:493
+msgid "Text"
+msgstr "Texto"
+
+#: ../shockingly-big-ie6-warning.php:489
+msgid "Title"
+msgstr "Título"
+
+#: ../shockingly-big-ie6-warning.php:497
+msgid "Observation"
+msgstr "Observação"
+
+#: ../shockingly-big-ie6-warning.php:503
+#: ../shockingly-big-ie6-warning.php:513
+msgid "PHP Detection"
+msgstr "Detecção PHP"
+
+#: ../shockingly-big-ie6-warning.php:522
+msgid "Turn this On <strong>only</strong> if you are having some kind of trouble, like layout errors, when this plugin is On. A PHP function will render the code <strong>only</strong> if you are using <strong>IE6</strong>. Can cause false negatives."
+msgstr "Selecione Ligado <strong>somente</strong> se você está tendo algum problema, como erros de layout, quando este plugin está Ligado, então uma função PHP irá inserir o código <strong>somente</strong> se você estiver usando o <strong>IE6</strong>."
+
+#: ../shockingly-big-ie6-warning.php:525
+msgid "IE6 Crash Methods"
+msgstr "Métodos de Travar o IE6"
+
+#: ../shockingly-big-ie6-warning.php:535
+msgid "Crash Methods"
+msgstr "Métodos"
+
+#: ../shockingly-big-ie6-warning.php:538
+msgid "1"
+msgstr "1"
+
+#: ../shockingly-big-ie6-warning.php:541
+msgid "2"
+msgstr "2"
+
+#: ../shockingly-big-ie6-warning.php:544
+msgid "Use the following code to crash IE6"
+msgstr "Use o seguinte código para travar o IE6"
+
+#: ../shockingly-big-ie6-warning.php:547
+msgid "Debug Mode"
+msgstr "Modo Debug"
+
+#: ../shockingly-big-ie6-warning.php:557
+msgid "Head Comment"
+msgstr "Comentário no Cabeçalho"
+
+#: ../shockingly-big-ie6-warning.php:566
+msgid "This mode will put a comment in the <code>head</code> of your blog with info about the setting of the plugin."
+msgstr "Este modo ira colocar um comentário no <code>cabeçalho</code> do seu blog com informações sobre as opção do plugin."
+
+#: ../shockingly-big-ie6-warning.php:569
+msgid "JavaScript Test"
+msgstr "Teste de JavaScript"
+
+#: ../shockingly-big-ie6-warning.php:578
+msgid "Make the warning JavaScript pop up two alerts, one in the begin and other in the end of the script, this way you can know if the script is correctly loaded. For security this function only work with <strong>Test Mode</strong> activated."
+msgstr "Faz aparecer dois alertas de JavaScript, um no início e outro no fim do script, deste modo você saberá se o script foi carregado corretamente. Por segurança esta função só funciona com o <strong>Modo de Teste</strong> ativado."
+
+#: ../shockingly-big-ie6-warning.php:581
+msgid "Cleanup Registry"
+msgstr "Limpar Registro"
+
+#: ../shockingly-big-ie6-warning.php:583
+msgid "Delete Options"
+msgstr "Recarregar Opções"
+
+#: ../shockingly-big-ie6-warning.php:585
+msgid "This option will remove any <strong>Shockingly Big IE6 Warning</strong> from the Wordpress database, use it for clean uninstall. If you want to use it againt deactivate and activate it or press the Reset Options button."
+msgstr "Esta opção removera rodas as opções do <strong>Shockingly Big IE6 Warning</strong> do banco de dados do Wordpress, use-a para uma desinstalação limpa. Se você quiser usa-lo denovo desative-o e ative-o ou pressione o botão Recarregar Opções."
+
+#: ../shockingly-big-ie6-warning.php:593
+#: ../shockingly-big-ie6-warning.php:637
+#: ../shockingly-big-ie6-warning.php:655
+#: ../shockingly-big-ie6-warning.php:681
+msgid "Value"
+msgstr "Valor"
+
+#: ../shockingly-big-ie6-warning.php:707
+msgid "Save Changes"
+msgstr "Salvar Mudanças"
+
+#: ../shockingly-big-ie6-warning.php:708
+msgid "Reset Options"
+msgstr "Recarregar Opções"
+
+#: ../shockingly-big-ie6-warning.php:712
+msgid "<strong>Note</strong>: i'm learning PHP & Wordpress coding and using this plugin to study, so if you have any idea or any kind of suggestion please contact me."
+msgstr "<strong>Nota</strong>: estou aprendendo PHP & codificação Wordpress e usando este plugin para estudar, então se você tiver qualquer idéia ou sugestão entre em contato."
+
+#: ../shockingly-big-ie6-warning.php:713
+msgid "by"
+msgstr "por"
+
+#: ../shockingly-big-ie6-warning.php:713
+msgid "at"
+msgstr "de"
+
+#~ msgid "Setting"
+#~ msgstr "Configuração"
+
