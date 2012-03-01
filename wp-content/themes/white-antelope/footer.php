@@ -17,6 +17,7 @@
 <script src="<?php bloginfo ('template_directory'); ?>/js/script.js"></script>
 
 <!-- Remove these before deploying to production -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>	
 <script src="<?php bloginfo ('template_directory'); ?>/js/hashgrid.js" type="text/javascript"></script>
 
 <?php wp_footer(); ?>
