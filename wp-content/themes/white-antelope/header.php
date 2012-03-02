@@ -82,15 +82,5 @@
 					<h1 id="site-title"><a href="<?php echo esc_url( home_url( '/' ) ); ?>" title="<?php echo esc_attr( get_bloginfo( 'name', 'display' ) ); ?>" rel="home"><img src="<?php bloginfo('template_directory'); ?>/images/logo.png" width="404" height="199" alt="Logo"></a></h1>
 					<h2 id="site-description"><?php bloginfo( 'description' ); ?></h2>
 				</hgroup>
-					
-					<!-- Breadcrumbs NavXT-->
-					<div class="breadcrumbs">
-						<?php
-						if(function_exists('bcn_display'))
-						{
-						    bcn_display();
-						}
-						?>
-					</div>
 			</header>
 			

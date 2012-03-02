@@ -8,6 +8,7 @@ html, body { height: 100%; }
   left: -9000px;
 }
 #wrapper { min-height: 100%; }
+body { background-color: #ededed; }
 #wrapper {
   width: 1200px;
   padding: 0 20px;
@@ -31,11 +32,11 @@ html, body { height: 100%; }
   text-transform: uppercase;
   text-decoration: none;
   font-size: 12px;
-  color: #ffffff;
+  color: #ededed;
 }
 header {
   width: 960px;
-  height: 245px;
+  height: 225px;
   padding-top: 30px;
   padding: 30px 0 0 50px;
 }
@@ -93,30 +94,30 @@ nav a {
 }
 nav li:hover > a {
   background: #656565;
-  color: #ffffff;
+  color: #ededed;
 }
 nav ul ul:hover > a {
   background: #656565;
-  color: #ffffff;
+  color: #ededed;
 }
 nav ul li:hover > ul { display: block; }
 nav ul li.current_page_item > a {
-  color: #ffffff;
+  color: #ededed;
   background: #1a1a1a;
   font-weight: 600;
 }
 nav ul li.current-menu-ancestor > a {
-  color: #ffffff;
+  color: #ededed;
   background: #1a1a1a;
   font-weight: 600;
 }
 nav ul li.current-menu-item > a {
-  color: #ffffff;
+  color: #ededed;
   background: #1a1a1a;
   font-weight: 600;
 }
 nav ul li.current-menu-parent > a {
-  color: #ffffff;
+  color: #ededed;
   background: #1a1a1a;
   font-weight: 600;
 }
@@ -128,14 +129,33 @@ nav ul li.current-menu-parent > a {
 #sidebar {
   float: left;
   width: 100px;
-  margin-right: 20px;
+  margin: 335px 20px 0 0;
 }
+#page { margin: 75px 0; }
 footer, .footer-push { height: 235px; }
 footer {
   width: 950px;
   margin: 0 auto;
   clear: both;
 }
+footer #site-info { text-align: right; }
+.small-box {
+  width: 240px;
+  height: 240px;
+}
+.large-box {
+  width: 480px;
+  height: 480px;
+}
+.col-240 {
+  width: 240px;
+  float: left;
+}
+.col-480 {
+  width: 480px;
+  float: left;
+}
+.float-left { float: left; }
 .wp-paginate {
   padding: 0;
   margin: 0;
@@ -170,7 +190,7 @@ footer {
   margin-right: 4px;
 }
 .wp-paginate .current {
-  color: #ffffff;
+  color: #ededed;
   background: #5f87ae;
   border: 1px solid #89adcf;
   margin-right: 4px;

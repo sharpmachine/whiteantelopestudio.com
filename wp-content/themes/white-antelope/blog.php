@@ -4,7 +4,7 @@
 */
 get_header(); ?>
 
-		<section id="page" class="span-20">
+		<section id="page">
 
 		<?php get_template_part( 'loop', 'blog' ); ?>
 		<?php rewind_posts(); ?>

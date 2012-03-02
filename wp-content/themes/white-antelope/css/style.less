@@ -10,7 +10,7 @@ html, body { height: 100%; }
 /*.......................................................the usual*/
 body
 {
-	
+	background-color: @was-white;
 }
 
 h1
@@ -101,7 +101,7 @@ a
 			text-transform: uppercase;
 			text-decoration: none;
 			font-size: 12px;
-			color: #fff;
+			color: @was-white;
 		}
 	}
 }
@@ -111,7 +111,7 @@ a
 header
 {
 	width: 960px;
-	height: 245px;
+	height: 225px;
 	padding-top: 30px;
 	padding: 30px 0 0 50px;
 	
@@ -172,7 +172,7 @@ nav
 	li:hover > a, ul ul :hover > a
 	{
 		background: @was-grey;
-		color: #fff;
+		color: @was-white;
 	}
 	
 	ul li:hover > ul
@@ -185,7 +185,7 @@ nav
 	ul li.current-menu-item > a,
 	ul li.current-menu-parent > a 
 	{
-		color: #fff;
+		color: @was-white;
 		background: @was-black;
 		font-weight: 600;
 	}
@@ -204,7 +204,13 @@ nav
 {
 	float: left;
 	width: 100px;
-	margin-right: 20px;
+	margin: 335px 20px 0 0;
+}
+
+/*.......................................................the page*/
+#page
+{
+	margin: 75px 0;
 }
 
 /*.......................................................the footer*/
@@ -218,8 +224,58 @@ footer
 	width: 950px;
 	margin: 0 auto;
 	clear: both;
+	
+	#site-info
+	{
+		text-align: right;
+	}
 }
 
+
+/*.......................................................the mosaic*/
+.small-box
+{
+	width: 240px;
+	height: 240px;
+}
+
+.large-box
+{
+	width: 480px;
+	height: 480px;
+}
+
+.photo-box
+{
+	
+}
+
+.menu-box
+{
+	
+}
+
+.video-box
+{
+	
+}
+
+.col-240
+{
+	width: 240px;
+	float: left;
+}
+
+.col-480
+{
+	width: 480px;
+	float: left;
+}
+
+.float-left
+{
+	float: left;
+}
 /*.......................................................the pagination*/
 .wp-paginate
 {
@@ -263,7 +319,7 @@ footer
 	
 	.current
 	{
-		color: #fff; 
+		color: @was-white; 
 		background: #5f87ae; 
 		border: 1px solid #89adcf; 
 		margin-right: 4px; 
