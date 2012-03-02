@@ -43,12 +43,28 @@
 					<img src="<?php bloginfo('template_directory'); ?>/images/painting.jpg" width="240" height="240" alt="Painting">
 				</div>
 				<div class="small-box photo-box">
-					<img src="<?php bloginfo('template_directory'); ?>/images/cake.jpg" width="240" height="240" alt="Cake">
+					<div class="image">
+						<img src="<?php bloginfo('template_directory'); ?>/images/cake.jpg" width="240" height="240" alt="Cake">
+					</div>
+					<div class="content">
+						<div class="inner">
+							<h2>Name of Piece</h2>
+							<p>Lorem ipsum dolor sit amet.</p>
+						</div>
+					</div>
 				</div>
 			</div>
 			<div class="col-480">
 				<div class="large-box photo-box">
-					<img src="<?php bloginfo('template_directory'); ?>/images/antelope.jpg" width="480" height="480" alt="Antelope">
+					<div class="image">
+						<img src="<?php bloginfo('template_directory'); ?>/images/antelope.jpg" width="480" height="480" alt="Antelope">
+					</div>
+					<div class="content">
+						<div class="inner">
+							<h2>Name of Piece</h2>
+							<p>Lorem ipsum dolor sit amet.</p>
+						</div>
+					</div>
 				</div>
 				<a href="<?php bloginfo('url'); ?>/gallery">
 					<div class="small-box menu-box float-left">
@@ -59,7 +75,15 @@
 					</div>
 				</a>
 				<div class="small-box photo-box float-left">
-					<img src="<?php bloginfo('template_directory'); ?>/images/edie.jpg" width="240" height="240" alt="Edie">
+					<div class="image">
+						<img src="<?php bloginfo('template_directory'); ?>/images/edie.jpg" width="240" height="240" alt="Edie">
+					</div>
+					<div class="content">
+						<div class="inner">
+							<h2>Edie Reno</h2>
+							<p>Founder of White Antelope Studio</p>
+						</div>
+					</div>
 				</div>
 			</div>
 		
