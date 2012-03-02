@@ -140,9 +140,9 @@ nav
 	
 	.menu-header, div.menu
 	{
-		font-size: 13px;
-		margin-left: 12px;
+		font-size: 20px;
 		width: 100px;
+		.open-sans;
 		
 		ul
 		{
@@ -155,52 +155,23 @@ nav
 		{
 			float: left;
 			position: relative;
+			padding: 2px 0;
 		}
 	}
 	
 	a
 	{
-		color: #666;
+		color: @was-light-grey;
+		text-transform: uppercase;
 		display: block;
-		line-height: 38px;
-		padding: 0 10px;
+		line-height: 20px;
+		padding: 0 2px;
 		text-decoration: none;
-	}
-	
-	ul ul
-	{
-		display: none;
-		position: absolute;
-		top: 38px;
-		left: 0;
-		float: left;
-		width: 180px;
-		z-index: 99999;
-		
-		li
-		{
-			min-width: 180px;
-		}
-		
-		ul
-		{
-			left: 100%;
-			top: 0;
-		}
-		
-		a
-		{
-			background: #333;
-			line-height: 1em;
-			padding: 10px;
-			width: 160px;
-			height: auto;
-		}
 	}
 	
 	li:hover > a, ul ul :hover > a
 	{
-		background: #333;
+		background: @was-grey;
 		color: #fff;
 	}
 	
@@ -214,7 +185,9 @@ nav
 	ul li.current-menu-item > a,
 	ul li.current-menu-parent > a 
 	{
-		color: #000;
+		color: #fff;
+		background: @was-black;
+		font-weight: 600;
 	}
 }
 

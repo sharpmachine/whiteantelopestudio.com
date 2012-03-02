@@ -54,9 +54,9 @@ nav {
   width: 100px;
 }
 nav .menu-header {
-  font-size: 13px;
-  margin-left: 12px;
+  font-size: 20px;
   width: 100px;
+  font-family: 'Open Sans', sans-serif;
 }
 nav .menu-header ul {
   list-style: none;
@@ -66,11 +66,12 @@ nav .menu-header ul {
 nav .menu-header li {
   float: left;
   position: relative;
+  padding: 2px 0;
 }
 nav div.menu {
-  font-size: 13px;
-  margin-left: 12px;
+  font-size: 20px;
   width: 100px;
+  font-family: 'Open Sans', sans-serif;
 }
 nav div.menu ul {
   list-style: none;
@@ -80,48 +81,45 @@ nav div.menu ul {
 nav div.menu li {
   float: left;
   position: relative;
+  padding: 2px 0;
 }
 nav a {
-  color: #666666;
+  color: #999999;
+  text-transform: uppercase;
   display: block;
-  line-height: 38px;
-  padding: 0 10px;
+  line-height: 20px;
+  padding: 0 2px;
   text-decoration: none;
 }
-nav ul ul {
-  display: none;
-  position: absolute;
-  top: 38px;
-  left: 0;
-  float: left;
-  width: 180px;
-  z-index: 99999;
-}
-nav ul ul li { min-width: 180px; }
-nav ul ul ul {
-  left: 100%;
-  top: 0;
-}
-nav ul ul a {
-  background: #333333;
-  line-height: 1em;
-  padding: 10px;
-  width: 160px;
-  height: auto;
-}
 nav li:hover > a {
-  background: #333333;
+  background: #656565;
   color: #ffffff;
 }
 nav ul ul:hover > a {
-  background: #333333;
+  background: #656565;
   color: #ffffff;
 }
 nav ul li:hover > ul { display: block; }
-nav ul li.current_page_item > a { color: #000000; }
-nav ul li.current-menu-ancestor > a { color: #000000; }
-nav ul li.current-menu-item > a { color: #000000; }
-nav ul li.current-menu-parent > a { color: #000000; }
+nav ul li.current_page_item > a {
+  color: #ffffff;
+  background: #1a1a1a;
+  font-weight: 600;
+}
+nav ul li.current-menu-ancestor > a {
+  color: #ffffff;
+  background: #1a1a1a;
+  font-weight: 600;
+}
+nav ul li.current-menu-item > a {
+  color: #ffffff;
+  background: #1a1a1a;
+  font-weight: 600;
+}
+nav ul li.current-menu-parent > a {
+  color: #ffffff;
+  background: #1a1a1a;
+  font-weight: 600;
+}
 * html nav ul li.current_page_item a { color: #000000; }
 * html nav ul li.current-menu-ancestor a { color: #000000; }
 * html nav ul li.current-menu-item a { color: #000000; }
