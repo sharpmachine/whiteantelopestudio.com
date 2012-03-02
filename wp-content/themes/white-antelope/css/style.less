@@ -5,8 +5,7 @@ menu, nav, section { display: block; }
 html { overflow-y: scroll; } /* force scrollbar */
 html, body { height: 100%; }
 .screen-reader-text { position: absolute; left: -9000px; } /* Text meant only for screen readers */
-#wrapper { min-height: 100%; margin: 0 auto -235px; } /* To always force footer to bottom.  Needs to minus whatever height your footer is set too */
-.container { padding: 0 20px; }
+#wrapper { min-height: 100%; } /* To always force footer to bottom.  Needs to minus whatever height your footer is set too */
 
 /*.......................................................the usual*/
 body
@@ -68,27 +67,82 @@ a
 	}
 }
 
+#wrapper
+{
+	width: 1200px;
+	padding: 0 20px;
+	margin: 0 auto;
+}
+
+.container
+{
+	float: left;
+}
+
+
+/*.......................................................the top bar*/
+#top-bar-wrapper
+{
+	width: 100%;
+	height: 37px;
+	background-color: @was-black;
+	
+	#top-bar
+	{
+		width: 960px;
+		height: 7px;
+		line-height: 7px;
+		margin: 0 auto;
+		padding: 15px 0px;
+		
+		a
+		{
+			.open-sans;
+			text-transform: uppercase;
+			text-decoration: none;
+			font-size: 12px;
+			color: #fff;
+		}
+	}
+}
+
+
 /*.......................................................the header*/
 header
 {
-	width: 950px;
-	margin: 0 auto;
+	width: 960px;
+	height: 245px;
+	padding-top: 30px;
+	padding: 30px 0 0 50px;
+	
+	h1#site-title
+	{
+		margin: 0;
+	}
+	
+	h2#site-description
+	{
+		.georgia;
+		font-style: italic;
+		font-size: 14px;
+		margin: 0;
+		padding-left: 130px;
+		color: @was-grey;
+	}
 }
 
 /*.......................................................the navigation*/
 nav
 {
 	background: #ddd;
-	display: block;
-	float: left;
 	margin: 0 auto;
-	width: 940px;
+	width: 100px;
 	
 	.menu-header, div.menu
 	{
 		font-size: 13px;
 		margin-left: 12px;
-		width: 928px;
+		width: 100px;
 		
 		ul
 		{
@@ -175,7 +229,9 @@ nav
 /*.......................................................the sidebar*/
 #sidebar
 {
-	
+	float: left;
+	width: 100px;
+	margin-right: 20px;
 }
 
 /*.......................................................the footer*/
