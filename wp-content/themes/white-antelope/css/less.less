@@ -19,3 +19,22 @@
 }
 
 /*.......................................................the misc LESS mixins & variables*/
+.transition(@property:all, @duration:0.5s, @effect:ease)
+{
+	-webkit-transition: @property @duration @effect;
+	-moz-transition: @property @duration @effect; 
+	-o-transition: @property @duration @effect;
+	transition: @property @duration @effect;
+}
+
+.radial(@posx:center, @posy:center, @circle:250px, @contain:250px, @colorstart:#222, @colorstartpercent:50%, @colorstop:#000, @colorstoppercent:100%)
+{
+	background: @colorstop; /* fallback for non-supporting browsers */
+	background-image: -webkit-gradient(radial, @posx @posy, @circle, @posx @posy, contain, from(@colorstop), to(@colorstart)); /* old WebKit Syntax */
+	background-image: -webkit-radial-gradient(@posx @posy, @circle @contain, @colorstart @colorstartpercent, @colorstop @colorstoppercent); /* New WebKit syntax */
+	background-image: -webkit-radial-gradient(@posx @posy, @circle @contain, @colorstart @colorstartpercent, @colorstop @colorstoppercent); /* New WebKit syntax */
+	background-image: -moz-radial-gradient(@posx @posy, @circle @contain, @colorstart @colorstartpercent, @colorstop @colorstoppercent);
+	background-image: -ms-radial-gradient(@posx @posy, @circle @contain, @colorstart @colorstartpercent, @colorstop @colorstoppercent); /* IE10+ */
+	background-image: -o-radial-gradient(@posx @posy, @circle @contain, @colorstart @colorstartpercent, @colorstop @colorstoppercent); /* Opera (13?) */
+	background-image: radial-gradient(@posx @posy, @circle @contain, @colorstart @colorstartpercent, @colorstop @colorstoppercent); /* standard syntax */
+}

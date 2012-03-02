@@ -77,6 +77,7 @@ a
 .container
 {
 	float: left;
+	margin-top: 37px;
 }
 
 
@@ -86,6 +87,8 @@ a
 	width: 100%;
 	height: 37px;
 	background-color: @was-black;
+	position: fixed;
+	z-index: 9999;
 	
 	#top-bar
 	{
@@ -171,8 +174,7 @@ nav
 	
 	li:hover > a, ul ul :hover > a
 	{
-		background: @was-grey;
-		color: @was-white;
+		color: @was-black;
 	}
 	
 	ul li:hover > ul
@@ -204,7 +206,7 @@ nav
 {
 	float: left;
 	width: 100px;
-	margin: 335px 20px 0 0;
+	margin: 370px 20px 0 0;
 }
 
 /*.......................................................the page*/
@@ -233,6 +235,39 @@ footer
 
 
 /*.......................................................the mosaic*/
+body.home #wrapper
+{
+	background: url('../images/home-bg.png') no-repeat scroll 140px 451px;
+	height: 722px;
+}
+
+.small-box, .large-box
+{
+	h2
+	{
+		.open-sans;
+		text-transform: uppercase;
+		font-size: 18px;
+	}
+	
+	h3
+	{
+		.open-sans;
+		text-transform: uppercase;
+		font-size: 12px;
+	}
+	
+	p
+	{
+		.georgia;
+		font-style: italic;
+	}
+	
+	a
+	{
+		
+	}
+}
 .small-box
 {
 	width: 240px;
@@ -247,17 +282,112 @@ footer
 
 .photo-box
 {
+	position: relative;
+	overflow: hidden;
+	color: #fff;
 	
+	.image
+	{
+		width: 240px;
+		height: 240px;
+		display: table;
+		position: relative;
+		z-index: 1;
+	}
+	
+	.content
+	{
+		background-color: rgba(0, 0, 0, 0.6);
+		.radial;
+		position: absolute;
+		top: 0;
+		z-index: 999;
+		filter: alpha(opacity = 0);
+		opacity: 0.0;
+		display: table;
+		width: 240px;
+		height: 240px;
+		text-align: center;
+		.transition;
+		
+		.inner
+		{
+		display: table-cell;
+    	vertical-align: middle;
+    	
+	    	h2
+	    	{
+	    		color: @was-white;
+	    	}
+		}
+	}
+	
+	:hover
+	{
+		.content
+		{
+			opacity: 0.6;
+			filter: alpha(opacity = 60);
+			.transition;
+			
+		}
+	}
 }
 
 .menu-box
 {
+	background-color: #ECECEC;
+	opacity: 0.8;
+	display: table;
+	.transition;
 	
+	:hover
+	{
+		background-color: #ddd;
+		.transition;
+	}
+	
+	span
+	{
+		display: table-cell;
+    	vertical-align: middle;
+    	padding: 0 35px;
+	}
+	
+	h2
+	{
+		.open-sans;
+		text-transform: uppercase;
+		font-size: 18px;
+	}
+	
+	h3.event-title
+	{
+		.open-sans;
+		text-transform: uppercase;
+		font-size: 12px;
+		color: @was-grey;
+	}
+	
+	p
+	{
+		.georgia;
+		font-style: italic;
+	}
 }
 
 .video-box
 {
 	
+}
+
+.col-240, .col-480
+{
+	a
+	{
+		display: block;
+		color: @was-black;
+	}
 }
 
 .col-240
