@@ -1,2 +1,5 @@
 .open-sans { font-family: 'Open Sans', sans-serif; }
-.georgia { font-family: Georgia; }
+.georgia {
+  font-family: Georgia;
+  font-style: italic;
+}

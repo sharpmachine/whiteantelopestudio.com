@@ -1,5 +1,8 @@
 .open-sans { font-family: 'Open Sans', sans-serif; }
-.georgia { font-family: Georgia; }
+.georgia {
+  font-family: Georgia;
+  font-style: italic;
+}
 article, aside, figure, footer, header, hgroup, menu, nav, section { display: block; }
 html { overflow-y: scroll; }
 html, body { height: 100%; }
@@ -8,7 +11,10 @@ html, body { height: 100%; }
   left: -9000px;
 }
 #wrapper { min-height: 100%; }
-body { background-color: #ededed; }
+body {
+  background-color: #ededed;
+  color: #1a1a1a;
+}
 #wrapper {
   width: 1200px;
   min-height: 100%;
@@ -16,6 +22,7 @@ body { background-color: #ededed; }
   margin: 0 auto;
 }
 .container {
+  width: 960px;
   float: left;
   margin-top: 37px;
 }
@@ -49,6 +56,7 @@ header {
 header h1#site-title { margin: 0; }
 header h2#site-description {
   font-family: Georgia;
+  font-style: italic;
   font-style: italic;
   font-size: 14px;
   margin: 0;
@@ -132,13 +140,84 @@ nav ul li.current-menu-parent > a {
   margin: 370px 20px 0 0;
 }
 #page { margin: 75px 0; }
-footer, .footer-push { height: 235px; }
 footer {
   width: 960px;
   margin: 0 auto;
   clear: both;
 }
-footer #site-info { text-align: right; }
+footer h2 {
+  font-family: 'Open Sans', sans-serif;
+  text-transform: uppercase;
+  font-size: 18px;
+}
+footer h3 a {
+  font-family: 'Open Sans', sans-serif;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: #656565;
+  text-decoration: none;
+  font-weight: normal;
+}
+footer h3 a:hover {
+  background: none;
+  color: #656565;
+}
+footer p {
+  font-family: Georgia;
+  font-style: italic;
+  font-style: italic;
+}
+footer a {
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-style: normal;
+  color: #1a1a1a;
+  padding: 1px;
+}
+footer a:hover {
+  background-color: #1a1a1a;
+  color: #ededed;
+  text-decoration: none;
+}
+footer ul.footer-events {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  margin-bottom: 1.5em;
+}
+footer ul.footer-events li { list-style: none; }
+footer ul.footer-events li a {
+  font-family: 'Open Sans', sans-serif;
+  text-transform: uppercase;
+  color: #656565;
+  text-decoration: none;
+  font-weight: normal;
+}
+footer ul.footer-events li a:hover {
+  color: #ededed;
+  background-color: #656565;
+}
+footer #site-info {
+  padding: 65px 0 20px 0;
+  font-family: Georgia;
+  font-style: italic;
+  font-style: italic;
+  text-align: right;
+  clear: both;
+}
+footer #site-info a {
+  font-family: Georgia;
+  font-style: italic;
+  font-style: italic;
+  font-weight: normal;
+  text-transform: none;
+  text-decoration: none;
+}
+footer #site-info a:hover {
+  background: none;
+  color: #656565;
+}
 body.home #wrapper {
   background: url('../images/home-bg.png') no-repeat scroll 140px 451px;
   height: 722px;
@@ -156,6 +235,7 @@ body.home #wrapper {
 .small-box p {
   font-family: Georgia;
   font-style: italic;
+  font-style: italic;
 }
 .large-box h2 {
   font-family: 'Open Sans', sans-serif;
@@ -169,6 +249,7 @@ body.home #wrapper {
 }
 .large-box p {
   font-family: Georgia;
+  font-style: italic;
   font-style: italic;
 }
 .small-box {
@@ -263,6 +344,7 @@ body.home #wrapper {
 }
 .menu-box p {
   font-family: Georgia;
+  font-style: italic;
   font-style: italic;
 }
 .video-box { position: relative; }
