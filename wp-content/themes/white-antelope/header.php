@@ -56,6 +56,7 @@
 -->
 	
 <link rel="pingback" href="<?php bloginfo( 'pingback_url' ); ?>" />
+<link rel="self" type="application/rss+xml" title="Revival Cry &raquo; Events Feed" href="<?php bloginfo('url'); ?>/events/rss" />
 	
 <script src="<?php bloginfo('template_directory'); ?>/js/modernizr-1.7.min.js"></script>
 <!--[if lte IE 8]><script src="<?php bloginfo('template_directory'); ?>/js/selectivizr-min.js"></script><![endif]--> 
@@ -71,7 +72,24 @@
 <body <?php body_class(); ?>>
 	<div id="top-bar-wrapper">
 		<div id="top-bar">
-			<a href="<?php bloginfo('url'); ?>/cart">Shopping Cart</a>
+			<div class="span-4 colborder">
+				<a href="<?php bloginfo('url'); ?>/cart"><img src="<?php bloginfo('template_directory'); ?>/images/shopping-cart.png" width="19" height="14" alt="Shopping Cart">Shopping Cart</a>
+			</div>
+			<div class="span-5 colborder">
+				<a href="#"><img src="<?php bloginfo('template_directory'); ?>/images/newsletter.png" width="18" height="14" alt="Newsletter">Signup for Newsletter</a>
+			</div>
+			<div class="span-6 colborder rss-feeds">
+				<img src="<?php bloginfo('template_directory'); ?>/images/rss.png" width="15" height="15" alt="Rss">
+				<a href="#">Gallery</a>
+				<a href="<?php bloginfo('url'); ?>/events/rss" type="application/rss+xml">Events</a>
+				<a href="<?php bloginfo("rss_url"); ?>">Blog</a>
+			</div>
+			<div class="span-6 social-media last">
+				<a href="#"><img src="<?php bloginfo('template_directory'); ?>/images/pinterest.png" width="58" height="15" alt="Pinterest" class="Pinterest" style="position:relative; top:4px;"></a>
+				<a href="#"><img src="<?php bloginfo('template_directory'); ?>/images/twitter.png" width="61" height="12" alt="Twitter" class="Twitter" style="position:relative; top:5px;"></a>
+				<a href="#"><img src="<?php bloginfo('template_directory'); ?>/images/facebook.png" width="72" height="16" alt="Facebook" class="Facebook" style="padding:0"></a>
+			</div>
+			
 		</div>
 	</div>
 	<div id="wrapper">

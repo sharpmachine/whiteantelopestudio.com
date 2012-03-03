@@ -88,26 +88,72 @@ a
 #top-bar-wrapper
 {
 	width: 100%;
-	height: 37px;
 	background-color: @was-black;
 	position: fixed;
 	z-index: 9999;
+	padding: 10px 0;
 	
 	#top-bar
 	{
 		width: 960px;
-		height: 7px;
-		line-height: 7px;
+		line-height: 14px;
 		margin: 0 auto;
-		padding: 15px 0px;
+		
+		img
+		{
+			position: relative;
+			top: 2px;
+			padding-right: 10px;
+		}
+		
+		.colborder 
+		{
+			-webkit-border-image:url("../images/top-bar-divider.png");
+			-moz-border-image:url("../images/top-bar-divider.png");
+			-o-border-image:url("../images/top-bar-divider.png");
+			-ms-border-image:url("../images/top-bar-divider.png");
+			border-image:url("../images/top-bar-divider.png");
+		}
+		
+		.social-media
+		{
+			a
+			{
+				float: right;
+				
+				img
+				{
+					padding: 0 0 0 19px;
+				}
+				
+				:after
+				{
+					content: "";
+				}
+			}
+		}
+		
+		.rss-feeds a
+		{
+			padding-right: 15px;
+		}
 		
 		a
 		{
 			.open-sans;
 			text-transform: uppercase;
 			text-decoration: none;
+			font-weight: 600;
 			font-size: 12px;
 			color: @was-white;
+			
+			:after
+			{
+				position: relative;
+				top: 1px;
+				left: 10px;
+				content: url(../images/arrow.png);
+			}
 		}
 	}
 }
@@ -506,6 +552,7 @@ body.home #wrapper
 	{
 		display: block;
 		color: @was-black;
+		text-decoration: none;
 	}
 }
 

@@ -12,7 +12,7 @@
 						<li><a href="#">+ Another Cool Event</a></li>
 						<li><a href="#">+ The Coolest Event</a></li>
 					</ul>
-					<a href="<?php bloginfo('url'); ?>/contact">See All Events</a>
+					<a href="<?php bloginfo('url'); ?>/events">See All Events</a>
 				</article>
 				<article class="span-5 colborder">
 					<h2>Last Blog Entry</h2>
