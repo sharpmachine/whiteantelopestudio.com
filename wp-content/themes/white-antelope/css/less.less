@@ -38,3 +38,11 @@
 	background-image: -o-radial-gradient(@posx @posy, @circle @contain, @colorstart @colorstartpercent, @colorstop @colorstoppercent); /* Opera (13?) */
 	background-image: radial-gradient(@posx @posy, @circle @contain, @colorstart @colorstartpercent, @colorstop @colorstoppercent); /* standard syntax */
 }
+
+.bigger(@property:scale, @degree:1)
+{
+	-webkit-transform: @property (@degree);
+	-moz-transform: @property (@degree);
+	-o-transform: @property (@degree);
+	transform: @property (@degree);
+}

@@ -1,20 +1,20 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: \n"
+"Project-Id-Version: Display-widgets\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: \n"
-"Last-Translator: darmoid <smychnyk@gmail.com>\n"
-"Language-Team: \n"
+"Last-Translator: Taulant Ceka <taulant@sem.al>\n"
+"Language-Team: Taulant Ceka <taulant@wporacle.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Poedit-Language: \n"
-"X-Poedit-Country: \n"
+"X-Poedit-Language: Albanian\n"
+"X-Poedit-Country: ALBANIA\n"
 "X-Poedit-SourceCharset: utf-8\n"
 "X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_n:1,2;__ngettext_noop:1,2;_n_noop:1,2;_c,_nc:4c,1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;_nx_noop:4c,1,2;\n"
-"X-Poedit-Basepath: \n"
+"X-Poedit-Basepath: .\n"
 "X-Poedit-Bookmarks: \n"
 "X-Poedit-SearchPath-0: .\n"
 "X-Textdomain-Support: yes"
@@ -22,82 +22,82 @@ msgstr ""
 #: display-widgets.php:95
 #@ display-widgets
 msgid "Front"
-msgstr "Лицо сайта"
+msgstr "Faqja Kryesore"
 
 #: display-widgets.php:96
 #@ display-widgets
 msgid "Blog"
-msgstr "Блог"
+msgstr "Faqja e blogut"
 
 #: display-widgets.php:97
 #@ display-widgets
 msgid "Archives"
-msgstr "Архивы"
+msgstr "Faqet e arkivit"
 
 #: display-widgets.php:98
 #@ display-widgets
 msgid "Single Post"
-msgstr "Отдельная Запись"
+msgstr "Postimi i vetÃ«m"
 
 #: display-widgets.php:99
 #@ display-widgets
 msgid "Search"
-msgstr "Поиск"
+msgstr "Faqja pÃ«r rezultatet e kÃ«rkimit"
 
 #: display-widgets.php:108
 #@ display-widgets
 msgid "Show/Hide Widget"
-msgstr "Показать/Спрятать Виджет"
+msgstr "Shfaqe/Fshije kÃ«tÃ« Widget"
 
 #: display-widgets.php:110
 #@ display-widgets
 msgid "Hide on checked"
-msgstr "Спрятать отмеченное"
+msgstr "Fshihe kur i bÃ«n check"
 
 #: display-widgets.php:111
 #@ display-widgets
 msgid "Show on checked"
-msgstr "Показать отмеченное"
+msgstr "Shfaqe kur i bÃ«n check"
 
 #: display-widgets.php:117
 #@ display-widgets
 msgid "Show only for Logged-out users"
-msgstr "Показывать только для гостей"
+msgstr "Shfaqe vetÃ«m pÃ«r jo-anÃ«tarÃ«t"
 
 #: display-widgets.php:119
 #@ display-widgets
 msgid "Show only for Logged-in users"
-msgstr "Показывать только для зарегистрированных пользователей"
+msgstr "Shfaqe vetÃ«m pÃ«r anÃ«tarÃ«t"
 
 #: display-widgets.php:131
 #@ display-widgets
 msgid "Pages"
-msgstr "Страницы"
+msgstr "Faqet"
 
 #: display-widgets.php:153
 #@ display-widgets
 msgid "Categories"
-msgstr "Категории"
+msgstr "KategoritÃ«"
 
 #: display-widgets.php:121
 #@ display-widgets
 msgid "Miscellaneous"
-msgstr "Разное"
+msgstr "Opcione tÃ« pÃ«rziera"
 
 #: display-widgets.php:127
 #@ display-widgets
 msgid "Page"
-msgstr "Страница"
+msgstr "  "
 
 #: display-widgets.php:199
 #@ display-widgets
 msgid "Comma Separated list of IDs of posts not listed above"
-msgstr "Разделенный запятыми список ID записей не перечисленных више"
+msgstr "Vendos ID e postimeve qÃ« nuk janÃ« listuar mÃ« lart tÃ« ndara me presje nga njÃ«ra tjetra"
 
 #: display-widgets.php:142
 #@ display-widgets
 msgid "Custom Post Types"
-msgstr "Записи произвольных типов"
+msgstr "Tipet e postimeve"
 
 #: display-widgets.php:167
 #@ display-widgets

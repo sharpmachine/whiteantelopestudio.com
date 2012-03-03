@@ -19,88 +19,93 @@ msgstr ""
 "X-Poedit-SearchPath-0: .\n"
 "X-Textdomain-Support: yes"
 
-#: display-widgets.php:84
+#: display-widgets.php:95
 #@ display-widgets
 msgid "Front"
 msgstr ""
 
-#: display-widgets.php:85
+#: display-widgets.php:96
 #@ display-widgets
 msgid "Blog"
 msgstr ""
 
-#: display-widgets.php:86
+#: display-widgets.php:97
 #@ display-widgets
 msgid "Archives"
 msgstr ""
 
-#: display-widgets.php:87
+#: display-widgets.php:98
 #@ display-widgets
 msgid "Single Post"
 msgstr ""
 
-#: display-widgets.php:88
+#: display-widgets.php:99
 #@ display-widgets
 msgid "Search"
 msgstr ""
 
-#: display-widgets.php:97
+#: display-widgets.php:108
 #@ display-widgets
 msgid "Show/Hide Widget"
 msgstr ""
 
-#: display-widgets.php:99
+#: display-widgets.php:110
 #@ display-widgets
 msgid "Hide on checked"
 msgstr ""
 
-#: display-widgets.php:100
+#: display-widgets.php:111
 #@ display-widgets
 msgid "Show on checked"
 msgstr ""
 
-#: display-widgets.php:106
+#: display-widgets.php:117
 #@ display-widgets
 msgid "Show only for Logged-out users"
 msgstr ""
 
-#: display-widgets.php:108
+#: display-widgets.php:119
 #@ display-widgets
 msgid "Show only for Logged-in users"
 msgstr ""
 
-#: display-widgets.php:120
+#: display-widgets.php:131
 #@ display-widgets
 msgid "Pages"
 msgstr ""
 
-#: display-widgets.php:142
+#: display-widgets.php:153
 #@ display-widgets
 msgid "Categories"
 msgstr ""
 
-#: display-widgets.php:110
+#: display-widgets.php:121
 #@ display-widgets
 msgid "Miscellaneous"
 msgstr ""
 
-#: display-widgets.php:116
+#: display-widgets.php:127
 #@ display-widgets
 msgid "Page"
 msgstr ""
 
-#: display-widgets.php:170
+#: display-widgets.php:199
 #@ display-widgets
 msgid "Comma Separated list of IDs of posts not listed above"
 msgstr ""
 
-#: display-widgets.php:131
+#: display-widgets.php:142
 #@ display-widgets
 msgid "Custom Post Types"
 msgstr ""
 
-#: display-widgets.php:156
+#: display-widgets.php:167
 #@ display-widgets
 msgid "Taxonomies"
+msgstr ""
+
+#: display-widgets.php:182
+#@ display-widgets
+msgid "Languages"
 msgstr ""
 

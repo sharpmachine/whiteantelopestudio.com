@@ -10,93 +10,102 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Poedit-Language: \n"
+"X-Poedit-Country: \n"
 "X-Poedit-SourceCharset: utf-8\n"
-"X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_n:1,2;__ngettext_noop:1,2;_n_noop:1,2;_c,_nc:4c,1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;_nx_noop:4c,1,2\n"
-"X-Textdomain-Support: yes\n"
+"X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_n:1,2;__ngettext_noop:1,2;_n_noop:1,2;_c,_nc:4c,1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;_nx_noop:4c,1,2;\n"
+"X-Poedit-Basepath: \n"
+"X-Poedit-Bookmarks: \n"
 "X-Poedit-SearchPath-0: .\n"
+"X-Textdomain-Support: yes"
 
+#: display-widgets.php:95
 #@ display-widgets
-#: display-widgets.php:84
 msgid "Front"
 msgstr "Fata"
 
+#: display-widgets.php:96
 #@ display-widgets
-#: display-widgets.php:85
 msgid "Blog"
 msgstr "Blog"
 
+#: display-widgets.php:97
 #@ display-widgets
-#: display-widgets.php:86
 msgid "Archives"
 msgstr "Archive"
 
+#: display-widgets.php:98
 #@ display-widgets
-#: display-widgets.php:87
 msgid "Single Post"
 msgstr "Postare"
 
+#: display-widgets.php:99
 #@ display-widgets
-#: display-widgets.php:88
 msgid "Search"
 msgstr "Cauta"
 
+#: display-widgets.php:108
 #@ display-widgets
-#: display-widgets.php:97
 msgid "Show/Hide Widget"
 msgstr "Arata/ascunde widget"
 
+#: display-widgets.php:110
 #@ display-widgets
-#: display-widgets.php:99
 msgid "Hide on checked"
 msgstr "Ascunde cand e bifat"
 
+#: display-widgets.php:111
 #@ display-widgets
-#: display-widgets.php:100
 msgid "Show on checked"
 msgstr "Arata cand e bifat"
 
+#: display-widgets.php:117
 #@ display-widgets
-#: display-widgets.php:106
 msgid "Show only for Logged-out users"
 msgstr "Arata doar pentru utilizatorii delogati"
 
+#: display-widgets.php:119
 #@ display-widgets
-#: display-widgets.php:108
 msgid "Show only for Logged-in users"
 msgstr "Arata doar pentru utilizatorii logati"
 
+#: display-widgets.php:131
 #@ display-widgets
-#: display-widgets.php:120
 msgid "Pages"
 msgstr "Pagini"
 
+#: display-widgets.php:153
 #@ display-widgets
-#: display-widgets.php:142
 msgid "Categories"
 msgstr "Categorii"
 
+#: display-widgets.php:121
 #@ display-widgets
-#: display-widgets.php:110
 msgid "Miscellaneous"
 msgstr "Altele"
 
+#: display-widgets.php:127
 #@ display-widgets
-#: display-widgets.php:116
 msgid "Page"
 msgstr "Pagina"
 
+#: display-widgets.php:199
 #@ display-widgets
-#: display-widgets.php:170
 msgid "Comma Separated list of IDs of posts not listed above"
 msgstr "Lista CSV ale ID-urilor posturilor nelistate deasupra"
 
+#: display-widgets.php:142
 #@ display-widgets
-#: display-widgets.php:131
 msgid "Custom Post Types"
 msgstr "Tipuri de postari personalizate"
 
+#: display-widgets.php:167
 #@ display-widgets
-#: display-widgets.php:156
 msgid "Taxonomies"
 msgstr "Tag-uri"
+
+#: display-widgets.php:182
+#@ display-widgets
+msgid "Languages"
+msgstr ""
 

@@ -70,6 +70,7 @@ a
 #wrapper
 {
 	width: 1200px;
+	min-height: 100%;
 	padding: 0 20px;
 	margin: 0 auto;
 }
@@ -223,7 +224,7 @@ footer, .footer-push
 
 footer
 {
-	width: 950px;
+	width: 960px;
 	margin: 0 auto;
 	clear: both;
 	
@@ -306,7 +307,7 @@ body.home #wrapper
 		.radial;
 		position: absolute;
 		top: 0;
-		z-index: 999;
+		z-index: 100;
 		filter: alpha(opacity = 0);
 		opacity: 0.0;
 		display: table;
@@ -383,7 +384,29 @@ body.home #wrapper
 
 .video-box
 {
+	position: relative;
 	
+	.play-button
+	{
+		width: 55px;
+		height: 55px;
+		position: absolute;
+		top: 93px;
+		left: 93px;
+		z-index: 9;
+		
+		:hover
+		{
+			a img
+			{
+				-webkit-transform: scale(1.08);
+				-moz-transform: scale(1.08);
+				-o-transform: scale(1.08);
+				-ms-transform: scale(1.08);
+				transform: scale(1.08);
+			}
+		}
+	}
 }
 
 .col-240, .col-480

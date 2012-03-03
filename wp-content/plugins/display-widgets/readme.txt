@@ -4,7 +4,7 @@ Donate link: http://strategy11.com/donate/
 Tags: widget, widgets, admin, show, hide, page, Thesis, sidebar, content, wpmu, wordpress, plugin, post, posts, content, filter, widget logic, widget context
 Requires at least: 2.8
 Tested up to: 3.2
-Stable tag: 1.21
+Stable tag: 1.22
 
 Simply hide widgets on specified pages. Adds checkboxes to each widget to either show or hide it on every site page.
 
@@ -17,6 +17,8 @@ By default, 'Hide on Checked' is selected with no boxes checked, so all current 
 http://strategy11.com/display-widgets/
 
 = Translations =
+* Albanian ([Taulant](http://wporacle.com/ "Taulant"))
+* Bahasa Malaysian (Jass at 100webhosting.com)
 * Chinese ([Hanolex](http://hanolex.org "Hanolex"))
 * Dutch (Alanya Hotels)
 * German ([Caspar Hübinger](http://glueckpress.com "Caspar Hübinger"))
@@ -46,6 +48,13 @@ This is a known limitation. Widgets written in the pre-2.8 format don't work the
 1. The extra widget options added.
 
 == Changelog ==
+= 1.22 =
+* Added WPML support
+* Fix to allow more than 5 taxonomies
+* Fix to allow more than 99 pages
+* Changed 'include' to 'dw_include' parameter naming to remove conflict with Suffusion widget
+* Added Albanian translation ([Taulant](http://wporacle.com/ "Taulant"))
+* Added Bahasa Malaysian translation (100webhosting.com)
 
 = 1.21 =
 * Added Romanian translation (Nobelcom)

@@ -41,6 +41,9 @@
 				</a>
 				<div class="small-box video-box">
 					<img src="<?php bloginfo('template_directory'); ?>/images/painting.jpg" width="240" height="240" alt="Painting">
+					<div class="play-button">
+						<a href="http://vimeo.com/36084566" rel="lightbox[video]" class="video-gallery"><img src="<?php bloginfo('template_directory'); ?>/images/play-button.gif" width="54" height="55" alt=""></a>
+					</div>
 				</div>
 				<div class="small-box photo-box">
 					<div class="image">
@@ -86,7 +89,7 @@
 					</div>
 				</div>
 			</div>
-		
+		<div class="clear"></div>
 		</section><!-- #page -->
 
 
