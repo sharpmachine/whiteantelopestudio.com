@@ -388,4 +388,255 @@ function acf_shortcode( $atts )
 }
 add_shortcode( 'acf', 'acf_shortcode' );
 
+
+/*--------------------------------------------------------------------------------------
+*
+*	Front end form Head
+*
+*	@author Elliot Condon
+*	@since 1.1.4
+* 
+*-------------------------------------------------------------------------------------*/
+
+function acf_form_head()
+{
+	// global vars
+	global $acf;
+	
+	
+	
+	// run database save first
+	if(isset($_POST) && isset($_POST['acf_save']))
+	{
+		$post_id = $_POST['post_id'];
+		
+		// save
+		// strip slashes
+		$_POST = array_map('stripslashes_deep', $_POST);
+		
+		// save fields
+		$fields = $_POST['fields'];
+		
+		if($fields)
+		{
+			foreach($fields as $key => $value)
+			{
+				// get field
+				$field = $acf->get_acf_field($key);
+				
+				$acf->update_value($post_id, $field, $value);
+			}
+		}
+		
+		
+		// redirect
+		if(isset($_POST['return']))
+		{
+			wp_redirect($_POST['return']);
+			exit;
+		}
+		
+	}
+	
+		
+	// register css / javascript
+	foreach($acf->fields as $field)
+	{
+		$acf->fields[$field->name]->admin_print_scripts();
+		$acf->fields[$field->name]->admin_print_styles();
+	}
+	wp_enqueue_style(array(
+		'colors-fresh'
+	));
+	
+		
+	// form was not posted, load js head stuff
+	add_action('wp_head', 'acf_form_wp_head');
+	
+}
+
+function acf_form_wp_head()
+{
+	// global vars
+	global $post, $acf;
+	
+	
+	// fields admin_head
+	foreach($acf->fields as $field)
+	{
+		$acf->fields[$field->name]->admin_head();
+	}
+	
+	
+	// Style
+	echo '<link rel="stylesheet" type="text/css" href="'.$acf->dir.'/css/global.css" />';
+	echo '<link rel="stylesheet" type="text/css" href="'.$acf->dir.'/css/input.css" />';
+
+
+	// Javascript
+	echo '<script type="text/javascript" src="'.$acf->dir.'/js/input-actions.js" ></script>';
+	echo '<script type="text/javascript">
+		acf.validation_message = "' . __("Validation Failed. One or more fields below are required.",'acf') . '";
+		acf.post_id = ' . $post->ID . ';
+		acf.editor_mode = "wysiwyg";
+		acf.admin_url = "' . admin_url() . '";
+	</script>';
+}
+
+
+/*--------------------------------------------------------------------------------------
+*
+*	Front end form
+*
+*	@author Elliot Condon
+*	@since 1.1.4
+* 
+*-------------------------------------------------------------------------------------*/
+
+function acf_form($options = null)
+{
+	global $post, $acf;
+	
+	
+	// defaults
+	$defaults = array(
+		'post_id' => $post->ID, // post id to get field groups from and save data to
+		'field_groups' => array(), // this will find the field groups for this post
+		'form_attributes' => array( // attributes will be added to the form element
+			'class' => ''
+		),
+		'return' => add_query_arg( 'updated', 'true', get_permalink() ), // return url
+		'html_field_open' => '<div class="field">', // field wrapper open
+		'html_field_close' => '</div>', // field wrapper close
+		'html_before_fields' => '', // html inside form before fields
+		'html_after_fields' => '', // html inside form after fields
+		'submit_value' => 'Update', // vale for submit field
+		'updated_message' => 'Post updated.', // default updated message. Can be false
+	);
+	
+	
+	// merge defaults with options
+	if($options && is_array($options))
+	{
+		$options = array_merge($defaults, $options);
+	}
+	else
+	{
+		$options = $defaults;
+	}
+	
+	
+	// post_id for options page
+	if($options['post_id'] == "options")
+	{
+		$options['post_id'] = 999999999;
+	}
+	
+	
+	// register post box
+	if(!$options['field_groups'])
+	{
+		$options['field_groups'] = $acf->get_input_metabox_ids(array('post_id' => $options['post_id']), false);
+	}
+
+	
+	// updated message
+	if(isset($_GET['updated']) && $_GET['updated'] == 'true' && $options['updated_message'])
+	{
+		echo '<div id="message" class="updated"><p>' . $options['updated_message'] . '</p></div>';
+	}
+	
+	// display form
+	?>
+	<form action="" id="post" method="post" <?php if($options['form_attributes']){foreach($options['form_attributes'] as $k => $v){echo $k . '="' . $v .'" '; }} ?>>
+	<div style="display:none">
+		<input type="hidden" name="acf_save" value="true" />
+		<input type="hidden" name="post_id" value="<?php echo $options['post_id']; ?>" />
+		<input type="hidden" name="return" value="<?php echo $options['return']; ?>" />
+		<?php wp_editor('', 'acf-temp-editor'); ?>
+	</div>
+	
+	<div id="poststuff">
+	<div class="acf_postbox">
+	<?php
+	
+	// html before fields
+	echo $defaults['html_before_fields'];
+	
+	$field_groups = $acf->get_field_groups();
+	if($field_groups):
+		foreach($field_groups as $field_group):
+			
+			if(!in_array($field_group['id'], $options['field_groups'])) continue;
+			
+			
+			// defaults
+			if(!$field_group['options'])
+			{
+				$field_group['options'] = array(
+					'layout'	=>	'default'
+				);
+			}
+			
+				
+			if($field_group['fields'])
+			{
+				
+				echo '<div class="options" data-layout="' . $field_group['options']['layout'] . '"></div>';
+				foreach($field_group['fields'] as $field)
+				{
+					// if they didn't select a type, skip this field
+					if($field['type'] == 'null') continue;
+					
+					// set value
+					$field['value'] = $acf->get_value($options['post_id'], $field);
+					
+					// required
+					if(!isset($field['required']))
+					{
+						$field['required'] == "0";
+					}
+					
+					$required_class = "";
+					$required_label = "";
+					
+					if($field['required'] == "1")
+					{
+						$required_class = ' required';
+						$required_label = ' <span class="required">*</span>';
+					}
+					
+					echo '<div class="field field-' . $field['type'] . $required_class . '">';
+									
+						echo '<label class="field_label" for="fields[' . $field['key'] . ']">' . $field['label'] . $required_label . '</label>';
+						if($field['instructions']) echo '<p class="instructions">' . $field['instructions'] . '</p>';
+						
+						$field['name'] = 'fields[' . $field['key'] . ']';
+						$acf->create_field($field);
+					
+					echo '</div>';
+					
+				}
+			}
+			
+		endforeach;
+	endif;
+	
+	// html after fields
+	echo $defaults['html_after_fields'];
+	
+	?>
+	<div class="field">
+		<input type="submit" value="<?php echo $options['submit_value']; ?>" />
+	</div>
+	</div>
+	</div>
+	</form>
+	
+	
+	<?php
+	
+}
+
+
 ?>

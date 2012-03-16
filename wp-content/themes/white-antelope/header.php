@@ -73,21 +73,21 @@
 	<div id="top-bar-wrapper">
 		<div id="top-bar">
 			<div class="span-4 colborder">
-				<a href="<?php bloginfo('url'); ?>/cart"><img src="<?php bloginfo('template_directory'); ?>/images/shopping-cart.png" width="19" height="14" alt="Shopping Cart">Shopping Cart</a>
+				<a href="<?php bloginfo('url'); ?>/gallery/cart"><img src="<?php bloginfo('template_directory'); ?>/images/shopping-cart.png" width="19" height="14" alt="Shopping Cart">Shopping Cart</a>
 			</div>
 			<div class="span-5 colborder">
 				<a href="#"><img src="<?php bloginfo('template_directory'); ?>/images/newsletter.png" width="18" height="14" alt="Newsletter">Signup for Newsletter</a>
 			</div>
 			<div class="span-6 colborder rss-feeds">
 				<img src="<?php bloginfo('template_directory'); ?>/images/rss.png" width="15" height="15" alt="Rss">
-				<a href="#">Gallery</a>
-				<a href="<?php bloginfo('url'); ?>/events/rss" type="application/rss+xml">Events</a>
+				<a href="<?php bloginfo('url'); ?>/gallery/feed/">Gallery</a>
+				<a href="<?php bloginfo('url'); ?>/events/feed" type="application/rss+xml">Events</a>
 				<a href="<?php bloginfo("rss_url"); ?>">Blog</a>
 			</div>
 			<div class="span-6 social-media last">
-				<a href="#"><img src="<?php bloginfo('template_directory'); ?>/images/pinterest.png" width="58" height="15" alt="Pinterest" class="Pinterest" style="position:relative; top:4px;"></a>
-				<a href="#"><img src="<?php bloginfo('template_directory'); ?>/images/twitter.png" width="61" height="12" alt="Twitter" class="Twitter" style="position:relative; top:5px;"></a>
-				<a href="#"><img src="<?php bloginfo('template_directory'); ?>/images/facebook.png" width="72" height="16" alt="Facebook" class="Facebook" style="padding:0"></a>
+				<a href="<?php the_field('pinterest', 'options'); ?>"><img src="<?php bloginfo('template_directory'); ?>/images/pinterest.png" width="58" height="15" alt="Pinterest" class="Pinterest" style="position:relative; top:4px;"></a>
+				<a href="<?php the_field('twitter', 'options'); ?>"><img src="<?php bloginfo('template_directory'); ?>/images/twitter.png" width="61" height="12" alt="Twitter" class="Twitter" style="position:relative; top:5px;"></a>
+				<a href="<?php the_field('facebook', 'options'); ?>"><img src="<?php bloginfo('template_directory'); ?>/images/facebook.png" width="72" height="16" alt="Facebook" class="Facebook" style="padding:0"></a>
 			</div>
 			
 		</div>

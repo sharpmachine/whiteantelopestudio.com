@@ -42,8 +42,8 @@ class acf_Wysiwyg extends acf_Field
    	{
     	return 'tinymce'; // html or tinymce
     }
-    
-	
+   	
+   	
    	/*--------------------------------------------------------------------------------------
 	*
 	*	add_tiny_mce
@@ -68,7 +68,7 @@ class acf_Wysiwyg extends acf_Field
    		}
 		
 	}
-   	
+	
    	
    	/*--------------------------------------------------------------------------------------
 	*
@@ -107,127 +107,6 @@ class acf_Wysiwyg extends acf_Field
 		));
 	}
 	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	admin_head
-	*
-	*	@author Elliot Condon
-	*	@since 2.0.6
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function admin_head()
-	{
-		?>
-		<script type="text/javascript">
-		(function($){
-			
-			// store wysiwyg buttons
-			$.acf_wysiwyg_buttons = {};
-			
-
-			$.fn.acf_deactivate_wysiwyg = function(){
-
-				$(this).find('.acf_wysiwyg textarea').each(function(){
-
-					tinyMCE.execCommand("mceRemoveControl", false, $(this).attr('id'));
-					
-				});
-				
-			};
-			
-			
-			$.fn.acf_activate_wysiwyg = function(){
-				
-				// tinymce must exist
-				if(typeof(tinyMCE) != "object")
-				{
-					return false;
-				}
-
-					
-				// add tinymce to all wysiwyg fields
-				$(this).find('.acf_wysiwyg textarea').each(function(){
-					
-					if(tinyMCE != undefined && tinyMCE.settings != undefined)
-					{
-						// reset buttons
-						tinyMCE.settings.theme_advanced_buttons1 = $.acf_wysiwyg_buttons.theme_advanced_buttons1;
-						tinyMCE.settings.theme_advanced_buttons2 = $.acf_wysiwyg_buttons.theme_advanced_buttons2;
-					
-						var toolbar = $(this).closest('.acf_wysiwyg').attr('data-toolbar');
-						
-						if(toolbar == 'basic')
-						{
-							tinyMCE.settings.theme_advanced_buttons1 = "bold,italic,formatselect,|,link,unlink,|,bullist,numlist,|,undo,redo";
-							tinyMCE.settings.theme_advanced_buttons2 = "";
-						}
-						else
-						{
-							// add images + code buttons
-							tinyMCE.settings.theme_advanced_buttons2 += ",code";
-						}
-					}
-
-					tinyMCE.execCommand('mceAddControl', false, $(this).attr('id'));
-
-				});
-				
-			};
-			
-			
-			$(window).load(function(){
-				
-				// timout seems to fix duplicate editors
-				setTimeout(function(){
-				
-					// store variables
-					if(tinyMCE != undefined && tinyMCE.settings != undefined)
-					{
-						$.acf_wysiwyg_buttons.theme_advanced_buttons1 = tinyMCE.settings.theme_advanced_buttons1;
-						$.acf_wysiwyg_buttons.theme_advanced_buttons2 = tinyMCE.settings.theme_advanced_buttons2;
-						
-					}
-				
-					$('#poststuff').acf_activate_wysiwyg();
-					
-				}, 10);
-				
-				
-			});
-			
-			// Sortable: Start
-			$('#poststuff .repeater > table > tbody, #poststuff .acf_flexible_content > .values').live( "sortstart", function(event, ui) {
-				
-				$(ui.item).find('.acf_wysiwyg textarea').each(function(){
-					tinyMCE.execCommand("mceRemoveControl", false, $(this).attr('id'));
-				});
-				
-			});
-			
-			// Sortable: End
-			$('#poststuff .repeater > table > tbody, #poststuff .acf_flexible_content > .values').live( "sortstop", function(event, ui) {
-				
-				$(ui.item).find('.acf_wysiwyg textarea').each(function(){
-					tinyMCE.execCommand("mceAddControl", false, $(this).attr('id'));
-				});
-				
-			});
-			
-			// Delete
-			$('#poststuff .repeater a.remove_field').live('click', function(event){
-				
-				var tr = $(event.target).closest('tr').find('.acf_wysiwyg textarea').each(function(){
-					tinyMCE.execCommand("mceRemoveControl", false, $(this).attr('id'));
-				});				
-			});
-			
-			
-		})(jQuery);
-		</script>
-		<?php
-	}
 	
 	
 	/*--------------------------------------------------------------------------------------
@@ -305,37 +184,52 @@ class acf_Wysiwyg extends acf_Field
 		$field['toolbar'] = isset($field['toolbar']) ? $field['toolbar'] : 'full';
 		$field['media_upload'] = isset($field['media_upload']) ? $field['media_upload'] : 'yes';
 		
-		$id = 'wysiwyg_' . uniqid();
+		$id = 'wysiwyg-' . $field['name'];
 		
-		$version = get_bloginfo('version');
+		
 		
 		?>
-		<?php if(version_compare($version,'3.2.1') > 0): ?>
-			
-		<?php else: ?>
-			
-		<?php endif; ?>
-		
-		<div class="acf_wysiwyg wp-editor-wrap" data-toolbar="<?php echo $field['toolbar']; ?>">
+		<div id="wp-<?php echo $id; ?>-wrap" class="acf_wysiwyg wp-editor-wrap" data-toolbar="<?php echo $field['toolbar']; ?>">
 			<?php if($field['media_upload'] == 'yes'): ?>
-				<?php if(version_compare($version,'3.2.1') > 0): ?>
-					<div id="wp-content-editor-tools" class="wp-editor-tools">
-						<div class="hide-if-no-js wp-media-buttons">
-							<?php do_action( 'media_buttons' ); ?>
-						</div>
-					</div>
-				<?php else: ?>
+				<?php if(get_bloginfo('version') < "3.3"): ?>
 					<div id="editor-toolbar">
 						<div id="media-buttons" class="hide-if-no-js">
 							<?php do_action( 'media_buttons' ); ?>
 						</div>
 					</div>
+				<?php else: ?>
+					<div id="wp-<?php echo $id; ?>-editor-tools" class="wp-editor-tools">
+						<?php /*<a onclick="switchEditors.switchto(this);" class="hide-if-no-js wp-switch-editor switch-html active" id="<?php echo $id; ?>-html">HTML</a>
+						<a onclick="switchEditors.switchto(this);" class="hide-if-no-js wp-switch-editor switch-tmce" id="<?php echo $id; ?>-tmce">Visual</a>*/ ?>
+						<div id="wp-<?php echo $id; ?>-media-buttons" class="hide-if-no-js wp-media-buttons">
+							<?php do_action( 'media_buttons' ); ?>
+						</div>
+					</div>
 				<?php endif; ?>
 			<?php endif; ?>
-			<div id="editorcontainer" class="wp-editor-container">
-				<textarea id="<?php echo $id; ?>" name="<?php echo $field['name']; ?>" ><?php echo wp_richedit_pre($field['value']); ?></textarea>
+			<div id="wp-<?php echo $id; ?>-editor-container" class="wp-editor-container">
+				<?php /*<div id="qt_<?php echo $id; ?>_toolbar" class="quicktags-toolbar">
+					<input type="button" value="b" title="" class="ed_button" accesskey="b" id="qt_<?php echo $id; ?>_strong">
+					<input type="button" value="i" title="" class="ed_button" accesskey="i" id="qt_<?php echo $id; ?>_em">
+					<input type="button" value="link" title="" class="ed_button" accesskey="a" id="qt_<?php echo $id; ?>_link">
+					<input type="button" value="b-quote" title="" class="ed_button" accesskey="q" id="qt_<?php echo $id; ?>_block">
+					<input type="button" value="del" title="" class="ed_button" accesskey="d" id="qt_<?php echo $id; ?>_del">
+					<input type="button" value="ins" title="" class="ed_button" accesskey="s" id="qt_<?php echo $id; ?>_ins">
+					<input type="button" value="img" title="" class="ed_button" accesskey="m" id="qt_<?php echo $id; ?>_img">
+					<input type="button" value="ul" title="" class="ed_button" accesskey="u" id="qt_<?php echo $id; ?>_ul">
+					<input type="button" value="ol" title="" class="ed_button" accesskey="o" id="qt_<?php echo $id; ?>_ol">
+					<input type="button" value="li" title="" class="ed_button" accesskey="l" id="qt_<?php echo $id; ?>_li">
+					<input type="button" value="code" title="" class="ed_button" accesskey="c" id="qt_<?php echo $id; ?>_code">
+					<input type="button" value="more" title="" class="ed_button" accesskey="t" id="qt_<?php echo $id; ?>_more">
+					<input type="button" value="lookup" title="Dictionary lookup" class="ed_button" id="qt_<?php echo $id; ?>_spell">
+					<input type="button" value="close tags" title="Close all open tags" class="ed_button" id="qt_<?php echo $id; ?>_close">
+					<input type="button" value="fullscreen" title="Toggle fullscreen mode" class="ed_button" accesskey="f" id="qt_<?php echo $id; ?>_fullscreen">
+				</div>*/ ?>
+				<textarea id="<?php echo $id; ?>" class="wp-editor-area" name="<?php echo $field['name']; ?>" ><?php echo wp_richedit_pre($field['value']); ?></textarea>
 			</div>
 		</div>
+		<?php //wp_editor('', $id); ?>
+		
 		<?php
 
 	}

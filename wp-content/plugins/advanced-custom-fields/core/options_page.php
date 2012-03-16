@@ -129,6 +129,7 @@ class Options_page
 	
 	function admin_head()
 	{	
+	
 		// save
 		if(isset($_POST['update_options']))
 		{
@@ -157,8 +158,8 @@ class Options_page
 		}
 		
 		$metabox_ids = $this->parent->get_input_metabox_ids(array('post_id' => 999999999), false);
-		$style = isset($metabox_ids[0]) ? $this->parent->get_input_style($metabox_ids[0]) : '';
-		echo '<style type="text/css" id="acf_style" >' .$style . '</style>';
+		/*$style = isset($metabox_ids[0]) ? $this->parent->get_input_style($metabox_ids[0]) : '';
+		echo '<style type="text/css" id="acf_style" >' .$style . '</style>';*/
 		
 		if(empty($metabox_ids))
 		{
@@ -172,12 +173,20 @@ class Options_page
 			$this->parent->fields[$field->name]->admin_head();
 		}
 		
-		// add css + javascript
+
+		// Style
 		echo '<link rel="stylesheet" type="text/css" href="'.$this->parent->dir.'/css/global.css" />';
 		echo '<link rel="stylesheet" type="text/css" href="'.$this->parent->dir.'/css/input.css" />';
-		echo '<script type="text/javascript" src="'.$this->parent->dir.'/js/input.js" ></script>';
-		echo '<script type="text/javascript">acf.validation_message = "' . __("Validation Failed. One or more fields below are required.",'acf') . '";</script>';
-		
+
+		// Javascript
+		echo '<script type="text/javascript" src="'.$this->parent->dir.'/js/input-actions.js" ></script>';
+		echo '<script type="text/javascript">
+			acf.validation_message = "' . __("Validation Failed. One or more fields below are required.",'acf') . '";
+			acf.post_id = 999999999;
+			acf.editor_mode = "tinymce";
+			acf.admin_url = "' . admin_url() . '";
+		</script>';
+
 
 		// get acf's
 		$acfs = $this->parent->get_field_groups();

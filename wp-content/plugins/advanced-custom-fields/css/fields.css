@@ -463,8 +463,10 @@ table#location_rules tr td.value div {
 
 
 /*---------------------------------------------------------------------------------------------
-	Options
----------------------------------------------------------------------------------------------*/
+*
+*	Options
+*	
+*---------------------------------------------------------------------------------------------*/
 
 .postbox#acf_options .inside {
 	margin: 0;
@@ -494,3 +496,44 @@ ul.checkbox_list li input {
 	vertical-align: top;
 } 
 
+
+/*---------------------------------------------------------------------------------------------
+*
+*	Flexible Content
+*	
+*---------------------------------------------------------------------------------------------*/
+table.acf_input table.acf_cf_meta {
+	width: 100%;
+	border: 0 none;
+}
+
+table.acf_input table.acf_cf_meta td {
+	border: 0 none;
+	width: 33%;
+}
+
+table.acf_input table.acf_cf_meta label {
+	width: 20%;
+	color: #333333;
+	font-weight: bold;
+}
+
+table.acf_input table.acf_cf_meta input {
+	width: 80%;
+}
+
+table.acf_input table.acf_cf_meta select {
+	width: 75%;
+}
+
+.acf_fc_reorder {
+	cursor: move;
+}
+
+.ui-state-highlight {
+	height: 40px;
+}
+
+.field_form table.acf_input .field_option_flexible_content > td {
+	background: #f9f9f9;
+}

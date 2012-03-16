@@ -19,6 +19,7 @@ $fields[999] = array(
 	'type'		=>	'text',
 	'order_no'	=>	'1',
 	'instructions'	=>	'',
+	'required' => '0',
 );
 
 // get name of all fields for use in field type drop down

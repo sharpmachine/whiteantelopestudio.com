@@ -29,7 +29,7 @@ if($fields)
 		// required
 		if(!isset($field['required']))
 		{
-			$field['required'] == "0";
+			$field['required'] = "0";
 		}
 		
 		$required_class = "";

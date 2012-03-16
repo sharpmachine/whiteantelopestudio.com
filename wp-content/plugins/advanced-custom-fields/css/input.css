@@ -109,12 +109,16 @@
 	top: -2px !important;
 }
 
-.acf_wysiwyg .editor-toolbar {
+/*.acf_wysiwyg .editor-toolbar {
 	display: none;
-}
+}*/
 
-.acf_wysiwyg #editorcontainer {
+.acf_wysiwyg .wp-editor-container {
 	background: #fff;
+	border-color: #CCCCCC #CCCCCC #DFDFDF;
+    border-style: solid;
+    border-radius: 3px 3px 0 0;
+    border-width: 1px;
 }
 
 
@@ -530,7 +534,7 @@ ul.checkbox_list {
 	border-right: 0 none;
 }
 
-.acf_flexible_content > .values > table > tbody > tr:hover a.remove_row {
+.acf_flexible_content > .values > table > tbody > tr:hover > td > a.remove_row {
 	visibility: visible;
 }
 
@@ -677,4 +681,14 @@ ul.checkbox_list {
 	padding: 19px;
 	border: #ccc dashed 1px;
 	text-align: center;
+}
+
+#acf_color_picker {
+	position: absolute;
+	top: 0;
+	left: 0;
+	display: none;
+	background: #fff;
+	border: #AAAAAA solid 1px;
+	border-radius: 4px;
 }

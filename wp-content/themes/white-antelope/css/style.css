@@ -68,6 +68,7 @@ body {
   left: 10px;
   content: url(../images/arrow.png);
 }
+#top-bar-wrapper #top-bar a:hover { text-decoration: underline; }
 header {
   width: 960px;
   height: 225px;

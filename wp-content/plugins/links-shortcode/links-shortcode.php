@@ -3,7 +3,7 @@
 Plugin Name: Links Shortcode
 Plugin URI: http://blog.bigcircle.nl/about/wordpress-plugins
 Description: Displays all links of a certain category in a post using a shortcode, according to a definable template. Includes optional Facebook Like button.
-Version: 1.0.1
+Version: 1.1
 Author: Maarten Swemmer
 Author URI: http://blog.bigcircle.nl
 */
@@ -18,8 +18,14 @@ function linkssc_css()
 {
 	echo '<link rel="stylesheet" type="text/css" media="screen" href="'. WP_PLUGIN_URL . '/links-shortcode/links-shortcode.css"/>';	
 }
-
 add_shortcode('links', 'linkssc_shortcode');
+
+function linkssc_update_info() {
+	if ( $info = wp_remote_fopen("http://blog.bigcircle.nl/links-shortcode-latest.txt") )
+		echo '<br />' . strip_tags( $info, "<br><a><b><i><span>" );
+}
+add_action('in_plugin_update_message-'.plugin_basename(__FILE__), 'linkssc_update_info');
+
 
 function linkssc_getdate($text)
 {
@@ -60,11 +66,11 @@ function linkssc_shortcode($atts, $content = null)
 			'show_updated'   => 0, 
 			'include'        => null,
 			'exclude'        => null,
-			'search'         => '.'
+			'search'         => ''
 			), $atts)
 	);
 	
-	$bms = get_bookmarks( array(
+	$args = array(
             'orderby'        => $orderby, 
             'order'          => $order,
             'limit'          => $limit, 
@@ -74,8 +80,18 @@ function linkssc_shortcode($atts, $content = null)
             'show_updated'   => $show_updated, 
             'include'        => $include,
             'exclude'        => $exclude,
-            'search'         => $search));
-    
+            'search'         => $search);
+			
+	if ($orderby == 'order' && function_exists('mylinkorder_get_bookmarks'))
+	{
+		// for compatibility with 'My link Order' plugin
+		$bms = mylinkorder_get_bookmarks( $args );
+	}
+	else 
+	{
+		$bms = get_bookmarks( $args );
+    }
+	
 	if ($fblike == '1'|| $fbrecommend == '1')
 	{
 		if ($fblike == '1') { $fbaction = 'like'; }
@@ -255,7 +271,10 @@ function linkssc_options_page()
 			<input type="radio" name="linkssc_orderby" value="url" <?php if ($orderby == 'url') echo 'CHECKED'; ?> /><?php _e('Link url','links-shortcode'); ?><br />
 			<input type="radio" name="linkssc_orderby" value="owner" <?php if ($orderby == 'owner') echo 'CHECKED'; ?> /><?php _e('Link owner, the user who added the link in the Links Manager','links-shortcode'); ?><br />
 			<input type="radio" name="linkssc_orderby" value="rating" <?php if ($orderby == 'rating') echo 'CHECKED'; ?> /><?php _e('Link rating','links-shortcode'); ?><br />
-			<input type="radio" name="linkssc_orderby" value="rand" <?php if ($orderby == 'rand') echo 'CHECKED'; ?> /><?php _e('Random','links-shortcode'); ?></td>
+			<input type="radio" name="linkssc_orderby" value="rand" <?php if ($orderby == 'rand') echo 'CHECKED'; ?> /><?php _e('Random','links-shortcode'); ?><br />
+	<?php if (is_plugin_active('my-link-order/mylinkorder.php')) { ?>
+			<input type="radio" name="linkssc_orderby" value="order" <?php if ($orderby == 'order') echo 'CHECKED'; ?> /><?php _e('My Link Order','links-shortcode'); ?><br/>
+	<?php } ?></td>
         </tr>
 
         <tr valign="top">

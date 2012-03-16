@@ -62,9 +62,8 @@ Your votes really make a difference! Thanks.
 
 1. Upload 'advanced-custom-fields' to the '/wp-content/plugins/' directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
-3. You may be prompted for a Database Upgrade. This is necessary for ACF to function. Please backup your database and click the Upgrade button
-3. Click on Adv Custom Fields and create your first Custom Field Group!
-4. Your ACF field group will now appear on the page / post / template you specified in the field group's location rules!
+3. Click on the new menu itme "Custom Fields" and create your first Custom Field Group!
+4. Your custom field group will now appear on the page / post / template you specified in the field group's location rules!
 5. Read the documentation to display your data: 
 
 
@@ -87,7 +86,16 @@ http://www.advancedcustomfields.com/support/
 
 == Changelog ==
 
-= 3.1.2 =
+= 3.1.5 =
+* Improvement: Redesigned the experience for uploading and selecting images / files in fields and sub fields. Image / File fields within a repeater can now add multiple images / files
+
+= 3.1.4 =
+* New Feature: Front end form (Please read documentation on website for usage)
+* Performance: compiled all field script / style into 1 .js file
+* Bug Fix: Editor now remembers mode (Visual / HTML) without causing errors when loading in HTML mode
+* Improvement: Added draft / private labels to post objects in relationship, post object and page link fields
+
+= 3.1.3 =
 * Bug Fix: Options page fields were rendered invisible in v3.1.2 (now fixed)
 * Updated POT file with new texts
 

@@ -11,7 +11,11 @@
 		return $(this).length>0;
 	};
 
-	
+	function uniqid()
+    {
+    	var newDate = new Date;
+    	return newDate.getTime();
+    }
 	
 	/*----------------------------------------------------------------------
 	*
@@ -82,17 +86,10 @@
 	*	setup_fields
 	*
 	*---------------------------------------------------------------------*/
-	
+        
 	function setup_fields()
 	{
 		
-		function uniqid()
-        {
-        	var newDate = new Date;
-        	return newDate.getTime();
-        }
-
-
 		// add edit button functionality
 		$('#acf_fields a.acf_edit_field').live('click', function(){
 
@@ -411,6 +408,139 @@
 		setup_fields();
 		setup_rules();
 		
+	});
+	
+	
+	/*
+	*  Flexible Content
+	*
+	*  @description: extra javascript for the flexible content field
+	*  @created: 3/03/2011
+	*/
+	
+	function uniqid()
+    {
+    	var newDate = new Date;
+    	return newDate.getTime();
+    }
+    
+
+	/*----------------------------------------------------------------------
+	*
+	*	Add Layout Option
+	*
+	*---------------------------------------------------------------------*/
+	
+	$('#acf_fields .acf_fc_add').live('click', function(){
+		
+		// vars
+		var tr = $(this).closest('tr.field_option_flexible_content');
+		var new_tr = $(this).closest('.field_form').find('tr.field_option_flexible_content:first').clone(false);
+		
+		// remove sub fields
+		new_tr.find('.sub_field.field').remove();
+		
+		// show add new message
+		new_tr.find('.no_fields_message').show();
+		
+		// reset layout meta values
+		new_tr.find('.acf_cf_meta input[type="text"]').val('');
+		new_tr.find('.acf_cf_meta select').val('table');
+		
+		// update id / names
+		var new_id = uniqid();
+		
+		new_tr.find('[name]').each(function(){
+		
+			var name = $(this).attr('name').replace('[layouts][0]','[layouts]['+new_id+']');
+			$(this).attr('name', name);
+			$(this).attr('id', name);
+			
+		});
+		
+		// add new tr
+		tr.after(new_tr);
+		
+		// add drag / drop
+		new_tr.find('.fields').sortable({
+			handle: 'td.field_order'
+		});
+		
+		return false;
+	});
+	
+	
+	/*----------------------------------------------------------------------
+	*
+	*	Delete Layout Option
+	*
+	*---------------------------------------------------------------------*/
+	
+	$('#acf_fields .acf_fc_delete').live('click', function(){
+
+		var tr = $(this).closest('tr.field_option_flexible_content');
+		var tr_count = tr.siblings('tr.field_option.field_option_flexible_content').length;
+
+		if(tr_count == 0)
+		{
+			alert('Flexible Content requires at least 1 layout');
+			return false;
+		}
+		
+		tr.animate({'left' : '50px', 'opacity' : 0}, 250, function(){
+			tr.remove();
+		});
+		
+	});
+	
+	
+	/*----------------------------------------------------------------------
+	*
+	*	Sortable Layout Option
+	*
+	*---------------------------------------------------------------------*/
+	
+	$('#acf_fields .acf_fc_reorder').live('mouseover', function(){
+		
+		var table = $(this).closest('table.acf_field_form_table');
+		
+		if(table.hasClass('sortable')) return false;
+		
+		var fixHelper = function(e, ui) {
+			ui.children().each(function() {
+				$(this).width($(this).width());
+			});
+			return ui;
+		};
+		
+		table.addClass('sortable').children('tbody').sortable({
+			items: ".field_option_flexible_content",
+			handle: 'a.acf_fc_reorder',
+			helper: fixHelper,
+			placeholder: "ui-state-highlight"
+		});
+		
+	});
+	
+	
+	/*----------------------------------------------------------------------
+	*
+	*	Label update name
+	*
+	*---------------------------------------------------------------------*/
+	
+	$('#acf_fields .acf_fc_label input[type="text"]').live('blur', function(){
+		
+		var label = $(this);
+		var name = $(this).parents('td').siblings('td.acf_fc_name').find('input[type="text"]');
+
+		if(name.val() == '')
+		{
+			var val = label.val().toLowerCase().split(' ').join('_').split('\'').join('');
+			name.val(val);
+			name.trigger('keyup');
+		}
+
 	});
 
 

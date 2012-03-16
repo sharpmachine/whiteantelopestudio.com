@@ -3,7 +3,7 @@
 Plugin Name: Advanced Custom Fields
 Plugin URI: http://www.advancedcustomfields.com/
 Description: Fully customise WordPress edit screens with powerful fields. Boasting a professional interface and a powerfull API, it’s a must have for any web developer working with WordPress.Field types include: Wysiwyg, text, textarea, image, file, select, checkbox, page link, post object, date picker, color picker and more!
-Version: 3.1.3
+Version: 3.1.5
 Author: Elliot Condon
 Author URI: http://www.elliotcondon.com/
 License: GPL
@@ -45,7 +45,7 @@ class Acf
 		$this->dir = plugins_url('',__FILE__);
 		$this->siteurl = get_bloginfo('url');
 		$this->wpadminurl = admin_url();
-		$this->version = '3.1.3';
+		$this->version = '3.1.5';
 		$this->upgrade_version = '3.0.0'; // this is the latest version which requires an upgrade
 		
 		
@@ -387,12 +387,24 @@ class Acf
 					$this->fields[$field->name]->admin_head();
 				}
 				
-				// add css + javascript
+				// Style
 				echo '<link rel="stylesheet" type="text/css" href="'.$this->dir.'/css/global.css" />';
 				echo '<link rel="stylesheet" type="text/css" href="'.$this->dir.'/css/input.css" />';
-				echo '<script type="text/javascript" src="'.$this->dir.'/js/input.js" ></script>';
 				echo '<style type="text/css">.acf_postbox, .postbox[id*="acf_"] { display: none; }</style>';
-				echo '<script type="text/javascript">acf.validation_message = "' . __("Validation Failed. One or more fields below are required.",'acf') . '";</script>';
+				
+				// find user editor setting
+				$user = wp_get_current_user();
+				$editor_mode = get_user_setting('editor', 'tinymce');
+				
+				// Javascript
+				echo '<script type="text/javascript" src="'.$this->dir.'/js/input-actions.js" ></script>';
+				echo '<script type="text/javascript" src="'.$this->dir.'/js/input-ajax.js" ></script>';
+				echo '<script type="text/javascript">
+					acf.validation_message = "' . __("Validation Failed. One or more fields below are required.",'acf') . '";
+					acf.post_id = ' . $post->ID . ';
+					acf.editor_mode = "' . $editor_mode . '";
+					acf.admin_url = "' . admin_url() . '";
+				</script>';
 				
 				// get acf's
 				$acfs = $this->get_field_groups();
@@ -410,7 +422,7 @@ class Acf
 							array($this, 'meta_box_input'), 
 							$post_type, 
 							$acf['options']['position'], 
-							'default', 
+							'high', 
 							array( 'fields' => $acf['fields'], 'options' => $acf['options'], 'show' => $show )
 						);
 					}
@@ -499,49 +511,7 @@ class Acf
 		{
 			include('core/admin/page_acf.php');
 		}
-		
-		// input meta boxes
-		if(in_array($GLOBALS['pagenow'], array('post.php', 'post-new.php')) && $GLOBALS['post_type'] != 'acf')
-		{
-			//wp_preload_dialogs( array( 'plugins' => 'safari,inlinepopups,spellchecker,paste,wordpress,media,fullscreen,wpeditimage,wpgallery,tabfocus' ) );
-			?>
-			<script type="text/javascript">
-			(function($){
-				
-				// add classes
-				$('#poststuff .postbox[id*="acf_"]').addClass('acf_postbox');
-				$('#adv-settings label[for*="acf_"]').addClass('acf_hide_label');
-				
-				// hide acf stuff
-				$('#poststuff .acf_postbox').hide();
-				$('#adv-settings .acf_hide_label').hide();
-				
-				// loop through acf metaboxes
-				$('#poststuff .postbox.acf_postbox').each(function(){
-					
-					// vars
-					var options = $(this).find('.inside > .options');
-					var show = options.attr('data-show');
-					var layout = options.attr('data-layout');
-					var id = $(this).attr('id').replace('acf_', '');
-					
-					// layout
-					$(this).addClass('acf_postbox').addClass(layout);
-					
-					// show / hide
-					if(show == 'true')
-					{
-						$(this).show();
-						$('#adv-settings .acf_hide_label[for="acf_' + id + '-hide"]').show();
-					}
-					
-				});
 
-			})(jQuery);
-			</script>
-			<?php
-		}
-		
 	}
 	
 	
@@ -1489,6 +1459,11 @@ class Acf
 		    // Options Page
 		    case "options_page":
 		
+				if(!function_exists('get_admin_page_title'))
+				{
+					return false;
+				}
+				
 		        if($rule['operator'] == "==")
 		        {
 		        	if(get_admin_page_title() == $rule['value'])

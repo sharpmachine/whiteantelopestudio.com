@@ -3,8 +3,8 @@ Contributors: maartenjs
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=79AKXNVRT8YSQ&lc=HK&item_name=Links%20Shortcode%20plugin%20by%20Maarten&item_number=Links%20Shortcode%20plugin&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted
 Tags: links, link, shortcode, category, Facebook, Like, Recommend, list of links, template, customizable
 Requires at least: 3.0
-Tested up to: 3.3
-Stable tag: 1.0.1
+Tested up to: 3.3.1
+Stable tag: 1.1
 
 The plugin provides the shortcode 'links'. This shortcode lists all links having specified characteristics, following a specified template.
 
@@ -21,7 +21,7 @@ The following options are available:
 
 *   **fblike**: Show the facebook Like button (default '1', to disable set to any value other than '1')
 *   **fbrecommend**: Show the Facebook Recommend botton (default '', to enable set to '1')
-*   **orderby**: Order the links by (default 'name') 
+*   **orderby**: Order the links by (default 'name'). Use 'order' to order links by order specified with 'My Link Order' plugin.
 *   **order**: How to order, ASC or DESC (default 'DESC')
 *   **limit**: Limit the number of links shown (default '-1', which means no limit) 
 *   **category**: Comma separated list of link category ID's
@@ -59,6 +59,10 @@ No special actions required before upgrading.
 2. Resulting list of links
 
 == Changelog ==
+
+= 1.1 =
+* Added compatibility with 'My Link Order' plugin
+* Fixed bug in link retrieving logic
 
 = 1.0.1 =
 * Added some example templates to choose from, including one that shows images (if you have entered image urls for your links)

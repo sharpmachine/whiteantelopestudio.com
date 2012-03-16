@@ -92,20 +92,20 @@ a
 	position: fixed;
 	z-index: 9999;
 	padding: 10px 0;
-	
+
 	#top-bar
 	{
 		width: 960px;
 		line-height: 14px;
 		margin: 0 auto;
-		
+
 		img
 		{
 			position: relative;
 			top: 2px;
 			padding-right: 10px;
 		}
-		
+
 		.colborder 
 		{
 			-webkit-border-image:url("../images/top-bar-divider.png");
@@ -114,30 +114,30 @@ a
 			-ms-border-image:url("../images/top-bar-divider.png");
 			border-image:url("../images/top-bar-divider.png");
 		}
-		
+
 		.social-media
 		{
 			a
 			{
 				float: right;
-				
+
 				img
 				{
 					padding: 0 0 0 19px;
 				}
-				
+
 				:after
 				{
 					content: "";
 				}
 			}
 		}
-		
+
 		.rss-feeds a
 		{
 			padding-right: 15px;
 		}
-		
+
 		a
 		{
 			.open-sans;
@@ -146,13 +146,18 @@ a
 			font-weight: 600;
 			font-size: 12px;
 			color: @was-white;
-			
+
 			:after
 			{
 				position: relative;
 				top: 1px;
 				left: 10px;
 				content: url(../images/arrow.png);
+			}
+			
+			:hover
+			{
+				text-decoration: underline;
 			}
 		}
 	}

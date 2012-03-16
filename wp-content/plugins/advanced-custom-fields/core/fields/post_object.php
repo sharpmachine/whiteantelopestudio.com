@@ -78,6 +78,7 @@ class acf_Post_object extends acf_Field
 					'post_type' => $post_type,
 					'sort_column' => 'menu_order',
 					'order' => 'ASC',
+					'post_status' => array('publish', 'private', 'draft'),
 					//'meta_key' => $field['meta_key'],
 					//'meta_value' => $field['meta_value'],
 				));
@@ -90,6 +91,7 @@ class acf_Post_object extends acf_Field
 					'post_type' => $post_type,
 					'orderby' => 'title',
 					'order' => 'ASC',
+					'post_status' => array('publish', 'private', 'draft'),
 					//'meta_key' => $field['meta_key'],
 					//'meta_value' => $field['meta_value'],
 				));
@@ -137,6 +139,14 @@ class acf_Post_object extends acf_Field
 						}
 					}
 					$value .= get_the_title($post->ID);
+					
+					// status
+					if($post->post_status == "private" || $post->post_status == "draft")
+					{
+						$value .= " ($post->post_status)";
+					}
+					
+					
 					$selected = '';
 					
 					
