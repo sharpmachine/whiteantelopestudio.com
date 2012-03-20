@@ -34,8 +34,7 @@
 					<div class="small-box menu-box">
 						<span>
 							<h2>Upcoming Events</h2>
-							<h3 class="event-title">Freedom to Worship</h3>
-							<p>Thursday, June 14, 2012 at 9:00am until Saturday, June 16, 2012 at 7:00pm</p>
+							<?php the_field('event_box_format', 'options'); ?>
 						</span>
 					</div>
 				</a>

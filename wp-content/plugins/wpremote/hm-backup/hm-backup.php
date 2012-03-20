@@ -3,7 +3,7 @@
 /**
  * Generic file and database backup class
  *
- * @version 1.4
+ * @version 1.5.1
  */
 class HM_Backup {
 
@@ -874,18 +874,23 @@ class HM_Backup {
 	 */
 	public function conform_dir( $dir, $recursive = false ) {
 
+		// Assume empty dir is root
+		if ( ! $dir )
+			$dir = '/';
+
 		// Replace single forward slash (looks like double slash because we have to escape it)
 		$dir = str_replace( '\\', '/', $dir );
 		$dir = str_replace( '//', '/', $dir );
 
 		// Remove the trailing slash
-		$dir = untrailingslashit( $dir );
+		if ( $dir !== '/' )
+			$dir = untrailingslashit( $dir );
 
 		// Carry on until completely normalized
 		if ( ! $recursive && $this->conform_dir( $dir, true ) != $dir )
 			return $this->conform_dir( $dir );
 
-		return $dir;
+		return (string) $dir;
 
 	}
 
@@ -1218,7 +1223,7 @@ class HM_Backup {
 	 */
 	public function error_handler( $type ) {
 
-		if ( in_array( $type, array( E_STRICT, E_DEPRECATED ) ) || error_reporting() === 0 )
+		if ( ( defined( 'E_DEPRECATED' ) && $type == E_DEPRECATED ) || ( defined( 'E_STRICT' ) && $type == E_STRICT ) || error_reporting() === 0 )
 			return false;
 
 		$args = func_get_args();

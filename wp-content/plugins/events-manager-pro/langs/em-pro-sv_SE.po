@@ -1,0 +1,726 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Events Manager Pro v1.321\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: 2011-09-29 19:39+0100\n"
+"Last-Translator: Marcus Sykes <noreply@wp-events-plugin.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Poedit-SourceCharset: utf-8\n"
+"X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_n:1,2;__ngettext_noop:1,2;_n_noop:1,2;_c,_nc:4c,1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;_nx_noop:4c,1,2\n"
+"X-Poedit-Basepath: ../\n"
+"X-Textdomain-Support: yes\n"
+"X-Poedit-SearchPath-0: .\n"
+
+# @ dbem
+#: emp-bookings-form.php:316
+msgid "The email address isn&#8217;t correct."
+msgstr "E-post-adressen är inte korrekt."
+
+# @ dbem
+#: emp-bookings-form.php:335
+msgid "This username is invalid because it uses illegal characters. Please enter a valid username."
+msgstr "Detta användarnamn är ogiltigt för det använder förbjudna tecken. Vänligen ange ett giltigt användarnamn."
+
+# @ default
+#: emp-bookings-form.php:338
+msgid "This username is already registered, please choose another one."
+msgstr "Detta användarnamn är redan upptaget, vänligen försök med ett annat."
+
+# @ dbem
+#: emp-bookings-form.php:474
+#: emp-bookings-form.php:546
+msgid "Yes"
+msgstr "Ja"
+
+#: emp-bookings-form.php:474
+#: emp-bookings-form.php:546
+msgid "No"
+msgstr "Nej"
+
+#: emp-bookings-form.php:483
+#: emp-bookings-form.php:640
+msgid "Booking Form Editor"
+msgstr "Redigerare för bokningsformulär"
+
+# @ em-pro
+#: emp-bookings-form.php:618
+msgid "You must include a name and email field type for booking forms to work. These are used to create the user account and aren't shown to logged in users."
+msgstr "För att bokningsformulär ska fungera krävs att du har minst ett namn- och ett e-postfält. Dessa används för att skapa användarkontot och visas inte för inloggade användare."
+
+# @ em-pro
+#: emp-bookings-form.php:625
+msgid "Changes Saved"
+msgstr "Förändringar sparade"
+
+# @ em-pro
+#: emp-bookings-form.php:647
+msgid "On this page you can override the default booking form and add your own custom fields."
+msgstr "På den här sidan kan du skapa ett eget bokningsformulär med egna anpassade fält."
+
+# @ em-pro
+#: emp-bookings-form.php:676
+msgid "Booking Form - General Information"
+msgstr "Bokningsformulär - Allmän information"
+
+# @ em-pro
+#: emp-bookings-form.php:679
+msgid "You can customize the fields shown in your booking forms below. "
+msgstr "Du kan anpassa de fälts som visas i ditt bokningsformulär nedan."
+
+# @ em-pro
+#: emp-bookings-form.php:680
+msgid "It is required that you have at least an email and name field so guest users can register. Registration fields are only shown to guest visitors. Not doing so may result in unexpected behaviour."
+msgstr "Det krävs att du har åtminstone ett e-post- och ett namnfält så dina gästanvändare kan registrera sig. Registreringsfälten kommer enbart att visas för gästanvändare. Om du inte gör detta kommer du eventuellt att få problem med bokningarna."
+
+# @ em-pro
+#: emp-bookings-form.php:681
+msgid "<strong>Important:</strong> When editing this form, to make sure your old booking information is displayed, make sure new field ids correspond with the old ones."
+msgstr "<strong>Viktigt när du ändrar i detta formulär:</strong> Se till att dina nya fält-ID:n stämmer överens med dina gamla. Detta är viktigt för att gammal bokningsinformation ska kunna visas på rätt sätt."
+
+# @ default
+#: emp-bookings-form.php:686
+msgid "DO NOT change these values if you want to keep your field settings associated with previous booking fields."
+msgstr "Ändra INTE dessa värden om du vill behålla dina fältinställningar tillhörande tidigare bokningsfält."
+
+#: emp-bookings-form.php:698
+msgid "Select Type"
+msgstr "Välj typ"
+
+# @ em-pro
+#: emp-bookings-form.php:699
+msgid "Customizable Fields"
+msgstr "Anpassningsbara fält"
+
+# @ em-pro
+#: emp-bookings-form.php:709
+msgid "Registration Fields"
+msgstr "Registreringsfält"
+
+#: emp-bookings-form.php:721
+msgid "remove"
+msgstr "ta bort"
+
+# @ em-pro
+#: emp-bookings-form.php:721
+#: emp-bookings-form.php:1040
+#: emp-bookings-form.php:1043
+#: emp-bookings-form.php:1103
+msgid "options"
+msgstr "alternativ"
+
+# @ em-pro
+#: emp-bookings-form.php:726
+#: emp-bookings-form.php:758
+msgid "Options"
+msgstr "Alternativ"
+
+# @ em-pro
+#: emp-bookings-form.php:729
+#: emp-bookings-form.php:761
+msgid "Available options, one per line."
+msgstr "Tillgängliga alternativ, en per rad."
+
+# @ em-pro
+#: emp-bookings-form.php:733
+msgid "Use Default?"
+msgstr "Använd standard?"
+
+# @ em-pro
+#: emp-bookings-form.php:737
+msgid "If checked, the first value above will be used."
+msgstr "Om ifylld så kommer det första värdet ovan att användas."
+
+# @ em-pro
+#: emp-bookings-form.php:741
+msgid "Default Text"
+msgstr "Standardtext"
+
+#: emp-bookings-form.php:743
+msgid "Select ..."
+msgstr "Välj ..."
+
+# @ em-pro
+#: emp-bookings-form.php:744
+msgid "Shown when a default value isn't selected, selected by default."
+msgstr "Visas när ett standardvärde inte är valt, valt som standard."
+
+# @ em-pro
+#: emp-bookings-form.php:748
+#: emp-bookings-form.php:765
+#: emp-bookings-form.php:782
+#: emp-bookings-form.php:799
+#: emp-bookings-form.php:816
+#: emp-bookings-form.php:844
+msgid "Error Message"
+msgstr "Felmeddelande"
+
+# @ em-pro
+#: emp-bookings-form.php:751
+#: emp-bookings-form.php:768
+msgid "This error will show if a value isn't chosen."
+msgstr "Detta fel visas ifall inget värde är valt."
+
+# @ em-pro
+#: emp-bookings-form.php:775
+msgid "Checked by default?"
+msgstr "Valt som standard?"
+
+# @ em-pro
+#: emp-bookings-form.php:785
+msgid "This error will show if this box is not checked."
+msgstr "Detta fel kommer att visas ifall denna ruta inte är ikryssad."
+
+# @ em-pro
+#: emp-bookings-form.php:792
+#: emp-bookings-form.php:809
+msgid "Regex"
+msgstr "Regex"
+
+# @ em-pro
+#: emp-bookings-form.php:795
+#: emp-bookings-form.php:812
+msgid "By adding a regex expression, you can limit the possible values a user can input, for example the following only allows numbers: "
+msgstr "Genom att lägga till ett reguljärt uttryck (regular expression) så kan du begränsa vad en användare kan fylla i i fälten. Exempelvis tillåter följande bara nummer:"
+
+# @ em-pro
+#: emp-bookings-form.php:802
+#: emp-bookings-form.php:819
+msgid "If the regex above does not match this error will be displayed."
+msgstr "Om det reguljära uttrycket ovan inte matchar kommer detta fel att visas."
+
+# @ em-pro
+#: emp-bookings-form.php:830
+msgid "Private Key"
+msgstr "Privat nyckel"
+
+# @ em-pro
+#: emp-bookings-form.php:833
+#: emp-bookings-form.php:840
+#, php-format
+msgid "Required, get your keys <a href=\"%s\">here</a>"
+msgstr "Krävs, skaffa dina nycklar <a href=\"%s\">här</a>"
+
+# @ em-pro
+#: emp-bookings-form.php:837
+msgid "Public Key"
+msgstr "Publik nyckel"
+
+# @ em-pro
+#: emp-bookings-form.php:847
+msgid "This error will show if the captcha is not correct."
+msgstr "Detta meddelande kommer att visas ifall captchan inte är korrekt"
+
+#: emp-bookings-form.php:856
+msgid "Add booking field"
+msgstr "Lägg till bokningsfält"
+
+# @ em-pro
+#: emp-bookings-form.php:864
+msgid "Disabling this option reverts your booking form with limited functionality as in the free version."
+msgstr "Avaktiverar du detta alternativ återgår ditt bokningsformulär till det begränsade läge som återfinns i gratisversionen."
+
+# @ em-pro
+#: emp-bookings-form.php:1010
+msgid "Save Forms"
+msgstr "Spara formulär"
+
+# @ em-pro
+#: emp-bookings-form.php:1083
+msgid "hide options"
+msgstr "dölj alternativ"
+
+# @ em-pro
+#: emp-install.php:75
+#, php-format
+msgid "Please fill in the field: %s"
+msgstr "Vänligen fyll i fältet: %s"
+
+# @ dbem
+#: emp-install.php:77
+msgid "Name"
+msgstr "Namn"
+
+# @ dbem
+#: emp-install.php:78
+#: emp-install.php:88
+msgid "Email"
+msgstr "E-post"
+
+#: emp-install.php:79
+msgid "Phone"
+msgstr "Telefon"
+
+#: emp-install.php:80
+#: gateways/gateway.offline.php:267
+msgid "Comment"
+msgstr "Kommentar"
+
+# @ em-pro
+#: emp-updates.php:31
+#, php-format
+msgid "Dev Mode active: Just a friendly reminder that you have added %s to your wp-config.php file. Only admins see this message, and it will go away when you remove that line."
+msgstr "Utvecklingsläge (Dev Mode) aktiverat: Bara en vänlig påminnelse om att du har lagt till %s i din wp-config.php fil. Endast administratörer ser detta meddelande, och det kommer att försvinna när du tar bort den raden."
+
+# @ dbem
+#: emp-updates.php:67
+msgid "Click to toggle"
+msgstr "Klicka för att välja"
+
+# @ dbem
+#: emp-updates.php:67
+msgid "Pro Membership Key"
+msgstr "Pro-medlemsskapsnyckel (Pro Membership Key)"
+
+# @ dbem
+#: emp-updates.php:71
+msgid "Pro Member Key"
+msgstr "Pro-medlemsnyckel (Pro Member Key)"
+
+# @ dbem
+#: emp-updates.php:71
+#, php-format
+msgid "Insert your Pro Member Key to access automatic updates you can get your membership key from <a href=\"%s\">here</a>."
+msgstr "Fyll i din Pro Member Key för att få tillgång till automatiska uppdateringar. Du kan få tag i din medlemsnyckel <a href=\"%s\">här</a>."
+
+#: gateways/class.gateway.php:97
+msgid "Payment Gateways"
+msgstr "Betalningsgateways"
+
+#: gateways/class.gateway.php:167
+#, php-format
+msgid "Edit &quot;%s&quot; settings"
+msgstr "Ändra \"%s\" inställningar"
+
+# @ default
+#: gateways/class.gateway.php:176
+msgid "Save Changes"
+msgstr "Spara ändringar"
+
+#: gateways/class.gateway.php:277
+#, php-format
+msgid "%s Transactions"
+msgstr "%s Transaktioner"
+
+#: gateways/class.gateway.php:297
+msgid "Event"
+msgstr "Händelse"
+
+#: gateways/class.gateway.php:298
+#: gateways/gateway.offline.php:253
+msgid "User"
+msgstr "Användare"
+
+#: gateways/class.gateway.php:299
+msgid "Date"
+msgstr "Datum"
+
+#: gateways/class.gateway.php:300
+#: gateways/gateway.offline.php:149
+msgid "Amount"
+msgstr "Mängd"
+
+#: gateways/class.gateway.php:301
+msgid "Transaction id"
+msgstr "Transaktions-ID"
+
+#: gateways/class.gateway.php:302
+msgid "Status"
+msgstr "Status"
+
+#: gateways/class.gateway.php:303
+msgid "Notes"
+msgstr "Anteckningar"
+
+#: gateways/class.gateway.php:314
+msgid "Recent transactions"
+msgstr "Aktuella transaktioner"
+
+#: gateways/class.gateway.php:315
+msgid "Pending transactions"
+msgstr "Väntande transaktioner"
+
+#: gateways/class.gateway.php:317
+msgid "Future transactions"
+msgstr "Framtida transaktioner"
+
+#: gateways/class.gateway.php:396
+#: gateways/class.gateway.php:405
+msgid "None yet"
+msgstr "Ingen ännu"
+
+#: gateways/class.gateway.php:414
+msgid "None"
+msgstr "Ingen"
+
+#: gateways/class.gateway.php:425
+msgid "No Transactions"
+msgstr "Inga transaktioner"
+
+#: gateways/class.gateway.php:450
+msgid "Gateway updated."
+msgstr "Gateway uppdaterad."
+
+#: gateways/class.gateway.php:451
+msgid "Gateway not updated."
+msgstr "Gateway inte uppdaterad."
+
+#: gateways/class.gateway.php:452
+msgid "Gateway activated."
+msgstr "Gateway aktiverad."
+
+#: gateways/class.gateway.php:453
+msgid "Gateway not activated."
+msgstr "Gateway inte aktiverad."
+
+#: gateways/class.gateway.php:454
+msgid "Gateway deactivated."
+msgstr "Gateway avaktiverad."
+
+#: gateways/class.gateway.php:455
+msgid "Gateway not deactivated."
+msgstr "Gateway inte avaktiverad."
+
+#: gateways/class.gateway.php:456
+msgid "Gateway activation toggled."
+msgstr "Gateway-aktivering vald."
+
+#: gateways/class.gateway.php:460
+msgid "Edit Gateways"
+msgstr "Ändra Gateways"
+
+#: gateways/class.gateway.php:472
+#: gateways/class.gateway.php:571
+#: gateways/gateway.offline.php:385
+msgid "Bulk Actions"
+msgstr "Masshantering"
+
+#: gateways/class.gateway.php:473
+#: gateways/class.gateway.php:572
+msgid "Toggle activation"
+msgstr "Aktivering/Avaktivera"
+
+#: gateways/class.gateway.php:475
+msgid "Apply"
+msgstr "Verkställ"
+
+#: gateways/class.gateway.php:484
+msgid "Gateway Name"
+msgstr "Gateway-namn"
+
+#: gateways/class.gateway.php:485
+#: gateways/class.gateway.php:545
+msgid "Active"
+msgstr "Aktiv"
+
+#: gateways/class.gateway.php:486
+msgid "Transactions"
+msgstr "Transaktioner"
+
+#: gateways/class.gateway.php:532
+msgid "Settings"
+msgstr "Inställningar"
+
+#: gateways/class.gateway.php:535
+msgid "Deactivate"
+msgstr "Avaktivera"
+
+#: gateways/class.gateway.php:537
+msgid "Activate"
+msgstr "Aktivera"
+
+#: gateways/class.gateway.php:547
+msgid "Inactive"
+msgstr "Inaktiv"
+
+#: gateways/class.gateway.php:552
+msgid "View transactions"
+msgstr "Visa transaktioner"
+
+#: gateways/class.gateway.php:561
+msgid "No Payment gateways where found for this install."
+msgstr "Ingen betalningsgateway kunde hittas för den här installationen."
+
+#: gateways/gateway.offline.php:43
+msgid "Payment has been registered."
+msgstr "Betalning registrerad."
+
+#: gateways/gateway.offline.php:47
+msgid "Booking is now fully paid and confirmed."
+msgstr "Bokningen är nu fullt betald och bekräftad."
+
+#: gateways/gateway.offline.php:90
+#: gateways/gateway.offline.php:92
+msgid "Pay Offline"
+msgstr "Betala offline"
+
+#: gateways/gateway.offline.php:141
+#: gateways/gateway.offline.php:164
+msgid "Add Offline Payment"
+msgstr "Lägg till offline-betalning"
+
+#: gateways/gateway.offline.php:155
+msgid "Comments"
+msgstr "Kommentarer"
+
+#: gateways/gateway.offline.php:185
+#, php-format
+msgid "Add Booking For &quot;%s&quot;"
+msgstr "Lägg till bokning för \"%s\""
+
+#: gateways/gateway.offline.php:188
+msgid "Bookings are closed for this event."
+msgstr "Den här händelsen tillåter inga nya bokningar"
+
+#: gateways/gateway.offline.php:200
+msgid "Ticket Type"
+msgstr "Biljettyp"
+
+#: gateways/gateway.offline.php:202
+msgid "Price"
+msgstr "Pris"
+
+#: gateways/gateway.offline.php:204
+#: gateways/gateway.offline.php:238
+msgid "Spaces"
+msgstr "Platser"
+
+#: gateways/gateway.offline.php:221
+#: gateways/gateway.offline.php:244
+msgid "N/A"
+msgstr "N / A"
+
+#: gateways/gateway.offline.php:256
+msgid "Select User"
+msgstr "Välj användare"
+
+#: gateways/gateway.offline.php:260
+msgid "Already Paid?"
+msgstr "Redan betalat?"
+
+#: gateways/gateway.offline.php:274
+msgid "Submit Booking"
+msgstr "Skicka bokning"
+
+#: gateways/gateway.offline.php:283
+msgid "No more tickets available at this time."
+msgstr "Det finns för närvarande inga fler biljetter tillgängliga."
+
+#: gateways/gateway.offline.php:298
+msgid "Button Image"
+msgstr "Knappbild"
+
+#: gateways/gateway.offline.php:301
+msgid "If you enter an image URL, this will be used instead of a button."
+msgstr "Om du anger en bild-url så kommer denna att användas istället för en knapp."
+
+#: gateways/gateway.offline.php:305
+msgid "Button Text"
+msgstr "Knapptext"
+
+#: gateways/gateway.offline.php:308
+msgid "Change the default button text."
+msgstr "Ändra standardtexten."
+
+#: gateways/gateway.offline.php:363
+msgid "Bookings Awaiting Payment"
+msgstr "Bokningar som inväntar betalning"
+
+#: gateways/gateway.offline.php:374
+#: gateways/gateway.offline.php:376
+msgid "Search"
+msgstr "Sök"
+
+#: gateways/gateway.offline.php:388
+#: gateways/gateway.offline.php:453
+msgid "Approve"
+msgstr "Godkänn"
+
+#: gateways/gateway.offline.php:391
+msgid "Decline"
+msgstr "Neka"
+
+#: gateways/gateway.offline.php:454
+msgid "Reject"
+msgstr "Avvisa"
+
+#: gateways/gateway.offline.php:455
+msgid "Delete"
+msgstr "Ta bort"
+
+#: gateways/gateway.offline.php:456
+msgid "Edit/View"
+msgstr "Ändra/Visa"
+
+#: gateways/gateway.offline.php:469
+msgid "Be aware that by approving a booking awaiting payment, a full payment transaction will be registered against this booking, meaning that it will be considered as paid."
+msgstr "Tänk på att genom att godkänna en bokning som fortfarande vänta på betalning så kommer en full betalningstransaktion registreras mot bokningen, och denna kommer alltså att betraktas som betald."
+
+#: gateways/gateway.offline.php:477
+msgid "No pending bookings."
+msgstr "Inga avvaktande bokningar."
+
+#: gateways/gateway.offline.php:492
+msgid "Add Booking"
+msgstr "Lägg till bokning"
+
+#: gateways/gateway.offline.php:497
+msgid "add booking"
+msgstr "lägg till bokning"
+
+# @ em-pro
+#: gateways/gateway.paypal.php:38
+msgid "Resume Payment"
+msgstr "Fortsätt betalning"
+
+# @ em-pro
+#: emp-install.php:82
+msgid "Please wait whilst you are redirected to PayPal to proceed with payment."
+msgstr "Vänligen vänta, du vidarebefordras till PayPal för att fortsätta med betalningen."
+
+#: gateways/gateway.paypal.php:137
+msgid "You must enable javascript in order for you to place a booking."
+msgstr "Du måste aktivera javascript för att kunna lägga en bokning."
+
+#: gateways/gateway.paypal.php:166
+msgid "Pay with Paypal"
+msgstr "Betala med Paypal"
+
+#: gateways/gateway.paypal.php:167
+msgid "Javascript is required in order to make bookings with Paypal. Please enable this in your browser settings."
+msgstr "Föra att göra bokningar via Paypal krävs att du aktiverar Javascript i din webbläsare."
+
+#: gateways/gateway.paypal.php:175
+msgid "Thank you for your payment. Your transaction has been completed, and a receipt for your purchase has been emailed to you along with a seperate email containing account details to access your booking information on this site. You may log into your account at www.paypal.com to view details of this transaction."
+msgstr "Tack för din betalning. Din transaktion har blivit genomför och ett kvitto på ditt köp har e-postats till dig ihop med ett separat mail innehållande dina kontouppgifter och information om du du kommer åt din bokningsinformation. Du kan även logga in på ditt konto på www.paypal.com för att se detaljer kring den här transaktionen."
+
+#: gateways/gateway.paypal.php:186
+msgid "PayPal Email"
+msgstr "PayPal E-Post"
+
+#: gateways/gateway.paypal.php:192
+msgid "PayPal Site"
+msgstr "PayPal-Site??"
+
+#: gateways/gateway.paypal.php:212
+msgid "Paypal Currency"
+msgstr "Paypal Valuta"
+
+#: gateways/gateway.paypal.php:213
+#, php-format
+msgid "Set your currency in the <a href=\"%s\">settings</a> page."
+msgstr "Ställ in din valuta på <a href=\"%s\">inställningssidan</a>."
+
+#: gateways/gateway.paypal.php:216
+msgid "PayPal Mode"
+msgstr "PayPal-läge"
+
+#: gateways/gateway.paypal.php:219
+msgid "Live Site"
+msgstr "Live Site??"
+
+#: gateways/gateway.paypal.php:220
+msgid "Test Mode (Sandbox)"
+msgstr "Testläge (Sandbox)"
+
+#: gateways/gateway.paypal.php:226
+msgid "Subscription button"
+msgstr "Prenumerationsknapp"
+
+#: gateways/gateway.paypal.php:232
+msgid "PayPal Page Logo"
+msgstr "PayPal Sidlogo"
+
+#: gateways/gateway.paypal.php:235
+msgid "Add your logo to the PayPal payment page. It's highly recommended you link to a https:// address."
+msgstr "Lägg till din logo till PayPals betalningssida. Det är starkts rekommenderat att du länkar tille n https:// adress."
+
+#: gateways/gateway.paypal.php:239
+msgid "Border Color"
+msgstr "Ramfärg"
+
+#: gateways/gateway.paypal.php:242
+msgid "Provide a hex value color to change the color from the default blue to another color (e.g. #CCAAAA)."
+msgstr "Skriv in ett hexvärde för att byta färgen från den standardblå till en annan färg (t ex: #CCAAAA)."
+
+#: gateways/gateway.paypal.php:246
+msgid "Manually approve completed transactions?"
+msgstr "Godkänn genomförda transaktioner manuellt?"
+
+#: gateways/gateway.paypal.php:249
+msgid "By default, when someone pays for a booking, it gets automatically approved once the payment is confirmed. If you would like to manually verify and approve bookings, tick this box."
+msgstr "Som standard så blir en bokning automatiskt bekräftad när en betalning är registrerad. Bocka för här om du hellre manuellt vill verifikatiera och godkänna bokningar."
+
+# @ dbem
+#: emp-install.php:83
+#: emp-install.php:84
+msgid "Booking successful."
+msgstr ""
+
+# @ em-pro
+#: emp-updates.php:24
+#, fuzzy, php-format
+msgid "To access automatic updates, you must update your <a href=\"%s\">Membership Key</a> for Events Mananager Pro <a href=\"#pro-api\">here</a>. Only admins see this message."
+msgstr "Uppdatera din <a href=\"%s\">Medlemsnyckel (Membership Key)</a> för Events Mananager Pro <a href=\"%s\">här</a> för att slippa detta meddelande."
+
+# @ em-pro
+#: events-manager-pro.php:78
+msgid "Please make sure you install Events Manager as well. You can search and install this plugin from your plugin installer or download it <a href=\"http://wordpress.org/extend/plugins/events-manager/\">here</a>."
+msgstr ""
+
+#: gateways/gateway.offline.php:312
+#: gateways/gateway.paypal.php:255
+msgid "Success Message"
+msgstr "Lyckat-meddelande"
+
+# @ em-pro
+#: gateways/gateway.offline.php:315
+msgid "The message that is shown to a user when a booking with offline payments is successful."
+msgstr ""
+
+#: gateways/gateway.paypal.php:253
+#, fuzzy
+msgid "Success Messages"
+msgstr "Lyckat-meddelande"
+
+# @ em-pro
+#: gateways/gateway.paypal.php:258
+msgid "The message that is shown to a user when a booking is successful whilst being redirected to PayPal for payment."
+msgstr ""
+
+#: gateways/gateway.paypal.php:262
+#, fuzzy
+msgid "Success Free Message"
+msgstr "Lyckat-meddelande"
+
+# @ em-pro
+#: gateways/gateway.paypal.php:265
+msgid "If some cases if you allow a free ticket (e.g. pay at gate) as well as paid tickets, this message will be shown and the user will not be redirected to PayPal."
+msgstr ""
+
+# @ em-pro
+#: emp-updates.php:38
+#, fuzzy
+msgid "Dev Mode active: Just a friendly reminder that you are updating to development versions. Only admins see this message, and it will go away when you disable this <a href=\"#pro-api\">here</a> in your settings."
+msgstr "Utvecklingsläge (Dev Mode) aktiverat: Bara en vänlig påminnelse om att du har lagt till %s i din wp-config.php fil. Endast administratörer ser detta meddelande, och det kommer att försvinna när du tar bort den raden."
+
+# @ dbem
+#: emp-updates.php:88
+msgid "Try Development Mode?"
+msgstr ""
+
+# @ dbem
+#: emp-updates.php:88
+msgid "Select yes if you would like to check for the latest development version rather than stable updates. <strong>Warning:</strong> Development versions are not always fully tested before release, use wisely!"
+msgstr ""
+
+# @ em-pro
+#: gateways/gateway.paypal.php:250
+#, php-format
+msgid "Approvals must also be required for all bookings in your <a href=\"%s\">settings</a> for this to work properly."
+msgstr ""
+
