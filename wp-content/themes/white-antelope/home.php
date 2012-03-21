@@ -34,16 +34,20 @@
 					<div class="small-box menu-box">
 						<span>
 							<h2>Upcoming Events</h2>
-							<?php the_field('event_box_format', 'options'); ?>
+							<?php echo do_shortcode('[events_list limit="1"]<h3>#_EVENTNAME</h3><p>#l, #F #j, #Y at #g:#i#a until #@_{l, F j, Y} in #_LOCATIONTOWN, #_LOCATIONSTATE</p>[/events_list]'); ?>
 						</span>
 					</div>
 				</a>
 				<div class="small-box video-box">
-					<img src="<?php bloginfo('template_directory'); ?>/images/painting.jpg" width="240" height="240" alt="Painting">
-					<div class="play-button">
-						<a href="http://vimeo.com/36084566" rel="lightbox[video]" class="video-gallery"><img src="<?php bloginfo('template_directory'); ?>/images/play-button.gif" width="54" height="55" alt=""></a>
+					<a href="<?php the_field('video_url', 'options'); ?>" rel="lightbox[video]" class="video-gallery">
+						<img src="<?php the_field('background_image', 'options'); ?>" width="240" height="240" alt="Painting">
+						<div class="video-box-bg">
+							<div class="play-button">
+								<img src="<?php bloginfo('template_directory'); ?>/images/play-button.gif" width="54" height="55" alt="Video">
+							</div>
+						</div>
 					</div>
-				</div>
+				</a>
 				<div class="small-box photo-box">
 					<div class="image">
 						<img src="<?php bloginfo('template_directory'); ?>/images/cake.jpg" width="240" height="240" alt="Cake">

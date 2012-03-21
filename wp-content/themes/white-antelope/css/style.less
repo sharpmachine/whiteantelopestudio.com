@@ -528,6 +528,19 @@ body.home #wrapper
 {
 	position: relative;
 	
+	.video-box-bg
+	{
+		width: 240px;
+		height: 240px;
+		position: relative;
+		top:-245px;
+		
+		:hover
+		{
+			background: url(../images/video-box-bg.png) no-repeat;
+		}
+	}
+	
 	.play-button
 	{
 		width: 55px;
@@ -535,19 +548,6 @@ body.home #wrapper
 		position: absolute;
 		top: 93px;
 		left: 93px;
-		z-index: 9;
-		
-		:hover
-		{
-			a img
-			{
-				-webkit-transform: scale(1.08);
-				-moz-transform: scale(1.08);
-				-o-transform: scale(1.08);
-				-ms-transform: scale(1.08);
-				transform: scale(1.08);
-			}
-		}
 	}
 }
 

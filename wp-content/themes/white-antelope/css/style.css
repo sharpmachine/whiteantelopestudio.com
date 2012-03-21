@@ -370,20 +370,19 @@ body.home #wrapper {
   font-style: italic;
 }
 .video-box { position: relative; }
+.video-box .video-box-bg {
+  width: 240px;
+  height: 240px;
+  position: relative;
+  top: -245px;
+}
+.video-box .video-box-bg:hover { background: url(../images/video-box-bg.png) no-repeat; }
 .video-box .play-button {
   width: 55px;
   height: 55px;
   position: absolute;
   top: 93px;
   left: 93px;
-  z-index: 9;
-}
-.video-box .play-button:hover a img {
-  -webkit-transform: scale(1.08);
-  -moz-transform: scale(1.08);
-  -o-transform: scale(1.08);
-  -ms-transform: scale(1.08);
-  transform: scale(1.08);
 }
 .col-240 a {
   display: block;
