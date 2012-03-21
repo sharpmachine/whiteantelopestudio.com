@@ -16,17 +16,19 @@
 						</span>
 					</div>
 				</a>
-				<div class="small-box photo-box">
-					<div class="image">
-						<img src="<?php bloginfo('template_directory'); ?>/images/sheep.jpg" width="240" height="240" alt="Sheep">
-					</div>
-					<div class="content">
-						<div class="inner">
-							<h2>Name of Piece</h2>
-							<p>Lorem ipsum dolor sit amet.</p>
+				<a href="<?php the_field('piece_url_bottom_left', 'options'); ?>">
+					<div class="small-box photo-box">
+						<div class="image">
+							<img src="<?php the_field('image_bottom_left', 'options'); ?>" width="240" height="240" alt="<?php the_field('title_bottom_left', 'options'); ?>">
+						</div>
+						<div class="content">
+							<div class="inner">
+								<h2><?php the_field('title_bottom_left', 'options'); ?></h2>
+								<p><?php the_field('description_bottom_left', 'options'); ?></p>
+							</div>
 						</div>
 					</div>
-				</div>
+				</a>
 			</div>
 			
 			<div class="col-240">
@@ -51,30 +53,34 @@
 						</div>
 					</div>
 				</a>
-				<div class="small-box photo-box">
-					<div class="image">
-						<img src="<?php bloginfo('template_directory'); ?>/images/cake.jpg" width="240" height="240" alt="Cake">
-					</div>
-					<div class="content">
-						<div class="inner">
-							<h2>Name of Piece</h2>
-							<p>Lorem ipsum dolor sit amet.</p>
+				<a href="<?php the_field('piece_url_bottom_center', 'options'); ?>">
+					<div class="small-box photo-box">
+						<div class="image">
+							<img src="<?php the_field('image_bottom_center', 'options'); ?>" width="240" height="240" alt="<?php the_field('title_bottom_center', 'options'); ?>">
+						</div>
+						<div class="content">
+							<div class="inner">
+								<h2><?php the_field('title_bottom_center', 'options'); ?></h2>
+								<p><?php the_field('description_bottom_center', 'options'); ?></p>
+							</div>
 						</div>
 					</div>
-				</div>
+				</a>
 			</div>
 			<div class="col-480">
-				<div class="large-box photo-box">
-					<div class="image">
-						<img src="<?php bloginfo('template_directory'); ?>/images/antelope.jpg" width="480" height="480" alt="Antelope">
-					</div>
-					<div class="content">
-						<div class="inner">
-							<h2>Name of Piece</h2>
-							<p>Lorem ipsum dolor sit amet.</p>
+				<a href="<?php the_field('piece_url_top_right', 'options'); ?>">
+					<div class="large-box photo-box">
+						<div class="image">
+							<img src="<?php the_field('image_top_right', 'options'); ?>" width="480" height="480" alt="<?php the_field('title_top_right', 'options'); ?>">
+						</div>
+						<div class="content">
+							<div class="inner">
+								<h2><?php the_field('title_top_right', 'options'); ?></h2>
+								<p><?php the_field('description_top_right', 'options'); ?></p>
+							</div>
 						</div>
 					</div>
-				</div>
+				</a>
 				<a href="<?php bloginfo('url'); ?>/gallery">
 					<div class="small-box menu-box float-left">
 						<span>
@@ -83,17 +89,19 @@
 						</span>
 					</div>
 				</a>
-				<div class="small-box photo-box float-left">
-					<div class="image">
-						<img src="<?php bloginfo('template_directory'); ?>/images/edie.jpg" width="240" height="240" alt="Edie">
-					</div>
-					<div class="content">
-						<div class="inner">
-							<h2>Edie Reno</h2>
-							<p>Founder of White Antelope Studio</p>
+				<a href="<?php the_field('about_url', 'options'); ?>">
+					<div class="small-box photo-box about-box float-left">
+						<div class="image">
+							<img src="<?php the_field('headshot', 'options'); ?>" width="240" height="240" alt="<?php the_field('name', 'options'); ?>">
+						</div>
+						<div class="content">
+							<div class="inner">
+								<h2><?php the_field('name', 'options'); ?></h2>
+								<p><?php the_field('title_position', 'options'); ?></p>
+							</div>
 						</div>
 					</div>
-				</div>
+				</a>
 			</div>
 		<div class="clear"></div>
 		</section><!-- #page -->

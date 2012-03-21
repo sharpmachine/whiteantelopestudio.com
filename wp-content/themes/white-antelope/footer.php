@@ -16,9 +16,23 @@
 				</article>
 				<article class="span-5 colborder">
 					<h2>Last Blog Entry</h2>
-					<h3><a href="#">Using Watercolor</a></h3>
-					<p>Sed in arcu felis, vel dictum odio. Nunc mollis nulla eget magna lobortis quis egestas risus feugiat.</p>
-					<a href="<?php bloginfo('url'); ?>/contact">Continue Reading</a>
+					<?php query_posts('posts_per_page=1'); ?>
+					<?php if (have_posts()) : ?>
+									
+						<?php while (have_posts()) : the_post(); ?>
+										
+							<h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
+							<?php the_excerpt(); ?>
+										
+						<?php endwhile; ?>
+										
+						<?php else : ?>
+										
+							<?php // No Posts Found ?>
+									
+					<?php endif; ?>
+					
+				
 				</article>
 				<article class="span-6 last">
 					<p>White Antelope exists to model, promote, teach and inspire art, including prophetic art, with the goal of helping others understand and harness the inherent property of healing that art carries, both through the production and appreciation of artistic works.</p>

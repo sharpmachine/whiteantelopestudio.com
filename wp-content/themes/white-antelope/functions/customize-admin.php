@@ -20,9 +20,6 @@ add_filter('admin_footer_text', 'modify_footer_admin');
 //Custom logo should be 20 x 20
 function custom_logo() {
   echo '<style type="text/css">
-    /*#wp-admin-bar-wp-logo > .ab-item .ab-icon { 
-    	background-image: url('.get_bloginfo('template_directory').'/images/admin-logo.png) !important; 
-	}*/
 	#cpt_info_box {
 		display: none !important; /* Hides Custom Post Type info box */
 	}
@@ -34,7 +31,13 @@ add_action('admin_head', 'custom_logo');
 //Login Logo
 function custom_login_logo() {
   echo '<style type="text/css">
-    h1 a { background-image:url('.get_bloginfo('template_directory').'/images/login-logo.png) !important; }
+    h1 a 
+    { 
+    	background-image:url('.get_bloginfo('template_directory').'/images/logo.png) !important;
+    	width: 410px !important;
+    	height: 200px !important;
+    	margin-left: -50px !important;
+	 }
     </style>';
 }
 

@@ -189,6 +189,10 @@ footer p {
   font-style: italic;
   font-style: italic;
 }
+footer p a {
+  display: inline-block;
+  margin-top: 1.5em;
+}
 footer a {
   font-family: 'Open Sans', sans-serif;
   font-weight: 600;
@@ -333,7 +337,7 @@ body.home #wrapper {
   transition: all 0.5s ease;
 }
 .menu-box {
-  background-color: #ececec;
+  background: url(../images/box-arrow.png) no-repeat bottom right #ececec;
   opacity: 0.8;
   display: table;
   -webkit-transition: all 0.5s ease;
@@ -384,6 +388,7 @@ body.home #wrapper {
   top: 93px;
   left: 93px;
 }
+.about-box .inner { padding-top: 140px; }
 #ob_content {
   background-color: #f6f6f6 !important;
   border: 0 solid #f6f6f6 !important;

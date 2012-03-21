@@ -200,7 +200,7 @@ add_filter( 'wp_page_menu_args', 'smm_page_menu_args' );
  * @return int
  */
 function smm_excerpt_length( $length ) {
-	return 40;
+	return 15;
 }
 add_filter( 'excerpt_length', 'smm_excerpt_length' );
 
@@ -211,7 +211,7 @@ add_filter( 'excerpt_length', 'smm_excerpt_length' );
  * @return string "Continue Reading" link
  */
 function smm_continue_reading_link() {
-	return ' <a href="'. get_permalink() . '">' . __( 'Continue reading <span class="meta-nav">&rarr;</span>', 'smm' ) . '</a>';
+	return ' <a class="latest-post" href="'. get_permalink() . '">' . __( 'Continue reading', 'smm' ) . '</a>';
 }
 
 /**
