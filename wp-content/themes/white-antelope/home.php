@@ -34,7 +34,10 @@
 					<div class="small-box menu-box">
 						<span>
 							<h2>Upcoming Events</h2>
-							<?php echo do_shortcode('[events_list limit="1"]<h3>#_EVENTNAME</h3><p>#l, #F #j, #Y at #g:#i#a until #@_{l, F j, Y} in #_LOCATIONTOWN, #_LOCATIONSTATE</p>[/events_list]'); ?>
+							<?php echo do_shortcode('[events_list limit="1"]
+								<h3>#_EVENTNAME</h3>
+								<p>#l, #F #j, #Y at #g:#i#a until #@_{l, F j, Y} in #_LOCATIONTOWN, #_LOCATIONSTATE</p>
+							[/events_list]'); ?>
 						</span>
 					</div>
 				</a>
