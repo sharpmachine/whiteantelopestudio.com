@@ -9,7 +9,7 @@ include 'functions/customize-admin.php';
  * is designed for, generally via the style.css stylesheet.
  */
 if ( ! isset( $content_width ) )
-	$content_width = 640;
+	$content_width = 960;
 
 /** Tell WordPress to run smm_setup() when the 'after_setup_theme' hook is run. */
 add_action( 'after_setup_theme', 'smm_setup' );
@@ -43,9 +43,6 @@ function smm_setup() {
 	// This theme styles the visual editor with editor-style.css to match the theme style.
 	add_editor_style();
 
-	// Post Format support. You can also use the legacy "gallery" or "asides" (note the plural) categories.
-	add_theme_support( 'post-formats', array( 'aside', 'gallery' ) );
-
 	// This theme uses post thumbnails
 	add_theme_support( 'post-thumbnails' );
 
@@ -64,89 +61,6 @@ function smm_setup() {
 	// This theme uses wp_nav_menu() in one location.
 	register_nav_menus( array(
 		'primary' => __( 'Primary Navigation', 'smm' ),
-	) );
-
-	// This theme allows users to set a custom background
-	add_custom_background();
-
-	// Your changeable header business starts here
-	if ( ! defined( 'HEADER_TEXTCOLOR' ) )
-		define( 'HEADER_TEXTCOLOR', '' );
-
-	// No CSS, just IMG call. The %s is a placeholder for the theme template directory URI.
-	if ( ! defined( 'HEADER_IMAGE' ) )
-		define( 'HEADER_IMAGE', '%s/images/headers/path.jpg' );
-
-	// The height and width of your custom header. You can hook into the theme's own filters to change these values.
-	// Add a filter to smm_header_image_width and smm_header_image_height to change these values.
-	define( 'HEADER_IMAGE_WIDTH', apply_filters( 'smm_header_image_width', 940 ) );
-	define( 'HEADER_IMAGE_HEIGHT', apply_filters( 'smm_header_image_height', 198 ) );
-
-	// We'll be using post thumbnails for custom header images on posts and pages.
-	// We want them to be 940 pixels wide by 198 pixels tall.
-	// Larger images will be auto-cropped to fit, smaller ones will be ignored. See header.php.
-	set_post_thumbnail_size( HEADER_IMAGE_WIDTH, HEADER_IMAGE_HEIGHT, true );
-
-	// Don't support text inside the header image.
-	if ( ! defined( 'NO_HEADER_TEXT' ) )
-		define( 'NO_HEADER_TEXT', true );
-
-	// Add a way for the custom header to be styled in the admin panel that controls
-	// custom headers. See smm_admin_header_style(), below.
-	add_custom_image_header( '', 'smm_admin_header_style' );
-
-	// ... and thus ends the changeable header business.
-
-	// Default custom headers packaged with the theme. %s is a placeholder for the theme template directory URI.
-	register_default_headers( array(
-		'berries' => array(
-			'url' => '%s/images/headers/berries.jpg',
-			'thumbnail_url' => '%s/images/headers/berries-thumbnail.jpg',
-			/* translators: header image description */
-			'description' => __( 'Berries', 'smm' )
-		),
-		'cherryblossom' => array(
-			'url' => '%s/images/headers/cherryblossoms.jpg',
-			'thumbnail_url' => '%s/images/headers/cherryblossoms-thumbnail.jpg',
-			/* translators: header image description */
-			'description' => __( 'Cherry Blossoms', 'smm' )
-		),
-		'concave' => array(
-			'url' => '%s/images/headers/concave.jpg',
-			'thumbnail_url' => '%s/images/headers/concave-thumbnail.jpg',
-			/* translators: header image description */
-			'description' => __( 'Concave', 'smm' )
-		),
-		'fern' => array(
-			'url' => '%s/images/headers/fern.jpg',
-			'thumbnail_url' => '%s/images/headers/fern-thumbnail.jpg',
-			/* translators: header image description */
-			'description' => __( 'Fern', 'smm' )
-		),
-		'forestfloor' => array(
-			'url' => '%s/images/headers/forestfloor.jpg',
-			'thumbnail_url' => '%s/images/headers/forestfloor-thumbnail.jpg',
-			/* translators: header image description */
-			'description' => __( 'Forest Floor', 'smm' )
-		),
-		'inkwell' => array(
-			'url' => '%s/images/headers/inkwell.jpg',
-			'thumbnail_url' => '%s/images/headers/inkwell-thumbnail.jpg',
-			/* translators: header image description */
-			'description' => __( 'Inkwell', 'smm' )
-		),
-		'path' => array(
-			'url' => '%s/images/headers/path.jpg',
-			'thumbnail_url' => '%s/images/headers/path-thumbnail.jpg',
-			/* translators: header image description */
-			'description' => __( 'Path', 'smm' )
-		),
-		'sunset' => array(
-			'url' => '%s/images/headers/sunset.jpg',
-			'thumbnail_url' => '%s/images/headers/sunset-thumbnail.jpg',
-			/* translators: header image description */
-			'description' => __( 'Sunset', 'smm' )
-		)
 	) );
 }
 endif;
@@ -200,7 +114,7 @@ add_filter( 'wp_page_menu_args', 'smm_page_menu_args' );
  * @return int
  */
 function smm_excerpt_length( $length ) {
-	return 15;
+	return 40;
 }
 add_filter( 'excerpt_length', 'smm_excerpt_length' );
 
@@ -339,9 +253,9 @@ endif;
 function smm_widgets_init() {
 	// Area 1, located at the top of the sidebar.
 	register_sidebar( array(
-		'name' => __( 'Primary Widget Area', 'smm' ),
+		'name' => __( 'Blog Widget Area', 'smm' ),
 		'id' => 'primary-widget-area',
-		'description' => __( 'The primary widget area', 'smm' ),
+		'description' => __( 'The blog widget area', 'smm' ),
 		'before_widget' => '<li id="%1$s" class="widget-container %2$s">',
 		'after_widget' => '</li>',
 		'before_title' => '<h3 class="widget-title">',
@@ -363,44 +277,44 @@ function smm_widgets_init() {
 	register_sidebar( array(
 		'name' => __( 'First Footer Widget Area', 'smm' ),
 		'id' => 'first-footer-widget-area',
-		'description' => __( 'The first footer widget area', 'smm' ),
-		'before_widget' => '<li id="%1$s" class="widget-container %2$s">',
-		'after_widget' => '</li>',
-		'before_title' => '<h3 class="widget-title">',
-		'after_title' => '</h3>',
+		'description' => __( 'The first footer widget area.  Used for inviting Edie to speak.', 'smm' ),
+		'before_widget' => '',
+		'after_widget' => '',
+		'before_title' => '<h2>',
+		'after_title' => '</h2>',
 	) );
 
 	// Area 4, located in the footer. Empty by default.
 	register_sidebar( array(
 		'name' => __( 'Second Footer Widget Area', 'smm' ),
 		'id' => 'second-footer-widget-area',
-		'description' => __( 'The second footer widget area', 'smm' ),
-		'before_widget' => '<li id="%1$s" class="widget-container %2$s">',
-		'after_widget' => '</li>',
-		'before_title' => '<h3 class="widget-title">',
-		'after_title' => '</h3>',
+		'description' => __( 'The second footer widget area.  Used for upcoming events.', 'smm' ),
+		'before_widget' => '',
+		'after_widget' => '',
+		'before_title' => '<h2>',
+		'after_title' => '</h2>',
 	) );
 
 	// Area 5, located in the footer. Empty by default.
 	register_sidebar( array(
 		'name' => __( 'Third Footer Widget Area', 'smm' ),
 		'id' => 'third-footer-widget-area',
-		'description' => __( 'The third footer widget area', 'smm' ),
-		'before_widget' => '<li id="%1$s" class="widget-container %2$s">',
-		'after_widget' => '</li>',
-		'before_title' => '<h3 class="widget-title">',
-		'after_title' => '</h3>',
+		'description' => __( 'The third footer widget area.  Leave empty for lastest post.', 'smm' ),
+		'before_widget' => '',
+		'after_widget' => '',
+		'before_title' => '<h2>',
+		'after_title' => '</h2>',
 	) );
 
 	// Area 6, located in the footer. Empty by default.
 	register_sidebar( array(
 		'name' => __( 'Fourth Footer Widget Area', 'smm' ),
 		'id' => 'fourth-footer-widget-area',
-		'description' => __( 'The fourth footer widget area', 'smm' ),
-		'before_widget' => '<li id="%1$s" class="widget-container %2$s">',
-		'after_widget' => '</li>',
-		'before_title' => '<h3 class="widget-title">',
-		'after_title' => '</h3>',
+		'description' => __( 'The fourth footer widget area.  Used for White Antelope mission statement.', 'smm' ),
+		'before_widget' => '',
+		'after_widget' => '',
+		'before_title' => '<h2 style="display: none;">',
+		'after_title' => '</h2>',
 	) );
 }
 /** Register sidebars by running smm_widgets_init() on the widgets_init hook. */
@@ -472,3 +386,16 @@ function smm_posted_in() {
 	);
 }
 endif;
+
+// Custom except for last post section in footer
+function get_footer_excerpt(){
+$excerpt = get_the_content();
+$excerpt = preg_replace(" (\[.*?\])",'',$excerpt);
+$excerpt = strip_shortcodes($excerpt);
+$excerpt = strip_tags($excerpt);
+$excerpt = substr($excerpt, 0, 85);
+$excerpt = substr($excerpt, 0, strripos($excerpt, " "));
+$excerpt = trim(preg_replace( '/\s+/', ' ', $excerpt));
+$excerpt = $excerpt.'... <a href="'.get_permalink().'">Continue Reading</a>';
+return $excerpt;
+}

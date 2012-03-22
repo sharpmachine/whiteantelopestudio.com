@@ -328,7 +328,7 @@ footer
 		}
 	}
 	
-	ul.footer-events
+	ul
 	{
 		list-style: none;
 		margin: 0;
@@ -348,11 +348,41 @@ footer
 				text-decoration: none;
 				font-weight: normal;
 				
+				:before
+				{
+					content: "+ ";
+				}
+				
 				:hover
 				{
 					color: @was-white;
 					background-color: @was-grey;
 				}
+			}
+		}
+		
+		li:last-child a
+		{
+			display: inline-block;
+			margin-top: 1.5em;
+			.open-sans;
+			font-weight: 600;
+			text-transform: uppercase;
+			font-style: normal;
+			color: @was-black;
+			padding: 1px;
+			text-decoration: underline;
+			
+			:hover
+			{
+				background-color: @was-black;
+				color: @was-white;
+				text-decoration: none;
+			}
+			
+			:before
+			{
+				content: "";
 			}
 		}
 	}
