@@ -2,6 +2,11 @@
 	Post Box
 ---------------------------------------------------------------------------------------------*/
 
+#poststuff .acf_postbox .widefat th, 
+#poststuff .acf_postbox .widefat td {
+	overflow: visible;
+}
+
 #poststuff .acf_postbox .inside {
 	margin: 0;
 	padding: 0;
@@ -71,9 +76,14 @@
 	display: none;
 }
 
-#poststuff .acf_postbox.no_box .field {
-    border-bottom: 1px solid #F4F4F4;
-}
+#poststuff .acf_postbox.no_box .field { 
+    border-bottom: 1px solid #F4F4F4; 
+    padding: 10px 0; 
+} 
+ 
+#poststuff .acf_postbox.no_box .field.error { 
+	padding: 10px; 
+} 
 
 
 /*---------------------------------------------------------------------------------------------
@@ -139,6 +149,8 @@
 	cursor: pointer;
 	margin: -3px 0 0 -3px;
 	display: none;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	border-radius: 8px;
 }
 
 .acf_image_uploader.active:hover a.remove_image {
@@ -172,28 +184,29 @@
 ---------------------------------------------------------------------------------------------*/
 .acf_file_uploader {
 	position: relative;
+	line-height: 1.5em;
 }
 
-.acf_file_uploader p {
-	margin: 0 !important;
-}
-
-.acf_file_uploader p.file {
+.acf_file_uploader .has-file {
 	display: none;
 }
 
-.acf_file_uploader p.no_file {
+.acf_file_uploader .no-file {
 	display: block;
 }
 
-.acf_file_uploader.active p.file {
+.acf_file_uploader.active .has-file {
 	display: block;
 }
 
-.acf_file_uploader.active p.no_file {
+.acf_file_uploader.active .no-file {
 	display: none;
 }
 
+.acf_file_uploader img {
+	margin: 0 5px 0 0;
+	height: 
+}
 
 /*---------------------------------------------------------------------------------------------
 	Repeater
@@ -240,11 +253,11 @@
 	border-right: 0 none;
 }
 
-.repeater > table > tbody > tr:hover a.remove_row {
+.repeater > table > tbody > tr:hover >td.remove > a.remove_row {
 	visibility: visible;
 }
 
-.repeater.hide_remove_buttons > table > tbody > tr:hover a.remove_row {
+.repeater.hide_remove_buttons > table > tbody > tr:hover >td.remove a.remove_row {
 	visibility: hidden;
 }
 
@@ -259,6 +272,8 @@ a.remove_row {
 	height: 16px;
 	background: url(../images/button_remove.png) 0 0 no-repeat;
 	visibility: hidden;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	border-radius: 8px;
 }
 
 a.remove_row:hover {
@@ -307,18 +322,7 @@ a.remove_row:hover {
 }
 
 .repeater .table_footer {
-	position: relative;
-	overflow: hidden;
 	padding: 8px 0;
-}
-
-.repeater .table_footer a.add_row{
-	display: block;
-    float: right;
-    margin: 0;
-    text-align: center;
-    color: #fff;
-    text-decoration: none;
 }
 
 #acf_input .wp_themeSkin tr.mceFirst td.mceToolbar {
@@ -450,6 +454,8 @@ ul.checkbox_list {
 	cursor: pointer;
 	margin: 5px 9px 0 0;
 	display: none;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	border-radius: 8px;
 }
 
 .acf_relationship .relationship_list a.sortable_active {
@@ -474,6 +480,8 @@ ul.checkbox_list {
 	cursor: pointer;
 	margin: 5px 9px 0 0;
 	display: none;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	border-radius: 8px;
 }
 
 .acf_relationship .relationship_list a:hover .remove {
@@ -585,15 +593,6 @@ ul.checkbox_list {
 	padding: 8px 0;
 }
 
-.acf_flexible_content .table_footer a.add_row{
-	display: block;
-    float: right;
-    margin: 0;
-    text-align: center;
-    color: #fff;
-    text-decoration: none;
-}
-
 .acf_popup {
 	position: absolute;
 	bottom: 25px;
@@ -604,6 +603,8 @@ ul.checkbox_list {
 	margin-bottom: 25px;
 	margin-right: -5px;
 	display: none;
+	min-width: 135px;
+	z-index: 99;
 }
 
 .has-right-sidebar .acf_popup {
@@ -611,7 +612,7 @@ ul.checkbox_list {
 }
 
 .has-right-sidebar .acf_popup .bit {
-	right: 31px;
+	right: 37px;
 }
 
 .acf_popup .bit {

@@ -148,7 +148,7 @@ class EM_Gateway_Paypal extends EM_Gateway {
 		);
 		if( !get_option('dbem_bookings_tax_auto_add') && is_numeric(get_option('dbem_bookings_tax')) && get_option('dbem_bookings_tax') > 0 ){
 			//tax only added if auto_add is disabled, since it would be added to individual ticket prices
-			$paypal_vars['tax_cart'] = $EM_Booking->get_price(false,false,false) * (get_option('dbem_bookings_tax')/100);;
+			$paypal_vars['tax_cart'] = round($EM_Booking->get_price(false,false,false) * (get_option('dbem_bookings_tax')/100), 2);
 		}
 		if( get_option('em_'. $this->gateway . "_return" ) != "" ){
 			$paypal_vars['return'] = get_option('em_'. $this->gateway . "_return" );

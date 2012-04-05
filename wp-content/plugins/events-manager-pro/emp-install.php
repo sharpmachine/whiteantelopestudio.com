@@ -107,21 +107,20 @@ function emp_create_coupons_table() {
 }
 
 function emp_add_options() {
+	global $wpdb;
 	add_option('em_pro_data', array());
-	
-	//Booking form stuff
-	add_option('em_booking_form_custom', 1); //we're installing with same values as in the normal booking form
-	add_option('em_booking_form_attendee_custom', 0);
-	add_option('em_booking_form_error_required', __('Please fill in the field: %s','em-pro'));
-	add_option('em_booking_form_fields', array (
-	  'name' => array ( 'booking_form_label' => __('Name','dbem'), 'booking_form_type' => 'name', 'booking_form_fieldid'=>'user_name' ),
-	  'user_email' => array ( 'booking_form_label' => __('Email','dbem'), 'booking_form_type' => 'user_email', 'booking_form_fieldid'=>'user_email' ),
-	  'dbem_phone' => array ( 'booking_form_label' => __('Phone','dbem'), 'booking_form_type' => 'dbem_phone', 'booking_form_fieldid'=>'dbem_phone' ),
-	  'textarea' => array ( 'booking_form_label' => __('Comment','dbem'), 'booking_form_type' => 'textarea', 'booking_form_fieldid'=>'booking_comment' ),
+	//Form Stuff
+	$booking_form_data = array( 'name'=> __('Default','em-pro'), 'form'=> array (
+	  'name' => array ( 'label' => __('Name','dbem'), 'type' => 'name', 'fieldid'=>'user_name' ),
+	  'user_email' => array ( 'label' => __('Email','dbem'), 'type' => 'user_email', 'fieldid'=>'user_email' ),
+	  'dbem_phone' => array ( 'label' => __('Phone','dbem'), 'type' => 'dbem_phone', 'fieldid'=>'dbem_phone' ),
+	  'textarea' => array ( 'label' => __('Comment','dbem'), 'type' => 'textarea', 'fieldid'=>'booking_comment' ),
 	));
-	
+	add_option('em_booking_form_error_required', __('Please fill in the field: %s','em-pro'));
+	add_option('em_user_fields', array ( 'dbem_phone' => array ( 'label' => __('Phone','dbem'), 'type' => 'text', 'fieldid'=>'dbem_phone' )) );
 	//Gateway Stuff
 	add_option('dbem_gateway_use_buttons', 0);
+	add_option('dbem_gateway_label', __('Pay With','em-pro'));
 	//paypal
 	add_option('em_paypal_option_name', __('PayPal', 'em-pro'));
 	add_option('em_paypal_form', '<img src="'.plugins_url('events-manager-pro/includes/images/paypal/paypal_info.png','events-manager').'" />');
@@ -139,8 +138,27 @@ function emp_add_options() {
 	add_option('em_authorize_aim_booking_feedback_free', __('Booking successful. You have not been charged for this booking.', 'dbem'));
 	
 	//Version updates
-	if( get_option('em_pro_version') ){ //upgrade, so make buttons the default option
-		if( get_option('em_pro_version') < 1.6 ){
+	if( get_option('em_pro_version') ){ //upgrade, so do any specific version updates
+		if( get_option('em_pro_version') < 2.061 ){ //new booking form data structure
+			global $wpdb;
+			//backward compatability, check first field to see if indexes start with 'booking_form_...' and change this.
+			$form_fields = get_option('em_booking_form_fields', $booking_form_data['form']);
+			if( is_array($form_fields) ){
+				$booking_form_fields = array();
+				foreach( $form_fields as $form_field_id => $form_field_data){
+					foreach( $form_field_data as $field_key => $value ){
+						$field_key = str_replace('booking_form_', '', $field_key);
+						$booking_form_fields[$form_field_id][$field_key] = $value;
+					}
+				}
+				//move booking form to meta table and update wp option with booking form id too
+				$booking_form = serialize(array('name'=>__('Default','em-pro'), 'form'=>$booking_form_fields));
+				if ($wpdb->insert(EM_META_TABLE, array('meta_key'=>'booking-form','meta_value'=>$booking_form,'object_id'=>0))){
+					update_option('em_booking_form_fields',$wpdb->insert_id);
+				}
+			}
+		}
+		if( get_option('em_pro_version') < 1.6 ){ //make buttons the default option
 			update_option('dbem_gateway_use_buttons', 1);
 			if( get_option('em_offline_button_text') && !get_option('em_offline_button') ){
 				update_option('em_offline_button',get_option('em_offline_button_text')); //merge offline quick pay button option into one
@@ -149,15 +167,11 @@ function emp_add_options() {
 				update_option('em_paypal_button',get_option('em_paypal_button_text')); //merge offline quick pay button option into one
 			}
 		}
-		if( get_option('em_pro_version') == '1.3' ){ //fix for v1.3
-			$booking_form_fields = get_option('em_booking_form_fields');
-			foreach($booking_form_fields as $key => $booking_form_field){
-				if($booking_form_field['booking_form_type'] == 'email' && $booking_form_field['booking_form_label'] == __('Email','dbem')){
-					$booking_form_fields[$key]['booking_form_type'] = 'user_email';
-					update_option('em_booking_form_fields',$booking_form_fields);
-				}
-			}
-		}
+	}else{
+		//Booking form stuff only run on install
+		$insert_result = $wpdb->insert(EM_META_TABLE, array('meta_value'=>serialize($booking_form_data), 'meta_key'=>'booking-form','object_id'=>0));
+		add_option('em_booking_form_fields', $wpdb->insert_id);
+		add_option('em_booking_form_custom', $insert_result !== false); //we're installing with same values as in the normal booking form
 	}
 }     
 ?>

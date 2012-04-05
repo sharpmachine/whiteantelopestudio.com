@@ -62,6 +62,8 @@ class acf_Repeater extends acf_Field
 		$row_limit = ( isset($field['row_limit']) && is_numeric($field['row_limit']) ) ? $field['row_limit'] : 999;
 		$layout = isset($field['layout']) ? $field['layout'] : 'table';
 		$sub_fields = isset($field['sub_fields']) ? $field['sub_fields'] : array();
+		$button_label = ( isset($field['button_label']) && $field['button_label'] != "" ) ? $field['button_label'] : __("+ Add Row",'acf');
+		
 		
 		// add clone field
 		if($row_limit == 1 && count($field['value']) == 0)
@@ -149,8 +151,11 @@ class acf_Repeater extends acf_Field
 			</table>
 			<?php if($row_limit > 1): ?>
 			<div class="table_footer">
-				<div class="order_message"></div>
-				<a href="javascript:;" id="r_add_row" class="add_row button-primary"><?php _e("+ Add Row",'acf'); ?></a>
+				<ul class="hl clearfix">
+					<li class="right">
+						<a href="javascript:;" id="r_add_row" class="add_row acf-button"><?php echo $button_label; ?></a>
+					</li>
+				</ul>
 			</div>	
 			<?php endif; ?>	
 		</div>
@@ -176,6 +181,8 @@ class acf_Repeater extends acf_Field
 		$field['row_limit'] = isset($field['row_limit']) ? $field['row_limit'] : '';
 		$field['layout'] = isset($field['layout']) ? $field['layout'] : 'table';
 		$field['sub_fields'] = isset($field['sub_fields']) ? $field['sub_fields'] : array();
+		$field['button_label'] = (isset($field['button_label']) && $field['button_label'] != "") ? $field['button_label'] : __("+ Add Row",'acf');
+		
 		
 		// add clone field
 		$field['sub_fields'][999] = array(
@@ -191,8 +198,8 @@ class acf_Repeater extends acf_Field
 		{
 			$fields_names[$f->name] = $f->title;
 		}
-		unset($fields_names['repeater']);
-		unset($fields_names['flexible_content']);
+		//unset($fields_names['repeater']);
+		//unset($fields_names['flexible_content']);
 		
 		?>
 <tr class="field_option field_option_<?php echo $this->name; ?>">
@@ -296,16 +303,20 @@ class acf_Repeater extends acf_Field
 									</td>
 								</tr>
 								<?php 
-								foreach($fields_names as $field_name => $field_title){
-									$this->parent->fields[$field_name]->create_options($key.'][sub_fields]['.$key2, $sub_field);
-								} 
+								
+								$this->parent->fields[$sub_field['type']]->create_options($key.'][sub_fields]['.$key2, $sub_field);
+								
 								?>
 								<tr class="field_save">
 									<td class="label">
-										<label><?php _e("Save Field",'acf'); ?></label>
+										<!-- <label><?php _e("Save Field",'acf'); ?></label> -->
 									</td>
-									<td><input type="submit" value="Save Field" class="button-primary" name="save" />
-										<?php _e("or",'acf'); ?> <a class="acf_edit_field" title="<?php _e("Hide this edit screen",'acf'); ?>" href="javascript:;"><?php _e("continue editing ACF",'acf'); ?></a>
+									<td>
+										<ul class="hl clearfix">
+											<li>
+												<a class="acf_edit_field acf-button grey" title="<?php _e("Close Field",'acf'); ?>" href="javascript:;"><?php _e("Close Sub Field",'acf'); ?></a>
+											</li>
+										</ul>
 									</td>
 								</tr>								
 							</tbody>
@@ -319,7 +330,7 @@ class acf_Repeater extends acf_Field
 		</div>
 		<div class="table_footer">
 			<div class="order_message"></div>
-			<a href="javascript:;" id="add_field" class="button-primary"><?php _e('+ Add Field','acf'); ?></a>
+			<a href="javascript:;" id="add_field" class="acf-button"><?php _e('+ Add Field','acf'); ?></a>
 		</div>
 	</div>
 	</td>
@@ -354,6 +365,20 @@ class acf_Repeater extends acf_Field
 				'table'	=>	'Table (default)',
 				'row'	=>	'Row'
 			)
+		));
+		?>
+	</td>
+</tr>
+<tr class="field_option field_option_<?php echo $this->name; ?>">
+	<td class="label">
+		<label><?php _e("Button Label",'acf'); ?></label>
+	</td>
+	<td>
+		<?php 
+		$this->parent->create_field(array(
+			'type'	=>	'text',
+			'name'	=>	'fields['.$key.'][button_label]',
+			'value'	=>	$field['button_label'],
 		));
 		?>
 	</td>

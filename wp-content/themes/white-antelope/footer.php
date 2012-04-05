@@ -16,7 +16,6 @@
 						
 						<?php else: ?>
 							
-					
 						<h2>Last Blog Entry</h2>
 						<?php query_posts('posts_per_page=1'); ?>
 						<?php if (have_posts()) : ?>

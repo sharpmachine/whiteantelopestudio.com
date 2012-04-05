@@ -198,12 +198,12 @@ class EM_Gateways_Transactions{
 					<td>
 						<?php
 							$EM_Booking = new EM_Booking($transaction->booking_id);
-							echo '<a href="'.EM_ADMIN_URL.'&amp;page=events-manager-bookings&amp;event_id='.$EM_Booking->get_event()->event_id.'">'.$EM_Booking->get_event()->event_name.'</a>';
+							echo '<a href="'.$EM_Booking->get_event()->get_bookings_url().'">'.$EM_Booking->get_event()->event_name.'</a>';
 						?>
 					</td>
 					<td>
 						<?php
-							echo '<a href="'.EM_ADMIN_URL.'&amp;page=events-manager-bookings&amp;person_id='.$EM_Booking->get_person()->ID.'">'.$EM_Booking->get_person()->get_name().'</a>';
+							echo '<a href="'.add_query_arg(array('person_id'=>$EM_Booking->person_id)).'">'. $EM_Booking->person->get_name() .'</a>';
 						?>
 					</td>
 					<td class="column-date">

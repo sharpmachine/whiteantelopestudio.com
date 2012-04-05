@@ -76,7 +76,7 @@
 				<a href="<?php bloginfo('url'); ?>/gallery/cart"><img src="<?php bloginfo('template_directory'); ?>/images/shopping-cart.png" width="19" height="14" alt="Shopping Cart">Shopping Cart</a>
 			</div>
 			<div class="span-5 colborder">
-				<a href="#"><img src="<?php bloginfo('template_directory'); ?>/images/newsletter.png" width="18" height="14" alt="Newsletter">Signup for Newsletter</a>
+				<a href="http://eepurl.com/f4jOb"><img src="<?php bloginfo('template_directory'); ?>/images/newsletter.png" width="18" height="14" alt="Newsletter">Signup for Newsletter</a>
 			</div>
 			<div class="span-6 colborder rss-feeds">
 				<img src="<?php bloginfo('template_directory'); ?>/images/rss.png" width="15" height="15" alt="Rss">

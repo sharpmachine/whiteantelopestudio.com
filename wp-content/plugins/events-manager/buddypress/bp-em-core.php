@@ -26,10 +26,12 @@ class BP_EM_Component extends BP_Component {
 			'buddypress/screens/my-locations.php',
 			'buddypress/screens/attending.php',
 			'buddypress/screens/my-bookings.php',
-			'buddypress/screens/my-group-events.php',
-			'buddypress/screens/group-events.php',
-			'buddypress/bp-em-groups.php'
+			'buddypress/screens/my-group-events.php'
 		);
+		if( bp_is_active('groups') ){
+			$includes[] = 'buddypress/screens/group-events.php';
+			$includes[] = 'buddypress/bp-em-groups.php';
+		}
 		parent::includes( $includes );
 		//TODO add admin pages for extra BP specific settings
 	}
@@ -204,7 +206,7 @@ if( !is_admin() ){
 	
 	function em_bp_rewrite_bookings_url($url, $EM_Event){
 		global $bp;
-		return $bp->events->link.'my-bookings/?action=edit&event_id='.$EM_Event->event_id;
+		return $bp->events->link.'my-bookings/?event_id='.$EM_Event->event_id;
 	}
 	if( !get_option('dbem_my_bookings_page') ){
 		add_filter('em_event_get_bookings_url','em_bp_rewrite_bookings_url',10,2);

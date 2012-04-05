@@ -86,6 +86,19 @@ http://www.advancedcustomfields.com/support/
 
 == Changelog ==
 
+= 3.1.6 =
+* New style for buttons
+* Bug Fix: Repeater maximum row setting was disabling the "add row" button 1 row early.
+* Performance: Field options are now loaded in via ajax. This results in much less HTML on the edit field group page
+* Performance: Field inputs are now loaded in via ajax. Again, less HTML on edit screens improves load times / memory usage
+* Bug Fix: Field groups registered by code were not showing on ajax change (category / page type / page template / etc). To fix this, your field group needs a unique ID. When you export a field group, you will now be given a unique ID to fix this issue. Field groups without a fixed id will still show on page load.
+* New Option: Repeater field can now have a custom button label
+* New Option: Flexible content field can now have a custom button label
+* Improvement: Updated the HTML / CSS for file fields with icon
+* Bug Fix: Fixed multi upload / select image in repeater. 
+* Performance: Added caching to the get_field function. Templates will now render quicker.
+* Bug Fix: Fixed Post formats location rule - it now works.
+
 = 3.1.5 =
 * Improvement: Redesigned the experience for uploading and selecting images / files in fields and sub fields. Image / File fields within a repeater can now add multiple images / files
 

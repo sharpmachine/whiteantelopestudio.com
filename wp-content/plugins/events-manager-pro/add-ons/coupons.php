@@ -1,5 +1,5 @@
 <?php
-include('coupon.php');
+include('coupons/coupon.php');
 class EM_Coupons extends EM_Object {
 	function init(){
 		//add coupon to admin menu
@@ -20,7 +20,7 @@ class EM_Coupons extends EM_Object {
 		//hook into paypal gateway
 		add_filter('em_gateway_paypal_get_paypal_vars', array('EM_Coupons', 'paypal_vars'), 10, 2);
 		//hook into price calculator
-		add_filter('em_booking_get_price', array('EM_Coupons', 'em_booking_get_price'), 10, 2);
+		add_filter('em_booking_get_price', array('EM_Coupons', 'em_booking_get_price'), 10, 5);
 		//add coupon code info to individual booking
 		add_action('em_bookings_admin_ticket_totals_header', array('EM_Coupons', 'em_bookings_admin_ticket_totals_header'), 10, 2);
 		//add coupon info to CSV
@@ -40,24 +40,24 @@ class EM_Coupons extends EM_Object {
 			$EM_Coupon = new EM_Coupon($EM_Booking->booking_meta['coupon']); //don't use the db, just give the array to create a coupon
 			?>
 			<tr>
-				<th><?php _e('Original Total Price','dbem'); ?></th>
+				<th><?php _e('Original Total Price','em-pro'); ?></th>
 				<th>&nbsp;</th>
 				<th><?php echo em_get_currency_formatted($EM_Booking->booking_meta['original_price']); ?></th>
 			</tr>
 			<tr>
-				<th><?php _e('Coupon Discount','dbem'); ?></th>
+				<th><?php _e('Coupon Discount','em-pro'); ?></th>
 				<th><?php echo $EM_Coupon->get_discount_text(); ?></th>
-				<th>- <?php echo em_get_currency_formatted($EM_Booking->booking_meta['original_price'] - $EM_Booking->get_price()); ?></th>
+				<th>- <?php echo em_get_currency_formatted($EM_Coupon->get_discount($EM_Booking->booking_meta['original_price'])); ?></th>
 			</tr>
 			<?php
 		}
 	}
 	
-	function em_booking_get_price( $price, $EM_Booking ){
+	function em_booking_get_price( $price, $EM_Booking, $force_refresh=false, $format=false, $add_tax='x' ){
 		if( !empty($EM_Booking->booking_meta['coupon']) ){
 			//get coupon and calculate price
-			$EM_Coupon = new EM_Coupon($EM_Booking->booking_meta['coupon']);
-			if( $EM_Booking->booking_price == $EM_Booking->booking_meta['original_price'] ){
+			if( $price == $EM_Booking->booking_meta['original_price'] ){
+				$EM_Coupon = new EM_Coupon($EM_Booking->booking_meta['coupon']);
 				return $EM_Coupon->apply_discount($price);
 			}
 		}
@@ -81,11 +81,18 @@ class EM_Coupons extends EM_Object {
 		return false;
 	}
 	
-	function em_booking_get_post($result, $EM_Booking){
+	/**
+	 * @param boolean $result
+	 * @param EM_Booking $EM_Booking
+	 * @return boolean
+	 */
+	function em_booking_get_post($result, $EM_Booking){ 
 		if( !empty($_REQUEST['coupon_code']) ){
 			$EM_Coupon = EM_Coupons::verify_code($_REQUEST['coupon_code'], $EM_Booking->get_event());
 			if( $EM_Coupon !== false ){
+				$EM_Booking->booking_meta['original_price'] = $EM_Booking->get_price(); //get original price before we add coupon codes to this
 				$EM_Booking->booking_meta['coupon'] = $EM_Coupon->to_array(); //we add an clean a coupon array here for the first time
+				$EM_Booking->get_price(true); //refresh price
 			}else{	
 				$EM_Booking->add_error(__('Invalid coupon code provided','em-pro'));
 			}
@@ -100,9 +107,6 @@ class EM_Coupons extends EM_Object {
 			if( $EM_Coupon === false || !$EM_Coupon->is_valid() ){
 				$EM_Booking->add_error(__('Invalid coupon code provided','em-pro'));
 				return false;
-			}elseif( $EM_Coupon !== false && empty($EM_Booking->booking_meta['original_price']) ){
-				$EM_Booking->booking_meta['original_price'] = $EM_Booking->booking_price; 
-				$EM_Booking->booking_price = $EM_Coupon->apply_discount($EM_Booking->booking_price); //double check price
 			}
 		}
 		return $result;
@@ -119,7 +123,7 @@ class EM_Coupons extends EM_Object {
 			}else{
 				//start coupon count
 				$wpdb->insert(EM_META_TABLE, array('meta_value'=>1, 'object_id'=>$EM_Coupon->coupon_id, 'meta_key'=>'coupon-count'));
-			}			
+			}
 		}
 		return $result;
 	}
@@ -272,6 +276,7 @@ class EM_Coupons extends EM_Object {
 		}
 		$global_coupons = array();
 		?>
+		<br style="clear" />
 		<p><strong><?php _e('Coupons','em-pro'); ?></strong></p>
 		<p><em><?php _e('Coupons selected here will be applied to bookings made for this event.','em-pro'); ?></em></p>
 		<div>	
@@ -295,7 +300,6 @@ class EM_Coupons extends EM_Object {
 			<?php endforeach; ?>
 		<?php endif; ?>
 		</div>
-		<br style="clear" />
 		<?php
 	}
 	
@@ -391,6 +395,8 @@ class EM_Coupons extends EM_Object {
 				$_REQUEST['redirect_to'] = em_add_get_params($_SERVER['REQUEST_URI'], array('action'=>null, 'coupon_id'=>null));
 			}
 			self::edit_form();
+		}elseif( !empty($_GET['action']) && $_GET['action']=='view' ){
+			self::view_page();
 		}else{
 			self::select_page();
 		}
@@ -403,14 +409,15 @@ class EM_Coupons extends EM_Object {
 		$page = ( !empty($_REQUEST['pno']) ) ? $_REQUEST['pno']:1;
 		$offset = ( $page > 1 ) ? ($page-1)*$limit : 0;
 		$args = array('limit'=>$limit, 'offset'=>$offset);
+		$coupons_mine_count = self::count( array('owner'=>get_current_user_id(), 'sitewide' => 0, 'eventwide' => 0) );
+		$coupons_all_count = current_user_can('manage_others_bookings') ? self::count(array('sitewide' => 0, 'eventwide' => 0)):0;
 		if( !empty($_REQUEST['view']) && $_REQUEST['view'] == 'others' && current_user_can('manage_others_bookings') ){
-			$coupons = self::get($args);
+			$coupons = self::get( array_merge($args, array('sitewide' => 0, 'eventwide' => 0)) );
+			$coupons_count = $coupons_all_count;
 		}else{
-			$coupons = self::get( array_merge($args, array('owner'=>get_current_user_id())) );
+			$coupons = self::get( array_merge($args, array('owner'=>get_current_user_id(), 'sitewide' => 0, 'eventwide' => 0)) );
+			$coupons_count = $coupons_mine_count;
 		}
-		$coupons_count = count($coupons);
-		$coupons_mine_count = self::count( array('owner'=>get_current_user_id()) );
-		$coupons_all_count = current_user_can('manage_others_bookings') ? self::count():0;
 		?>
 		<div class='wrap'>
 			<div class="icon32" id="icon-bookings"><br></div>
@@ -420,19 +427,23 @@ class EM_Coupons extends EM_Object {
 			<?php echo $EM_Notices; ?>
 			<form id='coupons-filter' method='post' action=''>
 				<input type='hidden' name='pno' value='<?php echo $page ?>' />
-				<div class="subsubsub">
-					<a href='<?php echo em_add_get_params($_SERVER['REQUEST_URI'], array('view'=>null, 'pno'=>null)); ?>' <?php echo ( empty($_REQUEST['view']) ) ? 'class="current"':''; ?>><?php echo sprintf( __( 'My %s', 'dbem' ), __('Coupons','em-pro')); ?> <span class="count">(<?php echo $coupons_mine_count; ?>)</span></a>
-					<?php if( current_user_can('manage_others_bookings') ): ?>
-					&nbsp;|&nbsp;
-					<a href='<?php echo em_add_get_params($_SERVER['REQUEST_URI'], array('view'=>'others', 'pno'=>null)); ?>' <?php echo ( !empty($_REQUEST['view']) && $_REQUEST['view'] == 'others' ) ? 'class="current"':''; ?>><?php echo sprintf( __( 'All %s', 'dbem' ), __('Coupons','em-pro')); ?> <span class="count">(<?php echo $coupons_all_count; ?>)</span></a>
-					<?php endif; ?>
-				</div>		
-				<?php
-				if ( $coupons_count >= $limit ) {
-					$coupons_nav = em_admin_paginate( $coupons_count, $limit, $page );
-					echo $coupons_nav;
-				}
-				?>				
+				<div class="tablenav">			
+					<div class="alignleft actions">
+						<div class="subsubsub">
+							<a href='<?php echo em_add_get_params($_SERVER['REQUEST_URI'], array('view'=>null, 'pno'=>null)); ?>' <?php echo ( empty($_REQUEST['view']) ) ? 'class="current"':''; ?>><?php echo sprintf( __( 'My %s', 'dbem' ), __('Coupons','em-pro')); ?> <span class="count">(<?php echo $coupons_mine_count; ?>)</span></a>
+							<?php if( current_user_can('manage_others_bookings') ): ?>
+							&nbsp;|&nbsp;
+							<a href='<?php echo em_add_get_params($_SERVER['REQUEST_URI'], array('view'=>'others', 'pno'=>null)); ?>' <?php echo ( !empty($_REQUEST['view']) && $_REQUEST['view'] == 'others' ) ? 'class="current"':''; ?>><?php echo sprintf( __( 'All %s', 'dbem' ), __('Coupons','em-pro')); ?> <span class="count">(<?php echo $coupons_all_count; ?>)</span></a>
+							<?php endif; ?>
+						</div>
+					</div>
+					<?php
+					if ( $coupons_count >= $limit ) {
+						$coupons_nav = em_admin_paginate( $coupons_count, $limit, $page );
+						echo $coupons_nav;
+					}
+					?>
+				</div>
 				<?php if ( $coupons_count > 0 ) : ?>
 				<table class='widefat'>
 					<thead>
@@ -441,7 +452,8 @@ class EM_Coupons extends EM_Object {
 							<th><?php _e('Code', 'em-pro') ?></th>
 							<th><?php _e('Created By', 'em-pro') ?></th>
 							<th><?php _e('Description', 'em-pro') ?></th>  
-							<th><?php _e('Discount', 'em-pro') ?></th>                
+							<th><?php _e('Discount', 'em-pro') ?></th>   
+							<th><?php _e('Uses', 'em-pro') ?></th>       
 						</tr> 
 					</thead>
 					<tfoot>
@@ -450,27 +462,35 @@ class EM_Coupons extends EM_Object {
 							<th><?php _e('Code', 'em-pro') ?></th>
 							<th><?php _e('Created By', 'em-pro') ?></th>
 							<th><?php _e('Description', 'em-pro') ?></th>  
-							<th><?php _e('Discount', 'em-pro') ?></th>      
+							<th><?php _e('Discount', 'em-pro') ?></th>   
+							<th><?php _e('Uses', 'em-pro') ?></th>
 						</tr>             
 					</tfoot>
 					<tbody>
-						<?php $i = 1; ?>
 						<?php foreach ($coupons as $EM_Coupon) : ?>	
-							<?php if( $i >= $offset && $i <= $offset+$limit ): ?>
-								<tr>
-									<td>
-										<a href='<?php echo admin_url('edit.php?post_type='.EM_POST_TYPE_EVENT.'&amp;page=events-manager-coupons&amp;action=edit&amp;coupon_id='.$EM_Coupon->coupon_id); ?>'><?php echo $EM_Coupon->coupon_name ?></a>
-										<div class="row-actions">
-											<span class="trash"><a class="submitdelete" href="<?php echo add_query_arg(array('coupon_id'=>$EM_Coupon->coupon_id,'action'=>'coupon_delete','_wpnonce'=>wp_create_nonce('coupon_delete_'.$EM_Coupon->coupon_id))) ?>"><?php _e('Delete','em-pro')?></a></span>
-										</div>
-									</td>
-									<td><?php echo esc_html($EM_Coupon->coupon_code); ?></td>
-									<td><a href="<?php echo admin_url('user-edit.php?user_id='.$EM_Coupon->get_person()->ID); ?>"><?php echo $EM_Coupon->get_person()->get_name(); ?></a></td>
-									<td><?php echo esc_html($EM_Coupon->coupon_description); ?></td>  
-									<td><?php echo esc_html($EM_Coupon->coupon_discount); ?></td>                             
-								</tr>
-							<?php endif; ?>
-							<?php $i++; ?> 
+							<tr>
+								<td>
+									<a href='<?php echo admin_url('edit.php?post_type='.EM_POST_TYPE_EVENT.'&amp;page=events-manager-coupons&amp;action=edit&amp;coupon_id='.$EM_Coupon->coupon_id); ?>'><?php echo $EM_Coupon->coupon_name ?></a>
+									<div class="row-actions">
+										<span class="trash"><a class="submitdelete" href="<?php echo add_query_arg(array('coupon_id'=>$EM_Coupon->coupon_id,'action'=>'coupon_delete','_wpnonce'=>wp_create_nonce('coupon_delete_'.$EM_Coupon->coupon_id))) ?>"><?php _e('Delete','em-pro')?></a></span>
+									</div>
+								</td>
+								<td><?php echo esc_html($EM_Coupon->coupon_code); ?></td>
+								<td><a href="<?php echo admin_url('user-edit.php?user_id='.$EM_Coupon->get_person()->ID); ?>"><?php echo $EM_Coupon->get_person()->get_name(); ?></a></td>
+								<td><?php echo esc_html($EM_Coupon->coupon_description); ?></td>  
+								<td><?php echo $EM_Coupon->get_discount_text(); ?></td>            
+								<td>
+									<a href='<?php echo admin_url('edit.php?post_type='.EM_POST_TYPE_EVENT.'&amp;page=events-manager-coupons&amp;action=view&amp;coupon_id='.$EM_Coupon->coupon_id); ?>'>
+									<?php 
+									if( !empty($EM_Coupon->coupon_max) ){
+										echo esc_html($EM_Coupon->get_count() .'/'. $EM_Coupon->coupon_max);
+									}else{
+										echo esc_html($EM_Coupon->get_count() .'/'. __('Unlimited','em-pro'));
+									}
+									?>
+									</a>
+								</td>                 
+							</tr>
 						<?php endforeach; ?>
 					</tbody>
 				</table>
@@ -479,9 +499,131 @@ class EM_Coupons extends EM_Object {
 				<p><?php _e('No coupons have been inserted yet!', 'dbem') ?></p>
 				<?php endif; ?>
 				
-				<?php if ( !empty($coupons_nav) ) echo $coupons_nav; ?>
+				<?php if ( !empty($coupons_nav) ) echo '<div class="tablenav">'. $coupons_nav .'</div>'; ?>
 			</form>
 
+		</div> <!-- wrap -->
+		<?php
+	}
+	
+	function view_page(){
+		global $EM_Notices, $EM_Coupon;
+		global $EM_Notices, $EM_Coupon, $wpdb;
+		$EM_Coupon = ( is_object($EM_Coupon) && get_class($EM_Coupon) == 'EM_Coupon') ? $EM_Coupon : new EM_Coupon();
+		//check that user can access this page
+		if( is_object($EM_Coupon) && !$EM_Coupon->can_manage('edit_locations','edit_others_locations') ){
+			?>
+			<div class="wrap"><h2><?php _e('Unauthorized Access','dbem'); ?></h2><p><?php echo sprintf(__('You do not have the rights to manage this %s.','dbem'),__('coupon','dbem')); ?></p></div>
+			<?php
+			return false;
+		}elseif( !is_object($EM_Coupon) ){
+			$EM_Coupon = new EM_Coupon();
+		}
+		$limit = ( !empty($_GET['limit']) ) ? $_GET['limit'] : 20;//Default limit
+		$page = ( !empty($_GET['pno']) ) ? $_GET['pno']:1;
+		$offset = ( $page > 1 ) ? ($page-1)*$limit : 0;
+		//a bit hacky, but this is the only way at least for now
+		$bookings = $wpdb->get_col('SELECT booking_id FROM '.EM_BOOKINGS_TABLE." WHERE booking_meta LIKE '%{$EM_Coupon->coupon_code}%'");
+		$bookings_count = 0;
+		$EM_Bookings = array();
+		foreach($bookings as $booking_id){ 
+			$EM_Booking = new EM_Booking($booking_id);
+			if( !empty($EM_Booking->booking_meta['coupon']) ){
+				$coupon = new EM_Coupon($EM_Booking->booking_meta['coupon']);
+				if($EM_Coupon->coupon_code == $coupon->coupon_code && $EM_Coupon->coupon_id == $coupon->coupon_id){
+					$bookings_count++;
+					$EM_Bookings[] = $EM_Booking;
+				}
+			}
+		}
+		?>
+		<div class='wrap nosubsub'>
+			<div class="icon32" id="icon-bookings"><br></div>
+			<h2><?php _e('Coupon Useage History','em-pro'); ?></h2>
+			<?php echo $EM_Notices; ?>
+			<p><?php echo sprintf(__('You are viewing the details of coupon %s - <a href="%s">edit</a>','em-pro'),'<code>'.$EM_Coupon->coupon_code.'</code>', add_query_arg(array('action'=>'view'))); ?></p>
+			<p>
+				<strong><?php echo __('Uses', 'em-pro'); ?>:</strong> 
+				<?php
+				if( !empty($EM_Coupon->coupon_max) ){
+					echo esc_html($EM_Coupon->get_count() .' / '. $EM_Coupon->coupon_max);
+				}else{
+					echo esc_html($EM_Coupon->get_count() .'/'. __('Unlimited','em-pro'));
+				}
+				?>
+			</p>
+			<?php if ( $bookings_count >= $limit ) : ?>
+			<div class='tablenav'>
+				<?php 
+				if ( $bookings_count >= $limit ) {
+					$bookings_nav = em_admin_paginate($bookings_count, $limit, $page, array('em_ajax'=>0, 'em_obj'=>'em_bookings_confirmed_table'));
+					echo $bookings_nav;
+				}
+				?>
+				<div class="clear"></div>
+			</div>
+			<?php endif; ?>
+			<div class="clear"></div>
+			<?php if ( $bookings_count > 0 ) : ?>
+			<div class='table-wrap'>
+				<table id='dbem-bookings-table' class='widefat post '>
+					<thead>
+						<tr>
+							<th class='manage-column' scope='col'><?php _e('Event', 'dbem'); ?></th>
+							<th class='manage-column' scope='col'><?php _e('Booker', 'dbem'); ?></th>
+							<th class='manage-column' scope='col'><?php _e('Spaces', 'dbem'); ?></th>
+							<th><?php _e('Original Total Price','em-pro'); ?></th>
+							<th><?php _e('Coupon Discount','em-pro'); ?></th>
+							<th><?php _e('Final Price','em-pro'); ?></th>
+							<th>&nbsp;</th>
+						</tr>
+					</thead>
+					<tfoot>
+						<tr>
+							<th class='manage-column' scope='col'><?php _e('Event', 'dbem'); ?></th>
+							<th class='manage-column' scope='col'><?php _e('Booker', 'dbem'); ?></th>
+							<th class='manage-column' scope='col'><?php _e('Spaces', 'dbem'); ?></th>
+							<th><?php _e('Original Total Price','em-pro'); ?></th>
+							<th><?php _e('Coupon Discount','em-pro'); ?></th>
+							<th><?php _e('Final Price','em-pro'); ?></th>
+							<th>&nbsp;</th>
+						</tr>
+					</tfoot>
+					<tbody>
+						<?php 
+						$rowno = 0;
+						$event_count = 0;
+						foreach($EM_Bookings as $EM_Booking){ 
+							if( ($rowno < $limit || empty($limit)) && ($event_count >= $offset || $offset === 0) ) {
+								$rowno++;
+									?>
+									<tr>
+										<td><?php echo $EM_Booking->output('#_BOOKINGSLINK') ?></td>
+										<td><a href="<?php echo EM_ADMIN_URL; ?>&amp;page=events-manager-bookings&amp;person_id=<?php echo $EM_Booking->person_id; ?>"><?php echo $EM_Booking->person->get_name() ?></a></td>
+										<td><?php echo $EM_Booking->get_spaces() ?></td>
+										<td><?php echo em_get_currency_formatted($EM_Booking->booking_meta['original_price']); ?></td>
+										<td><?php echo em_get_currency_formatted($EM_Booking->booking_meta['original_price'] - $EM_Booking->get_price()); ?> <em>(<?php echo $EM_Coupon->get_discount_text(); ?>)</em></td>
+										<td><?php echo em_get_currency_formatted($EM_Booking->get_price()); ?></td>
+										<td>										
+											<?php
+											$edit_url = em_add_get_params($_SERVER['REQUEST_URI'], array('booking_id'=>$EM_Booking->booking_id, 'em_ajax'=>null, 'em_obj'=>null));
+											?>
+											<?php if( $EM_Booking->can_manage() ): ?>
+											<a class="em-bookings-edit" href="<?php echo $edit_url; ?>"><?php _e('Edit/View','dbem'); ?></a>
+											<?php endif; ?>
+										</td>
+									</tr>
+									<?php
+							}
+							$event_count++;
+						}
+						?>
+					</tbody>
+				</table>
+			</div> <!-- table-wrap -->
+			<?php else: ?>
+			<p><?php _e('Your coupon hasn\'t been used yet!','em-pro'); ?></p>
+			<?php endif; ?>
 		</div> <!-- wrap -->
 		<?php
 	}
@@ -640,9 +782,13 @@ class EM_Coupons extends EM_Object {
 		}
 		//site/event-wide lookups
 		if( !empty($args['sitewide']) ){
-			$conditions['sitewide'] = "coupon_sitewide=1";
-			if( !empty($args['eventwide']) ) $conditions['eventwide'] = "coupon_eventwide=1";
-		}elseif( !empty($args['eventwide']) ){
+			if( !empty($conditions['owner'])){
+				$conditions['owner'] .= " OR coupon_sitewide=1";
+			}else{
+				$conditions['sitewide'] .= "coupon_sitewide=1";
+			}
+		}
+		if( !empty($args['eventwide']) && empty($args['owner']) ){
 			$conditions['eventwide'] = "coupon_eventwide=1";
 		}
 		return apply_filters( 'em_coupons_build_sql_conditions', $conditions, $args );
@@ -656,8 +802,8 @@ class EM_Coupons extends EM_Object {
 	 */
 	function get_default_search( $array = array() ){
 		$defaults = array(
-			'sitewide' => 0,
-			'eventwide' => 0,
+			'sitewide' => 1,
+			'eventwide' => 1,
 		);
 		return apply_filters('em_events_get_default_search', parent::get_default_search($defaults,$array), $array, $defaults);
 	}

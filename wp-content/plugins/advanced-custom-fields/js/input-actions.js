@@ -117,7 +117,7 @@ var acf = {
 				{
 					validation = false;
 				}
-				console.log(validation);
+				//console.log(validation);
 				
 			}
 			
@@ -220,7 +220,7 @@ var acf = {
 	*  @created: 1/03/2011
 	*/
 	
-	$('#poststuff .acf_file_uploader .no_file .button').live('click', function(){
+	$('#poststuff .acf_file_uploader .no-file .button').live('click', function(){
 				
 		// vars
 		var div = $(this).closest('.acf_file_uploader');
@@ -234,7 +234,7 @@ var acf = {
 		return false;
 	});
 		
-	$('#poststuff .acf_file_uploader .file .button').live('click', function(){
+	$('#poststuff .acf_file_uploader .acf-file-delete').live('click', function(){
 		
 		// vars
 		var div = $(this).closest('.acf_file_uploader');
@@ -288,7 +288,7 @@ var acf = {
 	*/
 	
 	// on mouse over, make list sortable
-	$('.acf_relationship').live('mouseenter', function(){
+	$('#poststuff .acf_relationship').live('mouseenter', function(){
 		
 		if($(this).attr('data-is_setup')) return false;
 		
@@ -474,6 +474,18 @@ var acf = {
 	};
 	
 	
+	// create wysiwygs
+	$(document).live('acf/setup_fields', function(e, postbox){
+		
+		if(typeof(tinyMCE) != "object")
+		{
+			return false;
+		}
+		
+		$(postbox).acf_activate_wysiwyg();
+
+	});
+		
 	$(window).load(function(){
 		
 		if(typeof(tinyMCE) != "object")
@@ -487,8 +499,8 @@ var acf = {
 			acf_wysiwyg_buttons.theme_advanced_buttons1 = tinyMCE.settings.theme_advanced_buttons1;
 			acf_wysiwyg_buttons.theme_advanced_buttons2 = tinyMCE.settings.theme_advanced_buttons2;
 		}
-	
-		$('#poststuff').acf_activate_wysiwyg();
+		
+		$(document).trigger('acf/setup_fields', $('#poststuff'));
 		
 		// if editor_mode == html, toggle the html mode button on the default editor
 		if(acf.editor_mode && acf.editor_mode == "html")
@@ -559,15 +571,16 @@ var acf = {
 			update: function(event, ui){
 				update_r_order_numbers(div);
 			},
-			handle: 'td.order',
-			helper: fixHelper
+			items : '> tr',
+			handle: '> td.order',
+			helper: fixHelper,
+			axis: "y" // limit the dragging to up/down only
 		});
 	};
 	
-	
-	$(document).ready(function(){
+	$(document).live('acf/setup_fields', function(e, postbox){
 		
-		$('#poststuff .repeater').each(function(){
+		$(postbox).find('.repeater').each(function(){
 		
 			var div = $(this);
 			var row_limit = parseInt(div.attr('data-row_limit'));
@@ -621,7 +634,8 @@ var acf = {
 		div.children('table').children('tbody').append(new_field); 
 		
 		// activate wysiwyg
-		new_field.acf_activate_wysiwyg();
+		$(document).trigger('acf/setup_fields',new_field);
+		//new_field.acf_activate_wysiwyg();
 	
 		update_r_order_numbers(div);
 		
@@ -629,7 +643,7 @@ var acf = {
 		row_count ++;
 		
 		// disable the add field button if row limit is reached
-		if((row_count+1) >= row_limit)
+		if(row_count >= row_limit)
 		{
 			div.find('#r_add_row').attr('disabled','true');
 		}
@@ -684,7 +698,9 @@ var acf = {
 			update: function(event, ui){
 				update_fc_order_numbers(div);
 			},
-			handle: 'td.order'
+			items : '> table',
+			handle: '> tbody > tr > td.order',
+			axis: "y" // limit the dragging to up/down only
 		});
 	}
 	
@@ -695,12 +711,12 @@ var acf = {
 		if($(this).hasClass('active'))
 		{
 			$(this).removeClass('active');
-			$(this).siblings('.acf_popup').animate({ opacity : 0, bottom : '35px' }, 250);
+			$(this).closest('.table_footer').find('.acf_popup').animate({ opacity : 0, bottom : '35px' }, 250);
 		}
 		else
 		{
 			$(this).addClass('active');
-			$(this).siblings('.acf_popup').css({display : 'block', opacity : 0, bottom : '15px'}).animate({ opacity : 1, bottom : '25px' }, 250);
+			$(this).closest('.table_footer').find('.acf_popup').css({display : 'block', opacity : 0, bottom : '15px'}).animate({ opacity : 1, bottom : '25px' }, 250);
 		}
 	});
 	
@@ -763,7 +779,8 @@ var acf = {
 		div.children('.values').append(new_field); 
 		
 		// activate wysiwyg
-		new_field.acf_activate_wysiwyg();
+		$(document).trigger('acf/setup_fields',new_field);
+		//new_field.acf_activate_wysiwyg();
 		
 		update_fc_order_numbers(div);
 		
@@ -779,9 +796,9 @@ var acf = {
 	});
 	
 	
-	$(document).ready(function(){
+	$(document).live('acf/setup_fields', function(e, postbox){
 		
-		$('#poststuff .acf_flexible_content').each(function(){
+		$(postbox).find('.acf_flexible_content').each(function(){
 
 			// sortable
 			make_fc_sortable($(this));

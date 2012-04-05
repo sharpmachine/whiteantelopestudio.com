@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Events Manager
-Version: 5.1.3
+Version: 5.1.4.3
 Plugin URI: http://wp-events-plugin.com
 Description: Event registration and booking management for WordPress. Recurring events, locations, google maps, rss, ical, booking registration and more!
 Author: Marcus Sykes
@@ -26,11 +26,12 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 // Setting constants
-define('EM_VERSION', 5.081); //self expanatory
-define('EM_PRO_MIN_VERSION', 1.71); //self expanatory
+define('EM_VERSION', 5.144); //self expanatory
+define('EM_PRO_MIN_VERSION', 2.12); //self expanatory
 define('EM_DIR', dirname( __FILE__ )); //an absolute path to this directory
+define('EM_SLUG', plugin_basename( __FILE__ )); //for updates
+
 //EM_MS_GLOBAL
 if( get_site_option('dbem_ms_global_table') && is_multisite() ){
 	define('EM_MS_GLOBAL', true);
@@ -199,7 +200,7 @@ class EM_Scripts_and_Styles {
 	 */
 	function public_enqueue() {
 		//Scripts
-		wp_enqueue_script('events-manager', plugins_url('includes/js/events-manager.js',__FILE__), array('jquery', 'jquery-ui-core','jquery-ui-widget','jquery-ui-position')); //jQuery will load as dependency
+		wp_enqueue_script('events-manager', plugins_url('includes/js/events-manager.js',__FILE__), array('jquery', 'jquery-ui-core','jquery-ui-widget','jquery-ui-position','jquery-ui-sortable')); //jQuery will load as dependency
 		//Styles
 		wp_enqueue_style('events-manager', plugins_url('includes/css/events_manager.css',__FILE__)); //main css
 	}
@@ -209,15 +210,8 @@ class EM_Scripts_and_Styles {
 	 */
 	function localize_script(){
 		global $em_localized_js;
-		//Localise vars regardless
+		$show24Hours = get_option('dbem_time_24h');
 		$locale_code = substr ( get_locale(), 0, 2 );
-		if (preg_match('/^en_(?:GB|IE|AU|NZ|ZA|TT|JM)$/', WPLANG)) {
-		    $locale_code = 'en-GB';
-		}
-		//Set time
-		$show24Hours = ( !preg_match("/en|sk|zh|us|uk/", $locale_code ) );	// Setting 12 hours format for those countries using it
-		//Maps Source
-		$is_ss = is_ssl() ? 'https://maps.google.com/maps/api/js?v=3.4&sensor=false&callback=em_maps':'http://maps.google.com/maps/api/js?v=3.4&callback=em_maps&sensor=false';
 		//Localize
 		$em_localized_js = array(
 			'ajaxurl' => admin_url('admin-ajax.php'),
@@ -230,11 +224,16 @@ class EM_Scripts_and_Styles {
 			'show24hours' => $show24Hours,
 			'is_ssl' => is_ssl()
 		);
-		$em_localized_js['event_reschedule_warning'] = __('Are you sure you want to reschedule this recurring event? If you do this, you will lose all booking information and the old recurring events will be deleted.', 'dbem');
-		$em_localized_js['disable_bookings_warning'] = __('Are you sure you want to disable bookings? If you do this and save, you will lose all previous bookings. If you wish to prevent further bookings, reduce the number of spaces available to the amount of bookings you currently have', 'dbem');
-		$em_localized_js['event_detach_warning'] = __('Are you sure you want to detach this event? By doing so, this event will be independent of the recurring set of events.', 'dbem');
-		$delete_text = ( !EMPTY_TRASH_DAYS ) ? __('This cannot be undone.','dbem'):__('All events will be moved to trash.','dbem');
-		$em_localized_js['delete_recurrence_warning'] = __('Are you sure you want to delete all recurrences of this event?', 'dbem').' '.$delete_text;
+		//logged in messages that visitors shouldn't need to see
+		if( is_user_logged_in() ){
+			$em_localized_js['event_reschedule_warning'] = __('Are you sure you want to reschedule this recurring event? If you do this, you will lose all booking information and the old recurring events will be deleted.', 'dbem');
+			$em_localized_js['disable_bookings_warning'] = __('Are you sure you want to disable bookings? If you do this and save, you will lose all previous bookings. If you wish to prevent further bookings, reduce the number of spaces available to the amount of bookings you currently have', 'dbem');
+			$em_localized_js['event_detach_warning'] = __('Are you sure you want to detach this event? By doing so, this event will be independent of the recurring set of events.', 'dbem');
+			$delete_text = ( !EMPTY_TRASH_DAYS ) ? __('This cannot be undone.','dbem'):__('All events will be moved to trash.','dbem');
+			$em_localized_js['delete_recurrence_warning'] = __('Are you sure you want to delete all recurrences of this event?', 'dbem').' '.$delete_text;
+			$em_localized_js['booking_warning_cancel'] = get_option('dbem_booking_warning_cancel');
+		}
+		//load admin/public only vars
 		if( is_admin() ){
 			$em_localized_js['event_post_type'] = EM_POST_TYPE_EVENT;
 			$em_localized_js['location_post_type'] = EM_POST_TYPE_LOCATION;
@@ -531,11 +530,21 @@ function em_rss_pubdate_change($result){
 }
 add_filter('em_event_save', 'em_rss_pubdate_change', 10,1);
 
+function em_admin_bar_mod($wp_admin_bar){
+	$wp_admin_bar->add_menu( array(
+		'parent' => 'network-admin',
+		'id'     => 'network-admin-em',
+		'title'  => __( 'Events Manager','dbem' ),
+		'href'   => network_admin_url('admin.php?page=events-manager-options'),
+	) );
+}
+add_action( 'admin_bar_menu', 'em_admin_bar_mod', 21 );
+
+
 function em_activate() {
 	update_option('dbem_flush_needed',1);
 }
 register_activation_hook( __FILE__,'em_activate');
-
 
 /* Creating the wp_events table to store event data*/
 function em_deactivate() {

@@ -1,21 +1,106 @@
 (function($){
 
-	/*----------------------------------------------------------------------
-	*
-	*	Exists
-	*
-	*---------------------------------------------------------------------*/
+	/*
+	*  Exists
+	*  
+	*  @since			3.1.6
+	*  @description		returns true or false on a element's existance
+	*/
 	
 	$.fn.exists = function()
 	{
 		return $(this).length>0;
 	};
-
+	
+	
+	/*
+	*  uniqid
+	*  
+	*  @since			3.1.6
+	*  @description		Returns a unique ID (secconds of time)
+	*/
+	
 	function uniqid()
     {
     	var newDate = new Date;
     	return newDate.getTime();
     }
+	
+	
+	/*
+	*  Place Confirm message on Publish trash button
+	*  
+	*  @since			3.1.6
+	*  @description		
+	*/
+	
+	$('#submit-delete').live('click', function(){
+			
+		var response = confirm(acf_messages.move_to_trash);
+		if(!response)
+		{
+			return false;
+		}
+		
+	});
+	
+	
+	/*
+	*  acf/update_field_options
+	*  
+	*  @since			3.1.6
+	*  @description		Load in the opions html
+	*/
+	
+	$('#acf_fields tr.field_type select').live('change', function(){
+		
+		var tbody = $(this).closest('tbody');
+
+		// show field options if they already exist
+		if(tbody.children('tr.field_option_'+$(this).val()).exists())
+		{
+			// hide + disable options
+			tbody.children('tr.field_option').hide().find('[name]').attr('disabled', 'true');
+			
+			// show and enable options
+			tbody.children('tr.field_option_'+$(this).val()).show().find('[name]').removeAttr('disabled');
+		}
+		else
+		{
+			// add loading gif
+			var tr = $('<tr"><td class="label"></td><td><div class="acf-loading"></div></td></tr>');
+			
+			// hide current options
+			tbody.children('tr.field_option').hide().find('[name]').attr('disabled', 'true');
+			
+			// append tr
+			tbody.children('tr.field_save').before(tr);
+			
+			var ajax_data = {
+				action : "acf_field_options",
+				post_id : $('#post_ID').val(),
+				field_key : $(this).attr('name'),
+				field_type : $(this).val()
+			};
+			
+			$.ajax({
+				url: ajaxurl,
+				data: ajax_data,
+				type: 'post',
+				dataType: 'html',
+				success: function(html){
+
+					tr.replaceWith(html);
+					
+				}
+			});
+		}
+		
+		
+		
+	});
+	
+	
 	
 	/*----------------------------------------------------------------------
 	*
@@ -139,32 +224,7 @@
 		});
 		
 		
-		// show field type options
-		$('#acf_fields tr.field_type select').live('change', function(){
-			
-			var tbody = $(this).closest('tbody');
-			var type = $(this).val();
-			
-			tbody.children('tr.field_option').hide();
-			tbody.children('tr.field_option').find('[name]').attr('disabled', 'true');
-			
-			var tr = tbody.children('tr.field_option_'+type);
-			tr.find('[name]').removeAttr('disabled');
-			
-			var tr_top = tbody.children('tr.field_type');
-			
-			tr.insertAfter(tr_top);
-			tr.show();
-			
-			// firefox radio button fix
-			tr.find('input[type="radio"][data-checked="checked"]').each(function(){
-				
-				$(this).removeAttr('checked').attr('checked', 'checked');
-				
-			});
-			
-			
-		}).trigger('change');
+	
 		
 		
 		// Add Field Button
@@ -281,7 +341,9 @@
 				update: function(event, ui){
 					update_order_numbers();
 				},
-				handle: 'td.field_order'
+				handle: 'td.field_order',
+				axis: "y",
+				revert: true
 			});
 		});
 		
@@ -296,45 +358,64 @@
 	
 	function setup_rules()
 	{
-		var tbody = $('table#location_rules tbody');
+		// vars
+		var location_rules = $('table#location_rules');
+		
+		
+		// does it have options?
+		if(!location_rules.find('td.param select option[value="options_page"]').exists())
+		{
+			location_rules.find('td.param select').append('<option value="options_page" disabled="true">Options Page (Unlock field with activation code)</option>');
+				
+		}
 		
 		
 		// show field type options
-		tbody.find('td.param select').live('change', function(){
+		location_rules.find('td.param select').live('change', function(){
 			
-			var tr = $(this).closest('tr');
-			var val = $(this).val();
-			
-			
-			// does it have options?
-			if(!$(this).find('option[value="options_page"]').exists())
-			{
-				//console.log('select: '+type+'. parent length: '+$(this).closest('.repeater').length);
-				$(this).append('<option value="options_page" disabled="true">Options Page (Unlock field with activation code)</option>');
-				
-			}
+			// vars
+			var tr = $(this).closest('tr'); 
+			var key = $(this).attr('name').split("]["); key = key[1];
+			var ajax_data = {
+				'action' : "acf_location",
+				'key' : key,
+				'value' : '',
+				'param' : $(this).val()
+			};
 			
 			
-			tr.find('td.value div').hide();
-			tr.find('td.value div [name]').attr('disabled', 'true');
+			// add loading gif
+			var div = $('<div class="acf-loading"></div>');
+			tr.find('td.value').html(div);
 			
-			tr.find('td.value div[rel="'+val+'"]').show();
-			tr.find('td.value div[rel="'+val+'"] [name]').removeAttr('disabled');
 			
-		}).trigger('change');
+			// load location html
+			$.ajax({
+				url: ajaxurl,
+				data: ajax_data,
+				type: 'post',
+				dataType: 'html',
+				success: function(html){
+
+					div.replaceWith(html);
+
+				}
+			});
+			
+			
+		});
 		
 		
 		// Add Button
-		tbody.find('td.buttons a.add').live('click',function(){
+		location_rules.find('td.buttons a.add').live('click',function(){
 
-			var tr_count = $(this).closest('tbody').children('tr').length;
 			var tr = $(this).closest('tr').clone();
 			
-			tr.insertAfter($(this).closest('tr'));
+			$(this).closest('tr').after(tr);
 			
-			update_names();
+			update_location_names();
 			
-			can_remove_more();
+			location_rules.find('td.buttons a.remove').removeClass('disabled');
 					
 			return false;
 			
@@ -342,39 +423,33 @@
 		
 		
 		// Remove Button
-		tbody.find('td.buttons a.remove').live('click',function(){
+		location_rules.find('td.buttons a.remove').live('click',function(){
+			
+			if($(this).hasClass('disabled'))
+			{
+				return false;
+			}
 			
 			var tr = $(this).closest('tr').remove();
 			
-			can_remove_more();
+			if(location_rules.find('tr').length <= 1)
+			{
+				location_rules.find('td.buttons a.remove').addClass('disabled');
+			}
 			
 			return false;
 			
 		});
 		
-		function can_remove_more()
+		if(location_rules.find('tr').length <= 1)
 		{
-			if(tbody.children('tr').length == 1)
-			{
-				tbody.children('tr').each(function(){
-					$(this).find('td.buttons a.remove').addClass('disabled');
-				});
-			}
-			else
-			{
-				tbody.children('tr').each(function(){
-					$(this).find('td.buttons a.remove').removeClass('disabled');
-				});
-			}
-			
+			location_rules.find('td.buttons a.remove').addClass('disabled');
 		}
 		
-		can_remove_more();
-		
-		function update_names()
+		function update_location_names()
 		{
-			tbody.children('tr').each(function(i){
-			
+			location_rules.find('tr').each(function(i){
+
 				$(this).find('[name]').each(function(){
 				
 					var name = $(this).attr('name').split("][");
@@ -397,12 +472,9 @@
 	
 	$(document).ready(function(){
 		
-		// firefox radio button bug (fixed on line 152)
-		//if($.browser.mozilla) $("form").attr("autocomplete", "off");
-	
-		
-		// add active to Settings Menu
-		//$('#adminmenu #menu-settings').removeClass('wp-not-current-submenu').addClass('current wp-menu-open wp-has-current-submenu');
+		// custom Publish metabox
+		$('#submitdiv #publish').attr('class', 'acf-button');
+		$('#submitdiv a.submitdelete').attr('class', 'acf-button grey').attr('id', 'submit-delete');
 		
 		// setup fields
 		setup_fields();
@@ -418,13 +490,6 @@
 	*  @created: 3/03/2011
 	*/
 	
-	function uniqid()
-    {
-    	var newDate = new Date;
-    	return newDate.getTime();
-    }
-    
-
 	/*----------------------------------------------------------------------
 	*
 	*	Add Layout Option
@@ -463,7 +528,9 @@
 		
 		// add drag / drop
 		new_tr.find('.fields').sortable({
-			handle: 'td.field_order'
+			handle: 'td.field_order',
+			axis: "y",
+			revert: true
 		});
 		
 		return false;
@@ -517,7 +584,9 @@
 			items: ".field_option_flexible_content",
 			handle: 'a.acf_fc_reorder',
 			helper: fixHelper,
-			placeholder: "ui-state-highlight"
+			placeholder: "ui-state-highlight",
+			axis: "y",
+			revert: true
 		});
 		
 	});

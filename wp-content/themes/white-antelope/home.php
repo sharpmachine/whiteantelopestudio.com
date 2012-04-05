@@ -1,12 +1,8 @@
 <?php get_header(); ?>
 
 		<section id="page">
-
-			
-			
 			<div class="col-240">
 				<div class="small-box">
-					
 				</div>
 				<a href="<?php bloginfo('url'); ?>/blog">
 					<div class="small-box menu-box">
@@ -30,7 +26,6 @@
 					</div>
 				</a>
 			</div>
-			
 			<div class="col-240">
 				<a href="<?php bloginfo('url'); ?>/events">
 					<div class="small-box menu-box">
@@ -105,6 +100,4 @@
 			</div>
 		<div class="clear"></div>
 		</section><!-- #page -->
-
-
 <?php get_footer(); ?>

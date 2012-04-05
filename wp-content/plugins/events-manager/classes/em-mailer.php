@@ -28,7 +28,35 @@ class EM_Mailer {
 		}else{
 			$emails_ok = is_email($receiver);
 		}
-		if( $emails_ok ){
+		if ( $emails_ok && get_option('dbem_rsvp_mail_send_method') == 'wp_mail' ){
+			$from = get_option('dbem_mail_sender_address');
+			$headers = get_option('dbem_mail_sender_name') ? 'From: '.get_option('dbem_mail_sender_name').' <'.$from.'>':'From: '.$from;
+			if( get_option('dbem_smtp_html') ){ //create filter to change content type to html in wp_mail
+				add_filter('wp_mail_content_type',create_function('', 'return "text/html";'));
+			}
+			$send = wp_mail($receiver, $subject, $body, $headers);
+			if(!$send){
+				global $phpmailer;
+				$this->errors[] = $phpmailer->ErrorInfo;
+			}
+			return $send;
+		}elseif ( $emails_ok && get_option('dbem_rsvp_mail_send_method') == 'mail' ){
+			if(is_array($receiver)){
+				$receiver = implode(', ', $receiver);
+			}
+			$headers = '';
+			if( get_option('dbem_smtp_html') ){
+				$headers  = 'MIME-Version: 1.0' . "\r\n";
+				$headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
+			}
+			$from = get_option('dbem_mail_sender_address');
+			$headers .= get_option('dbem_mail_sender_name') ? 'From: '.get_option('dbem_mail_sender_name').' <'.$from.'>':'From: '.$from;
+			$send = mail($receiver, $subject, $body, $headers);
+			if(!$send){
+				$this->errors = __('Could not send email.', 'dbem');
+			}
+			return $send;
+		}elseif( $emails_ok ){
 			$this->load_phpmailer();
 			$mail = new EM_PHPMailer();
 			//$mail->SMTPDebug = true;
@@ -58,27 +86,18 @@ class EM_Mailer {
 			}
 		
 			//Protocols
-			if ( get_option('dbem_rsvp_mail_send_method') == 'wp_mail' ){
-				$mail->Mailer = 'wp_mail';
-				$send = wp_mail($receiver, $subject, $body);
-				if(!$send){
-					global $phpmailer;
-					$this->errors[] = $phpmailer->ErrorInfo;
-				}
-			}else{
-			 	if( get_option('dbem_rsvp_mail_send_method') == 'qmail' ){       
-					$mail->IsQmail();
-				}else {
-					$mail->Mailer = get_option('dbem_rsvp_mail_send_method');
-				}                     
-				if(get_option('dbem_rsvp_mail_SMTPAuth') == '1'){
-					$mail->SMTPAuth = TRUE;
-			 	}
-			 	$send = $mail->Send();
-				if(!$send){
-					$this->errors[] = $mail->ErrorInfo;
-				}  
-			}		
+		 	if( get_option('dbem_rsvp_mail_send_method') == 'qmail' ){       
+				$mail->IsQmail();
+			}else {
+				$mail->Mailer = get_option('dbem_rsvp_mail_send_method');
+			}                     
+			if(get_option('dbem_rsvp_mail_SMTPAuth') == '1'){
+				$mail->SMTPAuth = TRUE;
+		 	}
+		 	$send = $mail->Send();
+			if(!$send){
+				$this->errors[] = $mail->ErrorInfo;
+			}
 			return $send;
 		}else{
 			$this->errors = __('Please supply a valid email format.', 'dbem');

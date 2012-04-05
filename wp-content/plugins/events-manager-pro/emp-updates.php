@@ -38,13 +38,6 @@ class EM_Updates {
 				</div>
 				<?php
 			}
-			if( !empty($_REQUEST['page']) && 'events-manager-options' == $_REQUEST['page'] && get_option('dbem_pro_dev_updates') == 1 ){
-				?>
-				<div id="message" class="updated">
-					<p><?php echo sprintf(__('Dev Mode active: Just a friendly reminder that you are updating to development versions. Only admins see this message, and it will go away when you disable this <a href="#pro-api">here</a> in your settings.','em-pro'),'<code>define(\'EMP_DEV_UPDATES\',true);</code>'); ?></p>
-				</div>
-				<?php
-			}
 		}
 	}
 	
@@ -61,8 +54,8 @@ class EM_Updates {
 				//save api key either way
 				if( self::check_api_key(true) ){
 					//force recheck of plugin updates, to refresh dl links
-					delete_transient('site_transient_update_plugins');
-					delete_site_transient('site_transient_update_plugins');
+					delete_transient('update_plugins');
+					delete_site_transient('update_plugins');
 				}
 			}
 		}
@@ -95,8 +88,8 @@ class EM_Updates {
 						}
 						?>
 					<?php endif; ?>
-					<?php em_options_radio_binary ( __( 'Try Development Mode?', 'em-pro' ), 'dbem_pro_dev_updates', __( 'Select yes if you would like to check for the latest development version of the pro plugin rather than stable updates. <strong>Warning:</strong> Development versions are not always fully tested before release, use wisely!','em-pro' ) ); ?>
 				</table>
+				<p><em><?php _e('looking for dev mode options? we moved it into <em>Admin Tools</em>','em-pro')?></em></p>
 			</div> <!-- . inside -->
 			</div> <!-- .postbox -->
 		<?php
@@ -166,7 +159,7 @@ class EM_Updates {
 			    	'api_key' => trim(get_option('dbem_pro_api_key'))
 			    );		
 			    //request the latest dev version
-			    if( (defined('EMP_DEV_UPDATES') && EMP_DEV_UPDATES) || get_option('dbem_pro_dev_updates') == 1 ){
+			    if( (defined('EMP_DEV_UPDATES') && EMP_DEV_UPDATES) || get_option('dbem_pro_dev_updates') || get_option('em_check_dev_version') ){
 			    	$args['dev_version'] = 1;
 			    }	    
 			    // Send request checking for an update
@@ -188,7 +181,6 @@ class EM_Updates {
 
 	//latest version
 	function check( $transient ) {
-	
 	    // Check if the transient contains the 'checked' information
 	    // If no, just return its value without hacking it
 	    if( empty( $transient->checked ) )
@@ -205,7 +197,7 @@ class EM_Updates {
 	    	'api_key' => trim(get_option('dbem_pro_api_key'))
 	    );	
 	    //request the latest dev version
-	    if( (defined('EMP_DEV_UPDATES') && EMP_DEV_UPDATES) || get_option('dbem_pro_dev_updates') == 1 ){
+	    if( (defined('EMP_DEV_UPDATES') && EMP_DEV_UPDATES) || get_option('dbem_pro_dev_updates') || get_option('em_check_dev_version') ){
 	    	$args['dev_version'] = 1;
 	    }	
 	    
@@ -213,7 +205,7 @@ class EM_Updates {
 	    $response = self::request( $args );
 	    
 	    // If response is false, don't alter the transient
-	    if( self::check_response($response) && $response->new_version > $transient->checked[EMP_SLUG] ) {
+	    if( self::check_response($response) && version_compare($transient->checked[EMP_SLUG], $response->new_version) < 0) {
 	        $transient->response[EMP_SLUG] = $response;
 	    }
 	    

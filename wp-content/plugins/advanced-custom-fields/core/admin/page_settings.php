@@ -166,7 +166,7 @@ if($action == ""):
 					<li><?php _e("ACF will create a .xml export file which is compatible with the native WP import plugin.",'acf'); ?></li>
 				</ul>
 				<ul class="hl right">
-					<li><input type="submit" class="button-primary" value="<?php _e("Export XML",'acf'); ?>" /></li>
+					<li><input type="submit" class="acf-button" value="<?php _e("Export XML",'acf'); ?>" /></li>
 				</ul>
 			</div>
 		</div>
@@ -233,7 +233,7 @@ if($action == ""):
 					<li><?php _e("ACF will create the PHP code to include in your theme",'acf'); ?></li>
 				</ul>
 				<ul class="hl right">
-					<li><input type="submit" class="button-primary" value="<?php _e("Create PHP",'acf'); ?>" /></li>
+					<li><input type="submit" class="acf-button" value="<?php _e("Create PHP",'acf'); ?>" /></li>
 				</ul>
 			</div>
 		</div>
@@ -318,6 +318,7 @@ if(function_exists("register_field_group"))
 			foreach($acfs as $acf)
 			{
 				$var = array(
+					'id' => uniqid(),
 					'title' => get_the_title($acf->ID),
 					'fields' => $this->get_acf_fields($acf->ID),
 					'location' => $this->get_acf_location($acf->ID),

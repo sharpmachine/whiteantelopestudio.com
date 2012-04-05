@@ -529,6 +529,8 @@ function em_add_options() {
 			'dbem_bookings_form_msg_attending'=>__('You are currently attending this event.','dbem'),
 			'dbem_bookings_form_msg_bookings_link'=>__('Manage my bookings','dbem'),
 			//messages
+			'dbem_booking_warning_cancel' => __('Are you sure you want to cancel your booking?','dbem'),
+			'dbem_booking_feedback_cancelled' =>sprintf(__('Booking %s','dbem'), __('Cancelled','dbem')),
 			'dbem_booking_feedback_pending' =>__('Booking successful, pending confirmation (you will also receive an email once confirmed).', 'dbem'),
 			'dbem_booking_feedback' => __('Booking successful.', 'dbem'),
 			'dbem_booking_feedback_full' => __('Booking cannot be made, not enough spaces available!', 'dbem'),
@@ -639,6 +641,16 @@ function em_add_options() {
 		update_option('dbem_taxonomy_tag_slug', $events_page->post_name.'/tags');
 		if( defined('EM_LOCATIONS_SLUG') && EM_LOCATIONS_SLUG != 'locations' ) update_option('dbem_cp_locations_slug', EM_LOCATIONS_SLUG);
 		if( defined('EM_CATEGORIES_SLUG') && EM_CATEGORIES_SLUG != 'categories' ) update_option('dbem_taxonomy_category_slug', $events_page->post_name.'/'.EM_CATEGORIES_SLUG);
+	}
+	if( get_option('dbem_time_24h','not set') == 'not set'){
+		//Localise vars regardless
+		$locale_code = substr ( get_locale(), 0, 2 );
+		if (preg_match('/^en_(?:GB|IE|AU|NZ|ZA|TT|JM)$/', WPLANG)) {
+		    $locale_code = 'en-GB';
+		}
+		//Set time
+		$show24Hours = ( !preg_match("/en|sk|zh|us|uk/", $locale_code ) );	// Setting 12 hours format for those countries using it
+		update_option('dbem_time_24h', $show24Hours);
 	}
 }
 

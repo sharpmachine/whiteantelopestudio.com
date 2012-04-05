@@ -193,9 +193,8 @@ function em_docs_init($force_init = false){
 							'#_LOCATIONEXCERPT' => array( 'desc' => 'If you added a <a href="http://en.support.wordpress.com/splitting-content/more-tag/">more tag</a> to your location description, only the content before this tag will show (currently, no read more link is added).' ),
 							'#_LOCATIONIMAGE' => array( 'desc' => 'Shows the location image.' ),
 							'#_LOCATIONIMAGE{x,y}' => array( 'desc' => 'Shows the location image thumbnail, x and y are width and height respectively, both being numbers e.g. <code>#_LOCATIONIMAGE{100,100}</code>' ),
-							'#_LOCATIONIMAGEURL' => array( 'desc' => 'Shows the cattegory image url, if available.' ),
+							'#_LOCATIONIMAGEURL' => array( 'desc' => 'Shows the location image url, if available.' ),
 							'#_LOCATIONFULLLINE' => array( 'desc' => 'Shows a comma-seperated line of location information, ommitting blanks (format of address, town, state, postcode, region' ),
-							'#_LOCATIONFULLBR' => array( 'desc' => 'Shows the cattegory image url, if available.' ),
 							'#_LOCATIONFULLBR' => array( 'desc' => 'Shows a line-break (br tag) seperated location information, ommitting blanks (format of address, town, state, postcode, region' ),
 						)
 					),
@@ -229,6 +228,7 @@ function em_docs_init($force_init = false){
 					'Booking Person Information' => array(
 						'desc' => 'When a specific booking is displayed (on screen and on email), you can use these placeholders to show specific information about the booking. Event and Location placeholders are also available in these cases.',
 						'placeholders' => array(
+							'#_BOOKINGID' => array( 'desc' => 'The unique ID of this booking, useful if you are making your own customizations to this plugin.' ),
 							'#_BOOKINGNAME' => array( 'desc' => 'Name of person who made the booking.' ),
 							'#_BOOKINGEMAIL' => array( 'desc' => 'Email of person who made the booking.' ),
 							'#_BOOKINGPHONE' => array( 'desc' => 'Phone number of person who made the booking.' ),

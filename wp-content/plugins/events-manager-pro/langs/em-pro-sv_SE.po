@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Events Manager Pro v1.321\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2011-09-29 19:39+0100\n"
-"Last-Translator: Marcus Sykes <noreply@wp-events-plugin.com>\n"
+"PO-Revision-Date: 2011-11-17 00:56+0100\n"
+"Last-Translator: Tommy Wahlund\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -659,18 +659,18 @@ msgstr "Som standard så blir en bokning automatiskt bekräftad när en betalnin
 #: emp-install.php:83
 #: emp-install.php:84
 msgid "Booking successful."
-msgstr ""
+msgstr "Bokningen lyckades."
 
 # @ em-pro
 #: emp-updates.php:24
-#, fuzzy, php-format
+#, php-format
 msgid "To access automatic updates, you must update your <a href=\"%s\">Membership Key</a> for Events Mananager Pro <a href=\"#pro-api\">here</a>. Only admins see this message."
-msgstr "Uppdatera din <a href=\"%s\">Medlemsnyckel (Membership Key)</a> för Events Mananager Pro <a href=\"%s\">här</a> för att slippa detta meddelande."
+msgstr "Uppdatera din <a href=\"%s\">Medlemsnyckel (Membership Key)</a> för Events Manager Pro <a href=\"#pro-api\">här</a> för att slippa detta meddelande. Endast administratörer ser detta meddelande."
 
 # @ em-pro
 #: events-manager-pro.php:78
 msgid "Please make sure you install Events Manager as well. You can search and install this plugin from your plugin installer or download it <a href=\"http://wordpress.org/extend/plugins/events-manager/\">here</a>."
-msgstr ""
+msgstr "Se till att du installerar Events Manager också. Du kan söka och installera detta plugin från din pluginsida eller ladda ner det <a href=\"http://wordpress.org/extend/plugins/events-manager/\">här</ a>."
 
 #: gateways/gateway.offline.php:312
 #: gateways/gateway.paypal.php:255
@@ -680,47 +680,44 @@ msgstr "Lyckat-meddelande"
 # @ em-pro
 #: gateways/gateway.offline.php:315
 msgid "The message that is shown to a user when a booking with offline payments is successful."
-msgstr ""
+msgstr "Det meddelande som visas för en användare när en bokning med offlinebetalningar lyckats."
 
 #: gateways/gateway.paypal.php:253
-#, fuzzy
 msgid "Success Messages"
-msgstr "Lyckat-meddelande"
+msgstr "Framgångsmeddelande"
 
 # @ em-pro
 #: gateways/gateway.paypal.php:258
 msgid "The message that is shown to a user when a booking is successful whilst being redirected to PayPal for payment."
-msgstr ""
+msgstr "Det meddelande som visas för en användare när en bokning är framgångsrik och hon omdirigeras till PayPal för betalning."
 
 #: gateways/gateway.paypal.php:262
-#, fuzzy
 msgid "Success Free Message"
-msgstr "Lyckat-meddelande"
+msgstr "Framgångsmeddelande (Gratis)"
 
 # @ em-pro
 #: gateways/gateway.paypal.php:265
 msgid "If some cases if you allow a free ticket (e.g. pay at gate) as well as paid tickets, this message will be shown and the user will not be redirected to PayPal."
-msgstr ""
+msgstr "I vissa fall om du tillåter en gratis biljett (t ex betala i dörren) samt betalda biljetter kommer detta meddelande att visas och användaren kommer inte att omdirigeras till PayPal."
 
 # @ em-pro
 #: emp-updates.php:38
-#, fuzzy
 msgid "Dev Mode active: Just a friendly reminder that you are updating to development versions. Only admins see this message, and it will go away when you disable this <a href=\"#pro-api\">here</a> in your settings."
-msgstr "Utvecklingsläge (Dev Mode) aktiverat: Bara en vänlig påminnelse om att du har lagt till %s i din wp-config.php fil. Endast administratörer ser detta meddelande, och det kommer att försvinna när du tar bort den raden."
+msgstr "Utvecklingsläge (Dev Mode) aktiverat: Bara en vänlig påminnelse om att du nu uppdaterar till utvecklingsversionerl. Endast administratörer ser detta meddelande, och det kommer att försvinna när du avaktiverar det <a href=\"#pro-api\">här</a> i dina inställningar."
 
 # @ dbem
 #: emp-updates.php:88
 msgid "Try Development Mode?"
-msgstr ""
+msgstr "Testa Utvecklingsläget?"
 
 # @ dbem
 #: emp-updates.php:88
 msgid "Select yes if you would like to check for the latest development version rather than stable updates. <strong>Warning:</strong> Development versions are not always fully tested before release, use wisely!"
-msgstr ""
+msgstr "Välj Ja om du vill söka efter den senaste utvecklingsversionen istället för de stabila uppdateringarna. <strong>Varning:</ strong> Utvecklingsversioner är inte alltid helt testade innan release, använd klokt!"
 
 # @ em-pro
 #: gateways/gateway.paypal.php:250
 #, php-format
 msgid "Approvals must also be required for all bookings in your <a href=\"%s\">settings</a> for this to work properly."
-msgstr ""
+msgstr "Godkännanden måste också vara aktiverat för alla bokningar i dina <a href=\"%s\">inställningar</ a> för att detta ska fungera."
 

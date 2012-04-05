@@ -8,6 +8,8 @@ class EM_Gateways {
 	 */
 	
 	function init(){
+		//add to booking interface (menu options, booking statuses)
+		add_action('em_bookings_table',array('EM_Gateways','em_bookings_table'),10,1);
 		//WP_Query/Rewrite
 		add_filter('rewrite_rules_array',array('EM_Gateways','rewrite_rules_array'));
 		add_filter('query_vars',array('EM_Gateways','query_vars'));			
@@ -27,6 +29,18 @@ class EM_Gateways {
 			add_filter('em_booking_form_buttons', array('EM_Gateways','booking_form_buttons'),10,2); //Replace button with booking buttons
 			//new way, with payment selector
 			add_action('em_booking_form_footer', array('EM_Gateways','booking_form_footer'),10,2);
+	}
+	
+	function em_bookings_table($EM_Bookings_Table){
+		$EM_Bookings_Table->statuses['awaiting-online'] = array('label'=>__('Awaiting Online Payment','em-pro'), 'search'=>4);
+		$EM_Bookings_Table->statuses['awaiting-payment'] = array('label'=>__('Awaiting Offline Payment','em-pro'), 'search'=>5);
+		$EM_Bookings_Table->statuses['needs-attention']['search'] = array(0,4,5);
+		if( !get_option('dbem_bookings_approval') ){
+			$EM_Bookings_Table->statuses['needs-attention']['search'] = array(5);
+		}else{
+			$EM_Bookings_Table->statuses['needs-attention']['search'] = array(0,5);
+		}
+		$EM_Bookings_Table->status = ( !empty($_REQUEST['status']) && array_key_exists($_REQUEST['status'], $EM_Bookings_Table->statuses) ) ? $_REQUEST['status']:get_option('dbem_default_bookings_search','needs-attention');
 	}
 
 	function register_gateway($gateway, $class) {
@@ -145,7 +159,7 @@ class EM_Gateways {
 				if( count($active_gateways) > 1 ){
 				?>
 				<p class="em-booking-gateway" id="em-booking-gateway">
-					<label><?php _e('Pay With','dbem')?></label>
+					<label><?php echo get_option('dbem_gateway_label'); ?></label>
 					<select name="gateway">
 					<?php
 					foreach($active_gateways as $gateway => $active_val){
@@ -203,7 +217,10 @@ class EM_Gateways {
 			<div class="handlediv" title="<?php __('Click to toggle', 'dbem'); ?>"><br /></div><h3 class='hndle'><span><?php _e ( 'Payment Gateway General Settings', 'em-pro' ); ?> </span></h3>
 			<div class="inside">
 				<table class='form-table'>
-					<?php em_options_radio_binary ( __( 'Enable Quick Pay Buttons?', 'dbem' ), 'dbem_gateway_use_buttons', sprintf(__( 'Only works with gateways that do not require additional payment information to be submitted (e.g. PayPal and Offline payments). If enabled, the default booking form submit button is not used, and each gateway will have a button (or image, see <a href="%s">individual gateway settings</a>) which if clicked on will submit a booking for that gateway.','em-pro' ),admin_url('edit.php?post_type='.EM_POST_TYPE_EVENT.'&page=events-manager-gateways')) ); ?>
+					<?php 
+						em_options_radio_binary ( __( 'Enable Quick Pay Buttons?', 'em-pro' ), 'dbem_gateway_use_buttons', sprintf(__( 'Only works with gateways that do not require additional payment information to be submitted (e.g. PayPal and Offline payments). If enabled, the default booking form submit button is not used, and each gateway will have a button (or image, see <a href="%s">individual gateway settings</a>) which if clicked on will submit a booking for that gateway.','em-pro' ),admin_url('edit.php?post_type='.EM_POST_TYPE_EVENT.'&page=events-manager-gateways')) );
+						em_options_input_text(__('Gateway Label','em-pro'),'dbem_gateway_label', __('If you are not using quick pay buttons a drop-down menu will be used, with this label.','em-pro'));
+					?>
 				</table>
 			</div> <!-- . inside -->
 			</div> <!-- .postbox -->

@@ -25,7 +25,7 @@ class EM_Gateway_Offline extends EM_Gateway {
 		if($this->is_active()) { //only if active
 			//Bookings Table
 			add_filter('em_bookings_table_booking_actions_5', array(&$this,'bookings_table_actions'),1,2);
-			add_filter('em_bookings_table_footer', array(&$this,'bookings_table_footer'),1,2);
+			add_filter('em_wp_localize_script', array(&$this,'em_wp_localize_script'),1,1);
 		}
 		add_action('em_admin_event_booking_options_buttons', array(&$this, 'event_booking_options_buttons'),10);
 		add_action('em_admin_event_booking_options', array(&$this, 'event_booking_options'),10);
@@ -92,6 +92,13 @@ class EM_Gateway_Offline extends EM_Gateway {
 				}
 			}	
 		}
+	}
+	
+	function em_wp_localize_script($vars){
+		if( is_user_logged_in() ){
+			$vars['offline_confirm'] = __('Be aware that by approving a booking awaiting payment, a full payment transaction will be registered against this booking, meaning that it will be considered as paid.','dbem');
+		}
+		return $vars;
 	}
 	
 	/* 
@@ -169,24 +176,6 @@ class EM_Gateway_Offline extends EM_Gateway {
 			'delete' => '<span class="trash"><a class="em-bookings-delete" href="'.em_add_get_params($_SERVER['REQUEST_URI'], array('action'=>'bookings_delete', 'booking_id'=>$EM_Booking->booking_id)).'">'.__('Delete','dbem').'</a></span>',
 			'edit' => '<a class="em-bookings-edit" href="'.em_add_get_params($EM_Booking->get_event()->get_bookings_url(), array('booking_id'=>$EM_Booking->booking_id, 'em_ajax'=>null, 'em_obj'=>null)).'">'.__('Edit/View','dbem').'</a>',
 		);
-	}
-	
-	/**
-	 * JS shown at the bottom of a bookings table to modify offline booking button behaviour
-	 * @param EM_Booking $EM_Booking
-	 */
-	function bookings_table_footer($EM_Booking){
-		?>
-		<script type="text/javascript">
-			jQuery(document).ready(function($){
-				$('.em-bookings-approve-offline').live('click', function(e){
-					if( !confirm('<?php _e('Be aware that by approving a booking awaiting payment, a full payment transaction will be registered against this booking, meaning that it will be considered as paid.','dbem'); ?>') ){
-						return false; 
-					}
-				});
-			});
-		</script>
-		<?php
 	}
 	
 	/**

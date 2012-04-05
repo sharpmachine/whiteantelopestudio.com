@@ -86,6 +86,7 @@ class EM_Coupon extends EM_Object {
 		$this->coupon_max = ( !empty($_POST['coupon_max']) && is_numeric($_POST['coupon_max']) ) ? $_POST['coupon_max']:'';
 		$this->coupon_type = ( !empty($_POST['coupon_type']) ) ? $_POST['coupon_type']:'';
 		$this->coupon_discount = ( !empty($_POST['coupon_discount']) ) ? $_POST['coupon_discount']:'';
+		if( $this->coupon_type == '%' && !empty($this->coupon_discount) ){ $this->coupon_discount = absint($this->coupon_discount); }
 		$this->coupon_eventwide = ( !empty($_POST['coupon_eventwide']) ) ? 1:0;
 		$this->coupon_sitewide = ( !empty($_POST['coupon_sitewide']) ) ? 1:0;
 		$this->coupon_private = ( !empty($_POST['coupon_private']) ) ? 1:0;
@@ -218,7 +219,7 @@ class EM_Coupon extends EM_Object {
 		switch($this->coupon_type){
 			case '%':
 				//discount by percent
-				$text = sprintf(__('%s Off','em-pro'), '%'.number_format($this->coupon_discount, 2));
+				$text = sprintf(__('%s Off','em-pro'), number_format($this->coupon_discount, 0).'%');
 				break;
 			case '#' :
 				//discount by price

@@ -54,7 +54,6 @@ function get_fields($post_id = false)
 }
 
 
-
 /*--------------------------------------------------------------------------------------
 *
 *	get_field
@@ -63,43 +62,53 @@ function get_fields($post_id = false)
 *	@since 1.0.3
 * 
 *-------------------------------------------------------------------------------------*/
-
-function get_field($field_name, $post_id = false)
-{
-	global $post, $acf;
-	
-	if(!$post_id)
-	{
-		$post_id = $post->ID;
-	}
-	elseif($post_id == "options")
-	{
-		$post_id = 999999999;
-	}
-	
-	// default
-	$value = "";
-	
-	// get value
-	$field_key = get_post_meta($post_id, '_' . $field_name, true);
-	
-	if($field_key != "")
-	{
-		// we can load the field properly!
-		$field = $acf->get_acf_field($field_key);
-		$value = $acf->get_value_for_api($post_id, $field);
-	}
-	else
-	{
-		// just load the text version
-		$value = get_post_meta($post_id, $field_name, true);
-	}
-	
-	// no value?
-	if($value == "") $value = false;
-		
-	return $value;
-	
+ 
+function get_field($field_name, $post_id = false) 
+{ 
+	global $post, $acf; 
+	 
+	if(!$post_id) 
+	{ 
+		$post_id = $post->ID; 
+	} 
+	elseif($post_id == "options") 
+	{ 
+		$post_id = 999999999; 
+	} 
+	 
+	// return cache 
+	$cache = wp_cache_get('acf_get_field_' . $post_id . '_' . $field_name); 
+	if($cache) 
+	{ 
+		return $cache; 
+	} 
+	 
+	// default 
+	$value = ""; 
+	 
+	// get value 
+	$field_key = get_post_meta($post_id, '_' . $field_name, true); 
+	 
+	if($field_key != "") 
+	{ 
+		// we can load the field properly! 
+		$field = $acf->get_acf_field($field_key); 
+		$value = $acf->get_value_for_api($post_id, $field); 
+	} 
+	else 
+	{ 
+		// just load the text version 
+		$value = get_post_meta($post_id, $field_name, true); 
+	} 
+	 
+	// no value? 
+	if($value == "") $value = false; 
+	 
+	// update cache 
+	wp_cache_set('acf_get_field_' . $post_id . '_' . $field_name, $value); 
+	 
+	return $value; 
+	 
 }
 
 
@@ -273,7 +282,11 @@ $GLOBALS['acf_register_field_group'] = array();
 function register_field_group($array)
 {
 	// add id
-	$array['id'] = uniqid();
+	if(!isset($array['id']))
+	{
+		$array['id'] = uniqid();
+	}
+	
 	$GLOBALS['acf_register_field_group'][] = $array;
 }
 
@@ -469,12 +482,12 @@ function acf_form_wp_head()
 	
 	
 	// Style
-	echo '<link rel="stylesheet" type="text/css" href="'.$acf->dir.'/css/global.css" />';
-	echo '<link rel="stylesheet" type="text/css" href="'.$acf->dir.'/css/input.css" />';
+	echo '<link rel="stylesheet" type="text/css" href="'.$acf->dir.'/css/global.css?ver=' . $acf->version . '" />';
+	echo '<link rel="stylesheet" type="text/css" href="'.$acf->dir.'/css/input.css?ver=' . $acf->version . '" />';
 
 
 	// Javascript
-	echo '<script type="text/javascript" src="'.$acf->dir.'/js/input-actions.js" ></script>';
+	echo '<script type="text/javascript" src="'.$acf->dir.'/js/input-actions.js?ver=' . $acf->version . '" ></script>';
 	echo '<script type="text/javascript">
 		acf.validation_message = "' . __("Validation Failed. One or more fields below are required.",'acf') . '";
 		acf.post_id = ' . $post->ID . ';

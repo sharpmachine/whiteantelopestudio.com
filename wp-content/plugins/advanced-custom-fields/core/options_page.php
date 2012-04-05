@@ -175,11 +175,11 @@ class Options_page
 		
 
 		// Style
-		echo '<link rel="stylesheet" type="text/css" href="'.$this->parent->dir.'/css/global.css" />';
-		echo '<link rel="stylesheet" type="text/css" href="'.$this->parent->dir.'/css/input.css" />';
+		echo '<link rel="stylesheet" type="text/css" href="'.$this->parent->dir.'/css/global.css?ver=' . $this->parent->version . '" />';
+		echo '<link rel="stylesheet" type="text/css" href="'.$this->parent->dir.'/css/input.css?ver=' . $this->parent->version . '" />';
 
 		// Javascript
-		echo '<script type="text/javascript" src="'.$this->parent->dir.'/js/input-actions.js" ></script>';
+		echo '<script type="text/javascript" src="'.$this->parent->dir.'/js/input-actions.js?ver=' . $this->parent->version . '" ></script>';
 		echo '<script type="text/javascript">
 			acf.validation_message = "' . __("Validation Failed. One or more fields below are required.",'acf') . '";
 			acf.post_id = 999999999;
@@ -287,10 +287,10 @@ class Options_page
 					
 					<!-- Update -->
 					<div class="postbox">
-						<h3 class="hndle"><span><?php _e("Save",'acf'); ?></span></h3>
+						<h3 class="hndle"><span><?php _e("Publish",'acf'); ?></span></h3>
 						<div class="inside">
 							<input type="hidden" name="HTTP_REFERER" value="<?php echo $_SERVER['HTTP_REFERER'] ?>" />
-							<input type="submit" class="button-primary" value="Save Options" name="update_options" />
+							<input type="submit" class="acf-button" value="Save Options" name="update_options" />
 						</div>
 					</div>
 					

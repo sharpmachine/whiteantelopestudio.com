@@ -5,12 +5,12 @@ Plugin URI: http://wp-events-plugin.com
 Description: Supercharge the Events Manager free plugin with extra feature to make your events even more successful!
 Author: NetWebLogic
 Author URI: http://wp-events-plugin.com/
-Version: 2.0.2
+Version: 2.1.1
 
 Copyright (C) 2011 NetWebLogic LLC
 */
-define('EMP_VERSION', 2.0);
-define('EM_MIN_VERSION', 5.071);
+define('EMP_VERSION', 2.11);
+define('EM_MIN_VERSION', 5.141);
 define('EMP_SLUG', plugin_basename( __FILE__ ));
 class EM_Pro {
 
@@ -27,20 +27,21 @@ class EM_Pro {
 		global $wpdb;
 		//Set when to run the plugin : after EM is loaded.
 		add_action( 'plugins_loaded', array(&$this,'init') );
-		//Define some tables
-		if( defined('EM_MS_GLOBAL') ){
-			$prefix = $wpdb->base_prefix;
-		}else{
-			$prefix = $wpdb->prefix;
-		}
-		define('EM_TRANSACTIONS_TABLE', $prefix.'em_transactions'); //TABLE NAME
-		define('EM_COUPONS_TABLE', $prefix.'em_coupons'); //TABLE NAME
 	}
 
 	/**
 	 * Actions to take upon initial action hook
 	 */
 	function init(){
+		global $wpdb;
+		//Define some tables
+		if( EM_MS_GLOBAL ){
+			$prefix = $wpdb->base_prefix;
+		}else{
+			$prefix = $wpdb->prefix;
+		}
+		define('EM_TRANSACTIONS_TABLE', $prefix.'em_transactions'); //TABLE NAME
+		define('EM_COUPONS_TABLE', $prefix.'em_coupons'); //TABLE NAME
 		//check that EM is installed
 		if(!defined('EM_VERSION')){
 			add_action('admin_notices',array(&$this,'em_install_warning'));
@@ -59,15 +60,32 @@ class EM_Pro {
 				emp_install();
 			}
 		}
-		//Add extra styling
-		if( get_option('dbem_disable_css') ){
-			add_filter('init', '');
+		//Add extra Styling/JS
+		if( !get_option('dbem_disable_css') ){
+			add_action('wp_head', array(&$this,'wp_head'));
+			add_action('admin_head', array(&$this,'admin_head'));
 		}
+		add_action('init', array(&$this,'enqueue_script'), 1); //so it gets added before EM, and events handlers override
+		//includes
+		include('emp-forms.php'); //form editor
 		//add-ons
 		include('add-ons/gateways.php');
 		include('add-ons/bookings-form.php');
 		include('add-ons/coupons.php');
-		add_action('wp_head', array(&$this,'wp_head'));
+		include('add-ons/user-fields.php');
+		//MS Specific stuff
+		if( is_multisite() ){
+			add_filter('em_ms_globals',array(&$this,'em_ms_globals'));
+		}
+	}
+
+	function em_ms_globals($globals){
+		$globals[] = 'dbem_pro_api_key';
+		return $globals;
+	}
+
+	function enqueue_script(){
+		wp_enqueue_script('events-manager-pro', plugins_url('includes/js/events-manager-pro.js',__FILE__), array('jquery', 'jquery-ui-core','jquery-ui-widget','jquery-ui-position')); //jQuery will load as dependency
 	}
 
 	/**
@@ -79,6 +97,36 @@ class EM_Pro {
 		 div.em-gateway-buttons { height:50px; width: 100%; }
 		 div.em-gateway-buttons .first { padding-left:0px; margin-left:0px; border-left:none; }
 		 div.em-gateway-button { float:left; padding-left:20px; margin-left:20px; border-left:1px solid #777; }
+		</style>
+		<?php
+	}
+
+	function admin_head(){
+		?>
+		<style type="text/css">
+			#em-booking-form-editor form { display:inline; }
+			 /* Custom Form Editor CSS */
+				/* structure */
+				.em-form-custom > div { max-width:810px; border:1px solid #ccc; padding:10px 0px 0px; }
+				.em-form-custom .booking-custom-head { font-weight:bold; }
+				.em-form-custom .booking-custom > div, .booking-custom > ul {  padding:10px; }
+				.em-form-custom .booking-custom-item { clear:left; border-top:1px solid #dedede; padding-top:10px; overflow:visible; }
+				/* cols/fields */
+				.em-form-custom .bc-col { float:left; width:140px; text-align:left; margin:0px 20px 0px 0px; }
+				.em-form-custom .bc-col-required { width:50px; text-align:center; }
+				.em-form-custom .bc-col-sort { margin-left:10px; width:25px; height:25px; background:url(<?php echo plugins_url('includes/images/cross.png',__FILE__); ?>) 0px 0px no-repeat; cursor:move; }
+				.em-form-custom .booking-custom-head .bc-col-sort { background:none; }
+				.em-form-custom .booking-custom-types { clear:left; }
+				.em-form-custom .booking-custom-types .bct-options { clear:left; margin-top:50px; }
+				.em-form-custom .booking-custom-types .bct-field { clear:left; margin-top:10px; }
+				/* option structure */
+				.em-form-custom .bct-options { padding:0px 20px; }
+				.em-form-custom .bct-field .bct-label { float:left; width:120px; }
+				.em-form-custom .bct-field .bct-input { margin:0px 0px 10px 130px; }
+				.em-form-custom .bct-field .bct-input input, .bct-field .bct-input textarea { display:block; }
+				/* Sorting */
+				.em-form-custom .booking-custom { list-style-type: none; margin: 0; padding: 0; }
+				.em-form-custom .bc-highlight { height:45px; line-height:35px; border:1px solid #cdcdcd; background:#efefef; }
 		</style>
 		<?php
 	}

@@ -35,7 +35,7 @@ class acf_Flexible_content extends acf_Field
 	
 	function create_field($field)
 	{
-
+		$button_label = ( isset($field['button_label']) && $field['button_label'] != "" ) ? $field['button_label'] : __("+ Add Row",'acf');
 		$layouts = array();
 		foreach($field['layouts'] as $l)
 		{
@@ -46,7 +46,7 @@ class acf_Flexible_content extends acf_Field
 		<div class="acf_flexible_content">
 			
 			<div class="no_value_message" <?php if($field['value']){echo 'style="display:none;"';} ?>>
-				<?php _e("Click the \"add row\" button below to start creating your layout",'acf'); ?>
+				<?php _e("Click the \"$button_label\" button below to start creating your layout",'acf'); ?>
 			</div>
 			
 			<div class="clones">
@@ -151,8 +151,11 @@ class acf_Flexible_content extends acf_Field
 					</ul>
 					<div class="bit"></div>
 				</div>
-				<a href="javascript:;" id="fc_add_row" class="add_row button-primary"><?php _e("+ Add Row",'acf'); ?></a>
-				<div class="clear"></div>
+				<ul class="hl clearfix">
+					<li class="right">
+						<a href="javascript:;" id="fc_add_row" class="add_row acf-button"><?php echo $button_label; ?></a>
+					</li>
+				</ul>
 			</div>	
 
 		</div>
@@ -177,6 +180,7 @@ class acf_Flexible_content extends acf_Field
 		// vars
 		$fields_names = array();
 		$field['layouts'] = isset($field['layouts']) ? $field['layouts'] : array();
+		$field['button_label'] = (isset($field['button_label']) && $field['button_label'] != "") ? $field['button_label'] : __("+ Add Row",'acf');
 		
 		// load default layout
 		if(empty($field['layouts']))
@@ -214,9 +218,9 @@ class acf_Flexible_content extends acf_Field
 	<td class="label">
 		<label><?php _e("Layout",'acf'); ?></label>
 		<p class="desription">
-			<span><a class="acf_fc_reorder" title="Edit this Field" href="javascript:;"><?php _e("Reorder",'acf'); ?></a> | </span>
-			<span><a class="acf_fc_add" title="Edit this Field" href="javascript:;"><?php _e("Add New",'acf'); ?></a> | </span>
-			<span><a class="acf_fc_delete" title="Delete this Field" href="javascript:;"><?php _e("Delete",'acf'); ?></a>
+			<span><a class="acf_fc_reorder" title="<?php _e("Reorder Layout",'acf'); ?>" href="javascript:;"><?php _e("Reorder",'acf'); ?></a> | </span>
+			<span><a class="acf_fc_add" title="<?php _e("Add New Layout",'acf'); ?>" href="javascript:;"><?php _e("Add New",'acf'); ?></a> | </span>
+			<span><a class="acf_fc_delete" title="<?php _e("Delete Layout",'acf'); ?>" href="javascript:;"><?php _e("Delete",'acf'); ?></a>
 		</p>
 	</td>
 	<td>
@@ -355,16 +359,20 @@ class acf_Flexible_content extends acf_Field
 									</td>
 								</tr>
 								<?php 
-								foreach($fields_names as $field_name => $field_title){
-									$this->parent->fields[$field_name]->create_options($key.'][layouts][' . $layout_key . '][sub_fields]['.$key2, $sub_field);
-								} 
+								
+								$this->parent->fields[$sub_field['type']]->create_options($key.'][layouts][' . $layout_key . '][sub_fields]['.$key2, $sub_field);
+								
 								?>
 								<tr class="field_save">
 									<td class="label">
-										<label><?php _e("Save Field",'acf'); ?></label>
+										<!-- <label><?php _e("Save Field",'acf'); ?></label> -->
 									</td>
-									<td><input type="submit" value="Save Field" class="button-primary" name="save" />
-										<?php _e("or",'acf'); ?> <a class="acf_edit_field" title="<?php _e("Hide this edit screen",'acf'); ?>" href="javascript:;"><?php _e("continue editing ACF",'acf'); ?></a>
+									<td>
+										<ul class="hl clearfix">
+											<li>
+												<a class="acf_edit_field acf-button grey" title="<?php _e("Close Field",'acf'); ?>" href="javascript:;"><?php _e("Close Sub Field",'acf'); ?></a>
+											</li>
+										</ul>
 									</td>
 								</tr>								
 							</tbody>
@@ -377,16 +385,26 @@ class acf_Flexible_content extends acf_Field
 		</div>
 		<div class="table_footer">
 			<div class="order_message"></div>
-			<a href="javascript:;" id="add_field" class="button-primary"><?php _e('+ Add Field','acf'); ?></a>
+			<a href="javascript:;" id="add_field" class="acf-button"><?php _e('+ Add Field','acf'); ?></a>
 		</div>
 	</div>
 	</td>
-</tr>
-			
-			<?php
-			endforeach;
-			endif;
-	}
+</tr><?php endforeach; endif; ?>
+<tr class="field_option field_option_<?php echo $this->name; ?>">
+	<td class="label">
+		<label><?php _e("Button Label",'acf'); ?></label>
+	</td>
+	<td>
+		<?php 
+		$this->parent->create_field(array(
+			'type'	=>	'text',
+			'name'	=>	'fields['.$key.'][button_label]',
+			'value'	=>	$field['button_label'],
+		));
+		?>
+	</td>
+</tr><?php
+  	}
 	
 	
 	

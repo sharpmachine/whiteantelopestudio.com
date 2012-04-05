@@ -2,9 +2,9 @@
 Contributors: nutsmuggler, netweblogic
 Donate link: http://wp-events-plugin.com
 Tags: events, event, event registration, event calendar, events calendar, event management, paypal, registration, ticket, tickets, ticketing, tickets, theme, widget, locations, maps, booking, attendance, attendee, buddypress, calendar, gigs, payment, payments, sports,
-Requires at least: 3.2
+Requires at least: 3.3
 Tested up to: 3.3.1
-Stable tag: 5.1.3
+Stable tag: 5.1.4.3
 
 Fully featured event registration management including recurring events, locations management, calendar, Google map integration, booking management
 
@@ -98,6 +98,61 @@ See our [FAQ](http://wp-events-plugin.com/documentation/faq/) page, which is upd
 6. Manage attendees with various booking reports
 
 == Changelog ==
+
+= 5.1.4.3 =
+* fixed bp group hidden events not going private
+* fixed countries list not working for certain langauges
+
+= 5.1.4.1 =
+* fixed wp rewrite issue when assigned events page slug = events slug
+* fixed minimum ticket price placheholder problems
+* added dev version auto-updater
+* improved performance in events with booking widget listings
+* improved performance in date range searches (e.g. calendar)
+* reverted to using .delegate() instead of jQuery 1.7+ .on() listener for compatibility
+* slightly improved mail options logic and layout (plus php mail can send html emails now)
+* fixed buddypress conflict if groups component is disabled
+* fixed event spaces not overriding displayed values in booking stats pages
+
+= 5.1.4 =
+* pinpoint your location with dragable map markers!
+* sortable booking table collumns and additional collumns
+* seriously improved CSV exporting options with sortable booking collumns
+* buddypress private group events now only shown to group members
+* added extra ID collumns to event/location/category admin lists
+* resend emails, change booking status, and modify booking form information as well as ticket numbers
+* any aspect of a booking can now be edited front-end with or without BuddyPress
+* customizable cancel booking message and confirmation
+* 24 hour option for time pickers possible in admin area
+* wp archive options visible now regardless of event/location page options
+* further fixes to post thumbnail compatability (hopefully fixed for good!)
+* added "Add New" location and recurring events to admin bar
+* blank pending status corrected in my bookings pages
+* fixed event categories when event is a subsite event shown on main site
+* added Swedish datepicker translations
+* fixed pagination issue
+* updated Danish, Dutch, Swedish languange files
+* small fix for duplicating plugins that keep the event id when saving dupe (WPML fix)
+* added ticket name field in single ticket mode
+* fixed pre 2k events showing in future events list in admin area
+* changed calendar linking so it works on all/most themes without JS
+* fixed bad translation of JS calendar days in Italian
+* hard-coded country names for currently translated languages
+* fixed some incompatibilities with Yoast Breadcrumbs
+* modified date fixed in ical
+* single event ical endpoint detection improved
+* fixed reserved spaces miscalculation bug
+* invalid taxonomy ids now stripped from searches
+* improvements to wp rewrite compatability by registering events and locations in varied order
+* fixed recurrence bug for single day events ending next early morning
+* depreciated attributes deleted if blank and resaved
+* single-event.php now overrides EM regardless of page settings
+* front-end deleted events now trashed (if available) rather than deleted
+* fixed errors on recurring event creation with bad ticket data
+* admin localized js variables (messages) hidden to public
+* php and wp mail functions called directly instead of via em/phpmailer
+* depreciated js .live() calls and used jQuery 1.7's .on() function, hence min wp 3.3 version
+
 = 5.1.3 =
 * added is_past and is_future conditionals
 * corrected conditional regex to allow multiple duplicate conditionals and nesting
