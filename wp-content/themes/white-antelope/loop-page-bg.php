@@ -22,7 +22,9 @@
 					<?php } ?>
 						
 					<div class="entry-content-bg">
+						<?php if(get_field('page_images')): ?>
 						<div class="page-images"><?php the_field('page_images'); ?></div>
+						<?php endif; ?>
 						<div class="page-content"><?php the_content(); ?></div>
 						<?php wp_link_pages( array( 'before' => '<div class="page-link">' . __( 'Pages:', 'smm' ), 'after' => '</div>' ) ); ?>
 					</div><!-- .entry-content -->

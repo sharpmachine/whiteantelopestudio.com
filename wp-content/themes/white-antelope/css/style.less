@@ -892,6 +892,113 @@ img.paypal-logo
 	top: 5px;
 	margin-left: 5px;
 }
+/*.......................................................the contact form*/
+form.wpcf7-form
+	{
+		margin: 40px 0 40px 75px;
+		
+		p
+		{
+			height: 30px;
+			margin-bottom: 20px;
+		}
+		
+		label
+		{
+			display: block;
+			float: left;
+			.open-sans;
+			font-weight: 600;
+			text-transform: uppercase;
+			color: @was-black;
+			font-size: 14px;
+			line-height: 30px;
+			width: 80px;
+		}
+		
+		input[type=text],
+		textarea,
+		select
+		{
+			float: left;
+			margin: 0;
+			.georgia;
+		}
+		
+		input[type=text]
+		{
+			width: 235px;
+			height: 30px;
+			padding: 0 5px;
+		}
+		
+		select
+		{
+			width: 247px;
+			height: 30px;
+		}
+		
+		textarea
+		{
+			width: 235px;
+			height: 160px;
+		}
+		
+		input[type=submit]
+		{
+			margin: 15px 0 0 80px;
+			font-size: 18px;
+			.open-sans;
+			font-weight: 400;
+			color: #fff;
+			border: none;
+			background-color: @was-black;
+			text-transform: uppercase;
+		}
+		
+		br
+		{
+			display: none;
+		}
+	}
+
+	
+div.wpcf7-validation-errors,
+div.wpcf7-mail-sent-ng,
+div.wpcf7-mail-sent-ok
+{
+	border: none !important;
+	position: relative;
+	top: 8px;
+	left: 15px;
+	text-transform: uppercase;
+	.open-sans;
+}
+
+div.wpcf7-validation-errors
+{
+	color: black;
+}
+
+div.wpcf7-mail-sent-ng
+{
+	color: red;
+}
+
+div.wpcf7 img.ajax-loader
+{
+	margin-top: -5px;
+}
+
+span.wpcf7-not-valid-tip
+{
+	border: none !important;
+	margin-left: 10px;
+	background: none !important;
+	font-weight: bold;
+	text-transform: uppercase;
+	color: @was-black;
+}
 
 /*.......................................................the misc*/
 article#friends

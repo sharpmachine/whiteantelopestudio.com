@@ -601,4 +601,81 @@ img.paypal-logo {
   top: 5px;
   margin-left: 5px;
 }
+form.wpcf7-form { margin: 40px 0 40px 75px; }
+form.wpcf7-form p {
+  height: 30px;
+  margin-bottom: 20px;
+}
+form.wpcf7-form label {
+  display: block;
+  float: left;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #1a1a1a;
+  font-size: 14px;
+  line-height: 30px;
+  width: 80px;
+}
+form.wpcf7-form input[type=text] {
+  float: left;
+  margin: 0;
+  font-family: Georgia;
+  font-style: italic;
+}
+form.wpcf7-form textarea {
+  float: left;
+  margin: 0;
+  font-family: Georgia;
+  font-style: italic;
+}
+form.wpcf7-form select {
+  float: left;
+  margin: 0;
+  font-family: Georgia;
+  font-style: italic;
+}
+form.wpcf7-form input[type=text] {
+  width: 235px;
+  height: 30px;
+  padding: 0 5px;
+}
+form.wpcf7-form select {
+  width: 247px;
+  height: 30px;
+}
+form.wpcf7-form textarea {
+  width: 235px;
+  height: 160px;
+}
+form.wpcf7-form input[type=submit] {
+  margin: 15px 0 0 80px;
+  font-size: 18px;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 400;
+  color: #ffffff;
+  border: none;
+  background-color: #1a1a1a;
+  text-transform: uppercase;
+}
+form.wpcf7-form br { display: none; }
+div.wpcf7-validation-errors, div.wpcf7-mail-sent-ng, div.wpcf7-mail-sent-ok {
+  border: none !important;
+  position: relative;
+  top: 8px;
+  left: 15px;
+  text-transform: uppercase;
+  font-family: 'Open Sans', sans-serif;
+}
+div.wpcf7-validation-errors { color: black; }
+div.wpcf7-mail-sent-ng { color: red; }
+div.wpcf7 img.ajax-loader { margin-top: -5px; }
+span.wpcf7-not-valid-tip {
+  border: none !important;
+  margin-left: 10px;
+  background: none !important;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #1a1a1a;
+}
 article#friends { margin-bottom: 120px; }
