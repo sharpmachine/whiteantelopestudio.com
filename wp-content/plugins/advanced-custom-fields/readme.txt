@@ -86,6 +86,11 @@ http://www.advancedcustomfields.com/support/
 
 == Changelog ==
 
+= 3.1.7 =
+* Bug fix: Image field returns correct url after selecting one or more images
+* Translation: Added Polish translation. Thank you Bartosz Arendt - Digital Factory - www.digitalfactory.pl
+* Update : Added id attribute to all div.field (id="acf-$field_name")
+
 = 3.1.6 =
 * New style for buttons
 * Bug Fix: Repeater maximum row setting was disabling the "add row" button 1 row early.

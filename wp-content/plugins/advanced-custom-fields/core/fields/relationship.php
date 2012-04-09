@@ -179,6 +179,11 @@ class acf_Relationship extends acf_Field
 				{
 					foreach($values_array as $value)
 					{
+						if(!isset($temp_posts[$value]))
+						{
+							continue;
+						}
+						
 						$post = $temp_posts[$value];
 						
 						$title = get_the_title($post->ID);

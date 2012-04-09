@@ -574,7 +574,7 @@ class EM_Booking extends EM_Object{
 		$EM_Event->get_bookings(true); //refresh all bookings
 		
 		//Make sure event matches booking, and that booking used to be approved.
-		if( $this->booking_status != $this->previous_status || $force_resend ){
+		if( $this->booking_status !== $this->previous_status || $force_resend ){
 			$msg = array( 'user'=> array('subject'=>'', 'body'=>''), 'admin'=> array('subject'=>'', 'body'=>'')); //blank msg template
 			
 			//admin messages won't change whether pending or already approved
@@ -646,9 +646,8 @@ class EM_Booking extends EM_Object{
 					}
 				}
 			}
-			return true;
 		}
-		return false;
+		return true;
 		//TODO need error checking for booking mail send
 	}	
 	

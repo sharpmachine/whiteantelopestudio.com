@@ -78,6 +78,7 @@ function em_docs_init($force_init = false){
 							'#_EVENTIMAGE' => array( 'desc' => 'Shows the event image, if available.' ),
 							'#_EVENTIMAGE{x,y}' => array( 'desc' => 'Shows the event image thumbnail, x and y are width and height respectively, both being numbers e.g. <code>#_EVENTIMAGE{100,100}</code>' ),
 							'#_EVENTCATEGORIES' => array( 'desc' => 'Shows a list of category links this event belongs to.' ),
+							'#_EVENTCATEGORIESIMAGES'  => array( 'desc' => 'Shows a list of category images this event belongs to. Categories without an image will be ignored.' ),
 							'#_EVENTTAGS' => array( 'desc' => 'Shows a list of tag links this event belongs to.' ),
 						)
 					),			
@@ -143,7 +144,8 @@ function em_docs_init($force_init = false){
 							'#_CONTACTAVATAR' => array( 'desc' => 'Contact person\'s avatar.' ),
 							'#_CONTACTPROFILELINK' => array( 'desc' => 'Contact person\'s "Profile" link. Only works with BuddyPress enabled.' ),
 							'#_CONTACTPROFILEURL' => array( 'desc' => 'Contact person\'s profile url. Only works with BuddyPress enabled.' ),
-							'#_CONTACTID' => array( 'desc' => 'Contact person\'s WordPress user ID.')
+							'#_CONTACTID' => array( 'desc' => 'Contact person\'s WordPress user ID.'),
+							'#_CONTACTMETA' => array( 'desc' => 'Display any user meta of a WordPress account by including the meta key, e.g. #_CONTACTMETA{dbem_phone}'),
 						)
 					),
 					'iCal/Calendar' => array(
