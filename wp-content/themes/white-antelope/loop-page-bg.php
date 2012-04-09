@@ -21,7 +21,7 @@
 						<h1 class="entry-title"><?php the_title(); ?></h1>
 					<?php } ?>
 						
-					<div class="entry-content">
+					<div class="entry-content-bg">
 						<div class="page-images"><?php the_field('page_images'); ?></div>
 						<div class="page-content"><?php the_content(); ?></div>
 						<?php wp_link_pages( array( 'before' => '<div class="page-link">' . __( 'Pages:', 'smm' ), 'after' => '</div>' ) ); ?>

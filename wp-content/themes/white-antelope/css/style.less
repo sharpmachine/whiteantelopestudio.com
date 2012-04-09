@@ -105,7 +105,7 @@ a
 	margin-left: 75px;
 }
 
-.entry-content
+.entry-content-bg
 {
 	background-color: #fff;
 	color: @was-grey;
@@ -350,6 +350,27 @@ nav
 		{
 			color: #fff;
 		}
+	}
+}
+
+#payment-buttons
+{
+	.open-sans;
+	font-size: 18px;
+	text-transform: uppercase;
+	margin-top: 30px;
+}
+
+a.button
+{
+	color: #fff;
+	background-color: @was-black;
+	text-decoration: none;
+	padding: 0 3px;
+	
+	:hover
+	{
+		background-color: @was-grey;
 	}
 }
 
@@ -679,6 +700,17 @@ body.home #wrapper
 	}
 }
 
+.friends-box
+{
+	margin: 0 1px 1px 0;
+	width: 239px;
+	
+	.inner
+	{
+		padding-top: 115px;
+	}
+}
+
 #ob_content
 {
 	background-color: #f6f6f6 !important;
@@ -862,3 +894,7 @@ img.paypal-logo
 }
 
 /*.......................................................the misc*/
+article#friends
+{
+	margin-bottom: 120px;
+}

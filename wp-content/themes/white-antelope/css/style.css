@@ -42,17 +42,17 @@ blockquote {
   width: 855px;
   margin-left: 75px;
 }
-.entry-content {
+.entry-content-bg {
   background-color: #ffffff;
   color: #656565;
   font-size: 14px;
 }
-.entry-content .page-images {
+.entry-content-bg .page-images {
   height: 142px;
   padding-left: 1px;
 }
-.entry-content .page-images img.alignleft { margin: 0; }
-.entry-content .page-content { padding: 45px 45px 20px 45px; }
+.entry-content-bg .page-images img.alignleft { margin: 0; }
+.entry-content-bg .page-content { padding: 45px 45px 20px 45px; }
 #top-bar-wrapper {
   width: 100%;
   background-color: #1a1a1a;
@@ -215,6 +215,19 @@ nav ul li.current-menu-parent > a {
   background-color: #1a1a1a;
 }
 .filter-by li.current_page_item a { color: #ffffff; }
+#payment-buttons {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 18px;
+  text-transform: uppercase;
+  margin-top: 30px;
+}
+a.button {
+  color: #ffffff;
+  background-color: #1a1a1a;
+  text-decoration: none;
+  padding: 0 3px;
+}
+a.button:hover { background-color: #656565; }
 footer {
   width: 960px;
   margin: 0 auto;
@@ -460,6 +473,11 @@ body.home #wrapper {
   left: 93px;
 }
 .about-box .inner { padding-top: 140px; }
+.friends-box {
+  margin: 0 1px 1px 0;
+  width: 239px;
+}
+.friends-box .inner { padding-top: 115px; }
 #ob_content {
   background-color: #f6f6f6 !important;
   border: 0 solid #f6f6f6 !important;
@@ -583,3 +601,4 @@ img.paypal-logo {
   top: 5px;
   margin-left: 5px;
 }
+article#friends { margin-bottom: 120px; }
