@@ -114,6 +114,7 @@ a
 	.page-images
 	{
 		height: 142px;
+		padding-left: 1px;
 		
 		img.alignleft
 		{
@@ -320,16 +321,34 @@ nav
 	width: 900px;
 	margin-top: -18px;
 	
-	a
+	ul
 	{
-		padding: 2px 5px;
-		color: @was-grey;
-		text-decoration: none;
+		float: right;
+		margin: 0;
+		padding: 0 0 0 6px;
+	}
+	
+	li
+	{
+		display: block;
+		float: left;
 		
-		:hover
+		a
+		{
+			padding: 2px 5px;
+			color: @was-grey;
+			text-decoration: none;
+		}
+	}
+	
+	li.current_page_item
+	{
+		color: #fff;
+		background-color: @was-black;
+		
+		a
 		{
 			color: #fff;
-			background-color: @was-black;
 		}
 	}
 }
@@ -826,6 +845,20 @@ img.aligncenter
 .wp-smiley 
 {
 	margin: 0;
+}
+
+img.cc-logos
+{
+	position: relative;
+	top: 5px;
+	margin-right: 5px;
+}
+
+img.paypal-logo
+{
+	position: relative;
+	top: 5px;
+	margin-left: 5px;
 }
 
 /*.......................................................the misc*/

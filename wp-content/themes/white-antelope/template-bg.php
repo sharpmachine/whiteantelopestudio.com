@@ -4,7 +4,27 @@
 */
 get_header(); ?>
 		<section id="page">
-			<div class="filter-by">Filter by: <a href="<?php bloginfo('url'); ?>/about/edie">Edie</a> <a href="<?php bloginfo('url'); ?>/about/white-antelope-studio">White Antelope Studio</a></div>
+			<div class="filter-by">Filter by:
+				<ul>
+				<?php
+							if (is_page( )) 
+							{
+								$page = $post->ID;
+								if ($post->post_parent) {
+								$page = $post->post_parent;
+							}
+						$children=wp_list_pages( 'echo=0&child_of=' . $page . '&title_li=' );
+							if ($children) 
+							{
+								$output = wp_list_pages ('echo=0&child_of=' . $page . '&title_li=');
+							}
+						}
+						echo $output;
+						?>
+						</ul>
+				
+				
+			</div>
 			<article id="content">
 			<?php get_template_part( 'loop', 'page-bg' ); ?>
 			</article>

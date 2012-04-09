@@ -47,7 +47,10 @@ blockquote {
   color: #656565;
   font-size: 14px;
 }
-.entry-content .page-images { height: 142px; }
+.entry-content .page-images {
+  height: 142px;
+  padding-left: 1px;
+}
 .entry-content .page-images img.alignleft { margin: 0; }
 .entry-content .page-content { padding: 45px 45px 20px 45px; }
 #top-bar-wrapper {
@@ -193,15 +196,25 @@ nav ul li.current-menu-parent > a {
   width: 900px;
   margin-top: -18px;
 }
-.filter-by a {
+.filter-by ul {
+  float: right;
+  margin: 0;
+  padding: 0 0 0 6px;
+}
+.filter-by li {
+  display: block;
+  float: left;
+}
+.filter-by li a {
   padding: 2px 5px;
   color: #656565;
   text-decoration: none;
 }
-.filter-by a:hover {
+.filter-by li.current_page_item {
   color: #ffffff;
   background-color: #1a1a1a;
 }
+.filter-by li.current_page_item a { color: #ffffff; }
 footer {
   width: 960px;
   margin: 0 auto;
@@ -560,3 +573,13 @@ img.alignleft, img.alignright, img.aligncenter { margin-bottom: 12px; }
   margin: 5px;
 }
 .wp-smiley { margin: 0; }
+img.cc-logos {
+  position: relative;
+  top: 5px;
+  margin-right: 5px;
+}
+img.paypal-logo {
+  position: relative;
+  top: 5px;
+  margin-left: 5px;
+}
