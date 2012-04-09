@@ -14,6 +14,13 @@ body
 	color: @was-black;
 }
 
+h1.entry-title
+{
+	font-family: 'Open Sans', sans-serif;
+	text-transform: uppercase;
+	font-size: 36px;
+}
+
 h1
 {
 	
@@ -42,6 +49,15 @@ h5
 h6
 {
 	
+}
+
+blockquote
+{
+	margin: 0;
+	color: @was-black;
+	font-size: 16px;
+	font-family: Georgia;
+	width: 580px;
 }
 
 a
@@ -83,6 +99,33 @@ a
 	margin-top: 37px;
 }
 
+#content
+{
+	width: 855px;
+	margin-left: 75px;
+}
+
+.entry-content
+{
+	background-color: #fff;
+	color: @was-grey;
+	font-size: 14px;
+	
+	.page-images
+	{
+		height: 142px;
+		
+		img.alignleft
+		{
+			margin: 0;
+		}
+	}
+	
+	.page-content
+	{
+		padding: 45px 45px 20px 45px;
+	}
+}
 
 /*.......................................................the top bar*/
 #top-bar-wrapper
@@ -267,6 +310,28 @@ nav
 #page
 {
 	margin: 75px 0;
+}
+
+.filter-by
+{
+	text-align: right;
+	font-family: 'Open Sans', sans-serif;
+	text-transform: uppercase;
+	width: 900px;
+	margin-top: -18px;
+	
+	a
+	{
+		padding: 2px 5px;
+		color: @was-grey;
+		text-decoration: none;
+		
+		:hover
+		{
+			color: #fff;
+			background-color: @was-black;
+		}
+	}
 }
 
 /*.......................................................the footer*/
