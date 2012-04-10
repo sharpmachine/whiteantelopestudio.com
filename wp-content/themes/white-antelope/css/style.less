@@ -14,11 +14,19 @@ body
 	color: @was-black;
 }
 
-h1.entry-title
+h1.entry-title,
+h2.entry-title
 {
 	font-family: 'Open Sans', sans-serif;
 	text-transform: uppercase;
 	font-size: 36px;
+	line-height: 36px;
+	
+	a
+	{
+		color: @was-black;
+		text-decoration: none;
+	}
 }
 
 h1
@@ -233,6 +241,13 @@ header
 }
 
 /*.......................................................the navigation*/
+#nav-menu
+{
+	float: left;
+	width: 100px;
+	margin: 370px 20px 0 0;
+}
+
 nav
 {
 	background: #ddd;
@@ -302,15 +317,13 @@ nav
 /*.......................................................the sidebar*/
 #sidebar
 {
-	float: left;
-	width: 100px;
-	margin: 370px 20px 0 0;
+	margin: 75px 0;
 }
 
 /*.......................................................the page*/
 #page
 {
-	margin: 75px 0;
+	margin: 78px 0;
 }
 
 .filter-by
@@ -318,7 +331,7 @@ nav
 	text-align: right;
 	font-family: 'Open Sans', sans-serif;
 	text-transform: uppercase;
-	width: 900px;
+	width: 960px;
 	margin-top: -18px;
 	
 	ul
@@ -374,6 +387,75 @@ a.button
 	}
 }
 
+/*.......................................................the blog*/
+.blog-landing
+{
+	h2.entry-title
+	{
+		margin-bottom: 10px;
+	}
+	
+	.post
+	{
+		margin-bottom: 25px;
+	}
+	
+	.excerpt
+	{
+		margin: 20px 0;
+		width: 370px;
+		.georgia;
+	}
+}
+
+.entry-utility
+{
+	color: @was-grey;
+	
+	a
+	{
+		text-decoration: none;
+	}
+}
+
+.post-img
+{
+	margin-top: 5px;
+}
+
+.post-details
+{
+	background-color: #fff;
+	height: 25px;
+	line-height: 25px;
+	display: inline-block;
+	color: @was-grey;
+	font-size: 18px;
+	padding: 0 5px;
+	margin-bottom: -10px;
+	
+	.date
+	{
+		.open-sans;
+		font-weight: 400;
+	}
+	
+	.author a
+	{
+		.georgia;
+		color: @was-grey;
+		text-decoration: none;
+		padding: 0 15px;
+	}
+	
+	.comment-count
+	{
+		font-size: 12px;
+		color: @was-black;
+		text-decoration: none;
+		text-transform: lowercase;
+	}
+}
 /*.......................................................the footer*/
 footer
 {
@@ -757,7 +839,9 @@ body.home #wrapper
 .wp-paginate
 {
 	padding: 0;
-	margin: 0;
+	margin: 75px 0 0 65px;
+	.open-sans;
+	font-size: 18px;
 	
 	li
 	{
@@ -767,18 +851,17 @@ body.home #wrapper
 	
 	a
 	{
-		background: #ddd; 
-		border: 1px solid #ccc; 
-		color: #666; 
+		background: none;
+		color: @was-black; 
 		margin-right: 4px; 
-		padding: 3px 6px;
+		padding: 3px 8px;
 		text-align: center; 
 		text-decoration: none;
 		
 		:hover, :active
 		{
-			background: #ccc; 
-			color: #888;
+			background: @was-grey; 
+			color: @was-white;
 		}
 	}
 	
@@ -796,11 +879,10 @@ body.home #wrapper
 	
 	.current
 	{
-		color: @was-white; 
-		background: #5f87ae; 
-		border: 1px solid #89adcf; 
+		color: @was-black; 
+		background: #fff; 
 		margin-right: 4px; 
-		padding: 3px 6px;
+		padding: 3px 8px;
 	}
 }
 

@@ -93,7 +93,7 @@
 		</div>
 	</div>
 	<div id="wrapper">
-		<?php get_sidebar(); ?>
+		<?php get_template_part( 'menu' ); ?>
 		<div class="container"> <!-- some layouts will require this to moved down just above the #page tag -->
 			<header role="banner">
 				<hgroup>

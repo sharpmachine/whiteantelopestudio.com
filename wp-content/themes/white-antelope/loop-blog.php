@@ -124,7 +124,11 @@
 <?php /* How to display all other posts. */ ?>
 
 	<?php else : ?>
-			<h1><?php the_title(); ?></h1>
+		<?php if(is_page('blog')): ?>
+			<h1 style="display:none"><?php the_title(); ?></h1>
+			<?php else: ?>
+				<h1><?php the_title(); ?></h1>
+			<?php endif; ?>
 	<?php if ( is_archive() || is_search() ) : // Only display excerpts for archives and search. ?>
 			<div class="entry-summary">
 				<?php the_excerpt(); ?>

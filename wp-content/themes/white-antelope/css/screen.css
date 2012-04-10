@@ -309,7 +309,8 @@ input.span-24, textarea.span-24 { width: 938px; }
 .append-20  { padding-right: 800px; } 
 .append-21  { padding-right: 840px; } 
 .append-22  { padding-right: 880px; } 
-.append-23  { padding-right: 920px; } 
+.append-23  { padding-right: 920px; }
+.append-24  { padding-right: 10px; }
 
 /* Add these to a column to prepend empty cols. */
 
@@ -336,6 +337,7 @@ input.span-24, textarea.span-24 { width: 938px; }
 .prepend-21  { padding-left: 840px; } 
 .prepend-22  { padding-left: 880px; } 
 .prepend-23  { padding-left: 920px; } 
+.prepend-24  { padding-left: 65px; } 
 
 
 /* Border on right hand side of a column. */

@@ -4,8 +4,17 @@
 */
 get_header(); ?>
 
-		<section id="page">
-
+		<section id="page" class="span-19  blog-landing">
+			<div class="filter-by">Filter by:
+				<ul>
+					<li>
+						<a href="<?php bloginfo('url'); ?>/blog">Recent</a>
+					</li>
+					<li>
+						<a href="<?php bloginfo('url'); ?>/category/tutorial/">Tutorials</a>
+					</li>
+				</ul>
+			</div>
 		<?php get_template_part( 'loop', 'blog' ); ?>
 		<?php rewind_posts(); ?>
 			
@@ -17,34 +26,44 @@ get_header(); ?>
 			while ($wp_query->have_posts()) : $wp_query->the_post();
 		?>
 			
-			<div id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
-				<h3 class="entry-title">
-					<a href="<?php the_permalink(); ?>"><?php the_title();  ?></a>
-				</h3>
-				<div><?php smm_posted_on(); ?></div>
-				<a href="<?php the_permalink(); ?>"><?php the_post_thumbnail( array (100, 100) ); ?></a>
-				<?php the_excerpt(); ?>
-			
-				<div class="entry-utility">
-				<?php if ( count( get_the_category() ) ) : ?>
-					<span class="cat-links">
-						<?php printf( __( '<span class="%1$s">Posted in</span> %2$s', 'smm' ), 'entry-utility-prep entry-utility-prep-cat-links', get_the_category_list( ', ' ) ); ?>
-					</span>
-					<span class="meta-sep">|</span>
-				<?php endif; ?>
-				<?php
-					$tags_list = get_the_tag_list( '', ', ' );
-					if ( $tags_list ):
-				?>
-					<span class="tag-links">
-						<?php printf( __( '<span class="%1$s">Tagged</span> %2$s', 'smm' ), 'entry-utility-prep entry-utility-prep-tag-links', $tags_list ); ?>
-					</span>
-					<span class="meta-sep">|</span>
-				<?php endif; ?>
-				<span class="comments-link"><?php comments_popup_link( __( 'Leave a comment', 'smm' ), __( '1 Comment', 'smm' ), __( '% Comments', 'smm' ) ); ?></span>
-				<?php edit_post_link( __( 'Edit', 'smm' ), '<span class="meta-sep">|</span> <span class="edit-link">', '</span>' ); ?>
-				</div><!-- .entry-utility -->
-			</div><!-- #post -->
+				<div id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
+					<div class="span-3 append-24 prepend-24 post-img">
+						<a href="<?php the_permalink(); ?>"><?php if ( has_post_thumbnail() ) {
+							the_post_thumbnail( array (80, 80) );
+							} else { ?>
+							<img src="<?php bloginfo('template_directory'); ?>/images/default-post-thumb.jpg" alt="<?php the_title(); ?>" class="post-thumb" />
+							<?php } ?>
+						</a>
+					</div>
+					
+					<div class="span-12 last">
+						<h2 class="entry-title">
+							<a href="<?php the_permalink(); ?>"><?php the_title();  ?></a>
+						</h2>
+						<div class="post-details"><span class="date"><?php the_time('m.d.y'); ?></span> <span class="author"><?php the_author_posts_link(); ?></span> <a href="<?php comments_link(); ?>" class="comment-count"><?php comments_number( ); ?></a></div>
+						
+						<div class="excerpt"><?php the_excerpt(); ?></div>
+						
+						<div class="entry-utility">
+						<?php if ( count( get_the_category() ) ) : ?>
+							<span class="cat-links">
+								<?php printf( __( '<span class="%1$s">Posted in</span> %2$s', 'twentyten' ), 'entry-utility-prep entry-utility-prep-cat-links', get_the_category_list( ', ' ) ); ?>
+							</span>
+						<?php endif; ?>
+						<?php
+							$tags_list = get_the_tag_list( '', ', ' );
+							if ( $tags_list ):
+						?>
+						<span class="meta-sep">|</span>
+							<span class="tag-links">
+								<?php printf( __( '<span class="%1$s">Tagged</span> %2$s', 'twentyten' ), 'entry-utility-prep entry-utility-prep-tag-links', $tags_list ); ?>
+							</span>
+						<?php endif; ?>
+						<?php edit_post_link( __( 'Edit', 'twentyten' ), '<span class="meta-sep">|</span> <span class="edit-link">', '</span>' ); ?>
+						</div><!-- .entry-utility -->
+					</div>
+					<div class="clear"></div>
+				</div>
 
 			<?php endwhile; ?>
 	
@@ -58,6 +77,5 @@ get_header(); ?>
 			<?php $wp_query = null; $wp_query = $temp;?>
 			
 		</section><!-- #page -->
-
-<?php get_sidebar(); ?>
+<?php get_sidebar(); ?> 
 <?php get_footer(); ?>

@@ -22,8 +22,6 @@ get_header(); ?>
 						echo $output;
 						?>
 						</ul>
-				
-				
 			</div>
 			<article id="content">
 			<?php get_template_part( 'loop', 'page-bg' ); ?>
