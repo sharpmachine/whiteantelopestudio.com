@@ -61,37 +61,6 @@ class EM_Gateway_Offline extends EM_Gateway {
 				}
 			}
 		}
-		//manual bookings
-		if( !empty($_REQUEST['event_id']) && !empty($_REQUEST['action']) && $_REQUEST['action'] == 'manual_booking' && !empty($_REQUEST['_wpnonce']) && wp_verify_nonce($_REQUEST['_wpnonce'],'manual_booking')){ //TODO allow manual bookings for any event owner that can manage bookings
-			$EM_Booking = new EM_Booking();
-			$EM_Event = new EM_Event($_REQUEST['event_id']);
-			if( $EM_Event->can_manage('manage_bookings','manage_others_bookings') ){
-				if( $EM_Booking->get_post() ){
-					//Assign a user to this booking
-					$EM_Booking->person = new EM_Person($_REQUEST['person_id']);
-					$EM_Booking->booking_status = !empty($_REQUEST['booking_paid']) ? 1 : 5;
-					if( $EM_Event->get_bookings()->add($EM_Booking) ){
-						$result = true;
-						if( !empty($_REQUEST['booking_paid']) ){
-							$this->record_transaction($EM_Booking, $EM_Booking->get_price(), get_option('dbem_bookings_currency'), current_time('mysql'), '', 'Completed', '');
-						}
-						$additional = sprintf(__('Go back to &quot;%s&quot; bookings','em-pro'), '<a href="'.$EM_Event->get_bookings_url().'">'.$EM_Event->name.'</a>');
-						$EM_Notices->add_confirm( $EM_Event->get_bookings()->feedback_message .' '.$additional, true );
-						$redirect = !empty($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : wp_get_referer();
-						wp_redirect( $redirect );
-						exit();
-					}else{
-						ob_start();
-						$result = false;
-						$EM_Booking->feedback_message = ob_get_clean();
-						$EM_Notices->add_error( $EM_Event->get_bookings()->get_errors() );				
-					}
-				}else{
-					$result = false;
-					$EM_Notices->add_error( $EM_Booking->get_errors() );
-				}
-			}	
-		}
 	}
 	
 	function em_wp_localize_script($vars){
@@ -107,6 +76,7 @@ class EM_Gateway_Offline extends EM_Gateway {
 	 * --------------------------------------------------
 	 */
 	
+	
 	/**
 	 * Intercepts return JSON and adjust feedback messages when booking with this gateway.
 	 * @param array $return
@@ -119,7 +89,7 @@ class EM_Gateway_Offline extends EM_Gateway {
 				$return['message'] = get_option('em_'.$this->gateway.'_booking_feedback');	
 				return apply_filters('em_gateway_offline_booking_add', $return, $EM_Booking->get_event(), $EM_Booking);
 			}
-		}
+		}						
 		return $return;
 	}
 	
@@ -222,7 +192,7 @@ class EM_Gateway_Offline extends EM_Gateway {
 								  </td>
 							  </tr>
 							</tbody>
-						</table>							
+						</table>
 						<input type="hidden" name="action" value="gateway_add_payment" />
 						<input type="hidden" name="_wpnonce" value="<?php echo wp_create_nonce('gateway_add_payment'); ?>" />
 						<input type="hidden" name="redirect_to" value="<?php echo (!empty($_REQUEST['redirect_to'])) ? $_REQUEST['redirect_to']:wp_get_referer(); ?>" />
@@ -234,6 +204,12 @@ class EM_Gateway_Offline extends EM_Gateway {
 		<?php
 	}
 
+	/* 
+	 * --------------------------------------------------
+	 * Manual Booking Functions
+	 * --------------------------------------------------
+	 */
+	
 	/**
 	 * Generates a booking form where an event admin can add a booking for another user. $EM_Event is assumed to be global at this point.
 	 */
@@ -241,6 +217,10 @@ class EM_Gateway_Offline extends EM_Gateway {
 		/* @var $EM_Event EM_Event */   
 		global $EM_Notices, $EM_Event;
 		if( !is_object($EM_Event) ) { return; }
+		if( !defined('EM_FORCE_REGISTRATION') ) define('EM_FORCE_REGISTRATION', true);
+		remove_action('em_booking_form_footer', array('EM_Gateways','booking_form_footer'),10,2);
+		add_action('em_booking_form_footer', array($this,'em_booking_form_footer'),10,2);
+		add_action('em_booking_form_custom', array($this,'em_booking_form_custom'), 1);
 		$booked_places_options = array();
 		for ( $i = 1; $i <= 10; $i++ ) {
 			$booking_spaces = (!empty($_POST['booking_spaces']) && $_POST['booking_spaces'] == $i) ? 'selected="selected"':'';
@@ -252,109 +232,115 @@ class EM_Gateway_Offline extends EM_Gateway {
 		<div class='wrap'>
 			<div class="icon32" id="icon-plugins"><br></div>
 			<h2><?php echo sprintf(__('Add Booking For &quot;%s&quot;','em-pro'), $EM_Event->name) .' '. $back_to_button; ?></h2>
-			<div id="em-booking">
-				<?php if( $EM_Event->start < current_time('timestamp') ): ?>
-					<p><?php _e('Bookings are closed for this event.','dbem'); ?></p>
-				<?php else: ?>
-					<?php echo $EM_Notices; ?>		
-					<?php if( count($EM_Tickets->tickets) > 0) : ?>
-						<?php //Tickets exist, so we show a booking form. ?>
-						<form id='em-booking-form' name='booking-form' method='post' action=''>
-							<?php do_action('em_booking_form_before_tickets'); ?>
-							<?php if( count($EM_Tickets->tickets) > 1 ): ?>
-								<div class='table-wrap'>
-								<table class="em-tickets widefat post" cellspacing="0" cellpadding="0">
-									<thead>
-										<tr>
-											<th><?php _e('Ticket Type','dbem') ?></th>
-											<?php if( !$EM_Event->is_free() ): ?>
-											<th><?php _e('Price','dbem') ?></th>
-											<?php endif; ?>
-											<th><?php _e('Spaces','dbem') ?></th>
-										</tr>
-									</thead>
-									<tbody>
-									<?php foreach( $EM_Tickets->tickets as $EM_Ticket ): ?>
-										<?php if( $EM_Ticket->is_available() || get_option('dbem_bookings_tickets_show_unavailable') ): ?>
-										<tr>
-											<td><?php echo wp_kses_data($EM_Ticket->name); ?></td>
-											<?php if( !$EM_Event->is_free() ): ?>
-											<td><?php echo $EM_Ticket->get_price(true); ?></td>
-											<?php endif; ?>
-											<td>
-												<?php 
-													$spaces_options = $EM_Ticket->get_spaces_options();
-													if( $spaces_options ){
-														echo $spaces_options;
-													}else{
-														echo "<strong>".__('N/A','dbem')."</strong>";
-													}
-												?>
-											</td>
-										</tr>
-										<?php endif; ?>
-									<?php endforeach; ?>
-									</tbody>
-								</table>	
-								</div>	
-							<?php endif; ?>
-							<?php do_action('em_booking_form_after_tickets'); ?>
-							<div class='em-booking-form-details'>
-							
-								<?php $EM_Ticket = $EM_Tickets->get_first(); ?>
-								<?php if( is_object($EM_Ticket) && count($EM_Tickets->tickets) == 1 ): ?>
-								<p>
-									<label for='em_tickets'><?php _e('Spaces', 'dbem') ?></label>
-									<?php 
-										$spaces_options = $EM_Ticket->get_spaces_options(false);
-										if( $spaces_options ){
-											echo $spaces_options;
-										}else{
-											echo "<strong>".__('N/A','dbem')."</strong>";
-										}
-									?>
-								</p>	
-								<?php endif; ?>
-								
-								<?php //Here we have extra information required for the booking. ?>
-								<?php do_action('em_booking_form_before_user_details'); ?>
-								<p>
-									<label for='booking_comment'><?php _e('User', 'dbem') ?></label>
-									<?php
-									$person_id = (!empty($_REQUEST['person_id'])) ? $_REQUEST['person_id'] : false;
-									wp_dropdown_users ( array ('name' => 'person_id', 'show_option_none' => __ ( "Select User", 'dbem' ), 'selected' => $person_id  ) );
-									?>
-								</p>
-								<p>
-									<label for='booking_comment'><?php _e('Already Paid?', 'dbem') ?></label>
-									<input type="checkbox" name="booking_paid" value="1" style="width:auto;"/>
-								</p>
-								<?php if( get_option('em_booking_form_custom') ) : ?>
-									<?php do_action('em_booking_form_custom'); ?>
-								<?php else: //temporary fix, don't depend on this ?>	
-									<p>
-										<label for='booking_comment'><?php _e('Comment', 'dbem') ?></label>
-										<textarea name='booking_comment'><?php echo !empty($_POST['booking_comment']) ? $_POST['booking_comment']:'' ?></textarea>
-									</p>
-									<?php do_action('em_booking_form_after_user_details'); ?>	
-								<?php endif; ?>	
-								<?php do_action('em_booking_form_after_user_details'); ?>					
-								<div class="em-booking-buttons">
-									<input type='submit' value="<?php _e('Submit Booking','em-pro'); ?>" />
-								 	<input type='hidden' name='gateway' value='offline'/>
-								 	<input type='hidden' name='action' value='manual_booking'/>
-								 	<input type='hidden' name='event_id' value='<?php echo $EM_Event->event_id; ?>'/>
-								 	<input type='hidden' name='_wpnonce' value='<?php echo wp_create_nonce('manual_booking'); ?>'/>
-								</div>
-							</div>
-						</form>	
-					<?php elseif( count($EM_Tickets->tickets) == 0 ): ?>
-						<div><?php _e('No more tickets available at this time.','dbem'); ?></div>
-					<?php endif; ?>  
-				<?php endif; ?>
-			</div>
+			<?php echo $EM_Event->output('#_BOOKINGFORM'); ?>
+			<script type="text/javascript">
+				jQuery(document).ready(function($){
+					$('.em-tickets').addClass('widefat');
+					$('#em-payment-full').click(function(e){
+						if( $(this).is(':checked') ){
+							$('#em-payment-amount').val('');
+							$('#em-payment-amount').attr('readonly',true);
+						}else{
+							$('#em-payment-amount').attr('readonly',false);
+						}
+					});
+					$('select#person_id').change(function(e){
+						var person_id  = $('select#person_id option:selected').val();
+						if( person_id > 0 ){
+							$('#em-booking-form p.input-user-field').hide();
+						}else{
+							$('#em-booking-form p.input-user-field').show();							
+						}
+					});
+				});
+			</script>
 		</div>
 		<?php
+		//add js that calculates final price, and also user auto-completer
+		//if user is chosen, we use normal registration and change person_id after the fact
+		//make sure payment amounts are resporcted
+	}
+	
+	/**
+	 * Triggered by the em_booking_add_yourgateway action, modifies the booking status if the event isn't free and also adds a filter to modify user feedback returned.
+	 * @param EM_Event $EM_Event
+	 * @param EM_Booking $EM_Booking
+	 * @param boolean $post_validation
+	 */
+	function booking_add($EM_Event,$EM_Booking, $post_validation = false){
+		global $wpdb, $wp_rewrite, $EM_Notices;
+		//manual bookings
+		if( !empty($_REQUEST['manual_booking']) && wp_verify_nonce($_REQUEST['manual_booking'], 'em_manual_booking_'.$_REQUEST['event_id']) ){
+			//validate post
+			if( !empty($_REQUEST['payment_amount']) && !is_numeric($_REQUEST['payment_amount'])){
+				$EM_Booking->add_error( 'Invalid payment amount, please provide a number only.', 'em-pro' );
+			}
+			if( !empty($_REQUEST['payment_amount']) || !empty($_REQUEST['payment_full']) ){				
+				//add em_event_save filter if payments are being made
+				add_filter('em_booking_save', array(&$this, 'em_booking_save'), 10, 2);
+			}
+			//set flag that we're manually booking here, and set gateway to offline
+			if( !defined('EM_FORCE_REGISTRATION') && (empty($_REQUEST['person_id']) || $_REQUEST['person_id'] < 0) ) define('EM_FORCE_REGISTRATION', true);
+		}
+		parent::booking_add($EM_Event, $EM_Booking, $post_validation);
+	}
+	
+	/**
+	 * @param boolean $result
+	 * @param EM_Booking $EM_Booking
+	 */
+	function em_booking_save( $result, $EM_Booking ){
+		if( $result && (!empty($_REQUEST['payment_amount']) || !empty($_REQUEST['payment_full'])) ){
+			remove_filter('em_booking_set_status',array(&$this,'em_booking_set_status'),1,2);
+			if( !empty($_REQUEST['payment_full']) ){
+				$this->record_transaction($EM_Booking, $EM_Booking->get_price(false, false, true), get_option('dbem_bookings_currency'), current_time('mysql'), '', 'Completed', __('Manual booking.','em-pro'));
+				$EM_Booking->set_status(1,false);
+			}elseif( !empty($_REQUEST['payment_amount']) && is_numeric($_REQUEST['payment_amount']) ){
+				$this->record_transaction($EM_Booking, $_REQUEST['payment_amount'], get_option('dbem_bookings_currency'), current_time('mysql'), '', 'Completed', __('Manual booking.','em-pro'));
+				if( $_REQUEST['payment_amount'] >= $EM_Booking->get_price(false, false, true) ){
+					$EM_Booking->set_status(1,false);
+				}
+			}
+			add_filter('em_booking_set_status',array(&$this,'em_booking_set_status'),1,2);
+			$add_txt = '<a href=\"'.wp_get_referer().'\">'.__('Add another booking','em-pro').'</a>';
+			add_filter('em_action_booking_add', create_function('$feedback', '$feedback["message"] = $feedback["message"] . "<p>'.$add_txt.'</p>"; return $feedback;'));
+		}
+		return $result;
+	}
+	
+	/**
+	 * Called before EM_Forms fields are added, when a manual booking is being made
+	 */
+	function em_booking_form_custom(){
+		global $EM_Event;
+		?>
+		<p>
+			<?php
+				$person_id = (!empty($_REQUEST['person_id'])) ? $_REQUEST['person_id'] : false;
+				wp_dropdown_users ( array ('name' => 'person_id', 'show_option_none' => __ ( "Select a user, or enter a new one below.", 'em-pro' ), 'selected' => $person_id  ) );
+			?>
+		</p>
+		<?php
+	}
+	
+	/**
+	 * Called instead of the filter in EM_Gateways if a manual booking is being made
+	 * @param EM_Event $EM_Event
+	 */
+	function em_booking_form_footer($EM_Event){
+		if( $EM_Event->can_manage('manage_bookings','manage_others_bookings') ){
+			//Admin is adding a booking here, so let's show a different form here.
+			?>
+			<input type="hidden" name="gateway" value="<?php echo $this->gateway; ?>" />
+			<input type="hidden" name="manual_booking" value="<?php echo wp_create_nonce('em_manual_booking_'.$EM_Event->event_id); ?>" />
+			<p class="em-booking-gateway" id="em-booking-gateway">
+				<label><?php _e('Amount Paid','em-pro'); ?></label>
+				<input type="text" name="payment_amount" id="em-payment-amount" value="<?php if(!empty($_REQUEST['payment_amount'])) echo $_REQUEST['payment_amount']; ?>">
+				<?php _e('Fully Paid','em-pro'); ?> <input type="checkbox" name="payment_full" id="em-payment-full" value="1">
+			</p>
+			<?php
+		}
+		return;
 	}
 	
 	/* 

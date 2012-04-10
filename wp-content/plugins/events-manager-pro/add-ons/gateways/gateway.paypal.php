@@ -24,6 +24,8 @@ class EM_Gateway_Paypal extends EM_Gateway {
 			add_action('em_gateway_js', array(&$this,'em_gateway_js'));
 			//Gateway-Specific
 			add_action('em_template_my_bookings_header',array(&$this,'say_thanks')); //say thanks on my_bookings page
+			add_filter('em_bookings_table_booking_actions_4', array(&$this,'bookings_table_actions'),1,2);
+			add_filter('em_my_bookings_booking_actions', array(&$this,'em_my_bookings_booking_actions'),1,2);
 			//set up cron
 			$timestamp = wp_next_scheduled('emp_cron_hook');
 			if( absint(get_option('em_paypal_booking_timeout')) > 0 && !$timestamp ){
@@ -94,8 +96,7 @@ class EM_Gateway_Paypal extends EM_Gateway {
 	 * @param EM_Booking $EM_Booking
 	 * @return string
 	 */
-	function em_my_bookings_booked_message( $message, $EM_Booking){
-		$message = parent::em_my_bookings_booked_message($message, $EM_Booking);
+	function em_my_bookings_booking_actions( $message, $EM_Booking){
 		if($this->uses_gateway($EM_Booking) && $EM_Booking->booking_status == $this->status){
 			//user owes money!
 			$paypal_vars = $this->get_paypal_vars($EM_Booking);
@@ -105,7 +106,7 @@ class EM_Gateway_Paypal extends EM_Gateway {
 			}
 			$form .= '<input type="submit" value="'.__('Resume Payment','em-pro').'">';
 			$form .= '</form>';
-			$message .= " ". $form;
+			$message = $form;
 		}
 		return $message;		
 	}
@@ -122,6 +123,18 @@ class EM_Gateway_Paypal extends EM_Gateway {
 	 */
 	function em_gateway_js(){
 		include(dirname(__FILE__).'/gateway.paypal.js');		
+	}
+	
+	/**
+	 * Adds relevant actions to booking shown in the bookings table
+	 * @param EM_Booking $EM_Booking
+	 */
+	function bookings_table_actions( $actions, $EM_Booking ){
+		return array(
+			'approve' => '<a class="em-bookings-approve em-bookings-approve-offline" href="'.em_add_get_params($_SERVER['REQUEST_URI'], array('action'=>'bookings_approve', 'booking_id'=>$EM_Booking->booking_id)).'">'.__('Approve','dbem').'</a>',
+			'delete' => '<span class="trash"><a class="em-bookings-delete" href="'.em_add_get_params($_SERVER['REQUEST_URI'], array('action'=>'bookings_delete', 'booking_id'=>$EM_Booking->booking_id)).'">'.__('Delete','dbem').'</a></span>',
+			'edit' => '<a class="em-bookings-edit" href="'.em_add_get_params($EM_Booking->get_event()->get_bookings_url(), array('booking_id'=>$EM_Booking->booking_id, 'em_ajax'=>null, 'em_obj'=>null)).'">'.__('Edit/View','dbem').'</a>',
+		);
 	}
 	
 	/*

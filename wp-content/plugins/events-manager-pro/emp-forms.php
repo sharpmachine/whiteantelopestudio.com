@@ -109,7 +109,7 @@ class EM_Form extends EM_Object {
 			case 'email': //depreciated
 				if( self::show_reg_fields() ){
 					?>
-					<p class="input-<?php echo $field['type']; ?> input-field-<?php echo $field['fieldid'] ?>">
+					<p class="input-<?php echo $field['type']; ?> input-field-<?php echo $field['fieldid'] ?> input-user-field">
 						<label for='<?php echo $field['fieldid'] ?>'><?php echo $field['label'] ?></label> 
 						<?php echo $this->output_field_input($field, $post); ?>
 					</p>
@@ -186,14 +186,14 @@ class EM_Form extends EM_Object {
 					if( array_key_exists($field['type'], $this->core_user_fields) ){
 						//registration fields
 						?>
-						<p class="input-<?php echo $field['type']; ?>">
+						<p class="input-<?php echo $field['type']; ?> input-user-field">
 							<label for='<?php echo $field['fieldid'] ?>'><?php echo $field['label'] ?></label> 
 							<?php echo $this->output_field_input($field, $post); ?>
 						</p>
 						<?php
 					}elseif( array_key_exists($field['type'], $this->custom_user_fields) ) {
 						?>
-						<p class="input-<?php echo $field['type']; ?>">
+						<p class="input-<?php echo $field['type']; ?> input-user-field">
 							<label for='<?php echo $field['fieldid'] ?>'><?php echo $field['label'] ?></label> 
 							<?php do_action('em_form_output_field_custom_'.$field['type'], $field, $post); ?>
 						</p>
@@ -238,7 +238,7 @@ class EM_Form extends EM_Object {
 				<?php
 				break;
 			case 'checkboxes':
-				echo "<span>";
+				echo "<span class=\"input-group\">";
 				if(!is_array($default)) $default = array();
 				$values = explode("\r\n",$field['options_selection_values']);
 				foreach($values as $value){ 
@@ -248,7 +248,7 @@ class EM_Form extends EM_Object {
 				echo "</span>";
 				break;
 			case 'radio':
-				echo "<span>";
+				echo "<span class=\"input-group\">";
 				$values = explode("\r\n",$field['options_selection_values']);
 				foreach($values as $value){
 					$value = trim($value); 
@@ -311,7 +311,6 @@ class EM_Form extends EM_Object {
 	function validate(){
 		foreach( array_keys($this->form_fields) as $field_id ){
 			$value = ( array_key_exists($field_id, $this->field_values) ) ? $this->field_values[$field_id] : '';
-			$this->validate_field($field_id, $value);
 		}
 		if( count($this->get_errors()) > 0 ){
 			return false;
@@ -350,21 +349,6 @@ class EM_Form extends EM_Object {
 						}
 					}
 					break;
-				case 'user_login':
-					if( self::show_reg_fields() ){
-						$sanitized_user_login = sanitize_user( $value );
-						// Check the username
-						if ( $sanitized_user_login == '' ) {
-							$this->add_error($err);
-							$result = false;
-						} elseif ( ! validate_username( $value ) ) {
-							$this->add_error( __( 'This username is invalid because it uses illegal characters. Please enter a valid username.', 'dbem') );
-							$result = false;
-						} elseif ( username_exists( $sanitized_user_login ) ) {
-							$this->add_error( __( 'This username is already registered, please choose another one.' ) );
-							$result = false;
-						}
-					}
 				case 'name':
 					if( self::show_reg_fields() ){
 						//regex
@@ -462,22 +446,23 @@ class EM_Form extends EM_Object {
 					break;
 				default:
 					//Registration and custom fields
-					if( !is_user_logged_in() && array_key_exists($field['type'], $this->user_fields) ){
-						if( array_key_exists($field['type'], $this->core_user_fields) ){
-							//regex
-							if( !empty($field['options_reg_regex']) && !@preg_match('/'.$field['options_reg_regex'].'/',$value) ){
-								if( !($value == '' && !$field['required']) ){
-									$this_err = (!empty($field['options_reg_error'])) ? $field['options_reg_error']:$err;
-									$this->add_error($this_err);
-									$result = false;
-								}
-							}
-							//non-empty match
-							if( empty($value) && ($field['required']) ){
-								$this->add_error($err);
+					if( (!is_user_logged_in() || defined('EM_FORCE_REGISTRATION')) && array_key_exists($field['type'], $this->user_fields) ){
+						//preliminary checks
+						//regex
+						if( !empty($field['options_reg_regex']) && !@preg_match('/'.$field['options_reg_regex'].'/',$value) ){
+							if( !($value == '' && !$field['required']) ){
+								$this_err = (!empty($field['options_reg_error'])) ? $field['options_reg_error']:$err;
+								$this->add_error($this_err);
 								$result = false;
 							}
-						}elseif( array_key_exists($field['type'], $this->custom_user_fields)) {
+						}
+						//non-empty match
+						if( empty($value) && ($field['required']) ){
+							$this->add_error($err);
+							$result = false;
+						}
+						//custom field chekcs
+						if( array_key_exists($field['type'], $this->custom_user_fields)) {
 							//custom field, so just apply 
 							$result = apply_filters('em_form_validate_field_custom', $result, $field, $value, $this);
 						}
@@ -538,7 +523,7 @@ class EM_Form extends EM_Object {
 
 	
 	private function show_reg_fields(){
-		return !is_user_logged_in() && get_option('dbem_bookings_anonymous'); 
+		return (!is_user_logged_in() || defined('EM_FORCE_REGISTRATION')) && get_option('dbem_bookings_anonymous'); 
 	}
 	
 	function editor($user_fields = true, $custom_fields = true, $captcha_fields = true){
@@ -619,7 +604,7 @@ class EM_Form extends EM_Object {
 								<div class="bct-field">
 									<div class="bct-label"><?php _e('Use Default?','em-pro'); ?></div>
 									<div class="bct-input">
-										<input type="checkbox" <?php self::input_default('options_select_default',$field_values,'checkbox'); ?>/>
+										<input type="checkbox" <?php self::input_default('options_select_default',$field_values,'checkbox'); ?> value="1" />
 										<input type="hidden" name="options_select_default[]" <?php self::input_default('options_select_default',$field_values); ?> /> 
 										<em><?php _e('If checked, the first value above will be used.','em-pro'); ?></em>
 									</div>
@@ -661,7 +646,7 @@ class EM_Form extends EM_Object {
 								<div class="bct-field">
 									<div class="bct-label"><?php _e('Checked by default?','em-pro'); ?></div>
 									<div class="bct-input">
-										<input type="checkbox" <?php self::input_default('options_checkbox_checked',$field_values,'checkbox'); ?>/>
+										<input type="checkbox" <?php self::input_default('options_checkbox_checked',$field_values,'checkbox'); ?> value="1" />
 										<input type="hidden" name="options_checkbox_checked[]" <?php self::input_default('options_checkbox_checked',$field_values); ?> /> 
 									</div>
 								</div>
@@ -697,24 +682,14 @@ class EM_Form extends EM_Object {
 								<div class="bct-field">
 									<div class="bct-label"><?php _e('Regex','em-pro'); ?></div>
 									<div class="bct-input">
-										<input type="text" name="options_reg_error" <?php self::input_default('options_text_regex',$field_values); ?> />
+										<input type="text" name="options_reg_regex[]" <?php self::input_default('options_reg_regex',$field_values); ?> />
 										<em><?php _e('By adding a regex expression, you can limit the possible values a user can input, for example the following only allows numbers: ','em-pro'); ?><code>^[0-9]+$</code></em>
 									</div>
 								</div>
 								<div class="bct-field">
 									<div class="bct-label"><?php _e('Error Message','em-pro'); ?></div>
 									<div class="bct-input">
-										<input type="text" name="options_reg_error" <?php self::input_default('options_text_error',$field_values); ?> />
-										<em><?php _e('If the regex above does not match this error will be displayed.','em-pro'); ?></em>
-									</div>
-								</div>
-							</div>
-							<div class="bct-custom_registration bct-options" style="display:none;">
-								<!-- registration -->
-								<div class="bct-field">
-									<div class="bct-label"><?php _e('Error Message','em-pro'); ?></div>
-									<div class="bct-input">
-										<input type="text" name="options_custom_reg_error" <?php self::input_default('options_text_error',$field_values); ?> />
+										<input type="text" name="options_reg_error[]" <?php self::input_default('options_reg_error',$field_values); ?> />
 										<em><?php _e('If the regex above does not match this error will be displayed.','em-pro'); ?></em>
 									</div>
 								</div>
@@ -769,7 +744,7 @@ class EM_Form extends EM_Object {
 				$('.bct-options').hide();
 				//Booking Form
 				var booking_template = $('#<?php echo $form_name; ?> #booking-custom-item-template').detach();
-				$(document).delegate('#<?php echo $form_name; ?> .booking-form-custom-field-remove', 'click', function(e){
+				$('#<?php echo $form_name; ?>').delegate('.booking-form-custom-field-remove', 'click', function(e){
 					e.preventDefault();
 					$(this).parents('.booking-custom-item').remove();
 				});
@@ -777,7 +752,7 @@ class EM_Form extends EM_Object {
 					e.preventDefault();
 					booking_template.clone().appendTo($(this).parents('.em-form-custom').find('ul.booking-custom-body').first());
 				});
-				$(document).delegate('#<?php echo $form_name; ?> .booking-form-custom-field-options', 'click', function(e){
+				$('#<?php echo $form_name; ?>').delegate('.booking-form-custom-field-options', 'click', function(e){
 					e.preventDefault();
 					if( $(this).attr('rel') != '1' ){
 						$(this).parents('.em-form-custom').find('.booking-form-custom-field-options').text('<?php _e('options','em-pro'); ?>').attr('rel','0')
@@ -788,32 +763,31 @@ class EM_Form extends EM_Object {
 					}
 				});
 				//specifics
-				$('#<?php echo $form_name; ?> .booking-form-custom-label').live('change',function(e){
+				$('#<?php echo $form_name; ?>').delegate('.booking-form-custom-label', 'change', function(e){
 					var parent_div =  $(this).parents('.booking-custom-item').first();
 					var field_id = parent_div.find('input.booking-form-custom-fieldid').first();
 					if( field_id.val() == '' ){
 						field_id.val(escape($(this).val()).replace(/%[0-9]+/g,'_').toLowerCase());
 					}
 				});
-				$('#<?php echo $form_name; ?> .em-form-custom input[type=checkbox]').live('change',function(){
+				$('#<?php echo $form_name; ?>').delegate('input[type="checkbox"]', 'change', function(){
 					var checkbox = $(this);
 					if( checkbox.next().attr('type') == 'hidden' ){
-						if( this.checked ){
+						if( checkbox.is(':checked') ){
 							checkbox.next().val(1);
 						}else{
 							checkbox.next().val(0);
 						}
 					}
 				});
-				$('#<?php echo $form_name; ?> .booking-form-custom-type').live('change',function(){
+				$('#<?php echo $form_name; ?>').delegate('.booking-form-custom-type', 'change', function(){
 					$('.bct-options').slideUp();
 					var type_keys = {
 						select : ['select','multiselect'],
 						selection : ['checkboxes','radio'],
 						checkbox : ['checkbox'],
 						text : ['text','textarea','email','name'],
-						registration : ['<?php echo implode("', '", array_keys($this->core_user_fields)); ?>'],
-						custom_registration : ['<?php echo implode("', '", array_keys($this->custom_user_fields)); ?>'],
+						registration : ['<?php echo implode("', '", array_keys($this->user_fields)); ?>'],
 						captcha : ['captcha']							
 					}
 					var select_box = $(this);
@@ -828,7 +802,7 @@ class EM_Form extends EM_Object {
 						}
 					});
 				});
-				$('#<?php echo $form_name; ?> .bc-link-up, #<?php echo $form_name; ?> .bc-link-down').live('click',function(e){
+				$('#<?php echo $form_name; ?>').delegate('.bc-link-up, #<?php echo $form_name; ?> .bc-link-down', 'click', function(e){
 					e.preventDefault();
 					item = $(this).parents('.booking-custom-item').first();
 					if( $(this).hasClass('bc-link-up') ){
@@ -841,12 +815,12 @@ class EM_Form extends EM_Object {
 						}
 					}
 				});
-				$('.bc-col-sort').live('mousedown',function(){
+				$('#<?php echo $form_name; ?>').delegate('.bc-col-sort', 'mousedown', function(){
 					parent_div =  $(this).parents('.booking-custom-item').first();
 					parent_div.find('.bct-options').hide();
 					parent_div.find('.booking-form-custom-field-options').text('<?php _e('options','em-pro'); ?>').attr('rel','0');
 				});
-				$( ".em-form-custom .booking-custom-body" ).sortable({
+				$("#<?php echo $form_name; ?> .booking-custom-body" ).sortable({
 					placeholder: "bc-highlight",
 					handle:'.bc-col-sort'
 				});
@@ -877,9 +851,10 @@ class EM_Form extends EM_Object {
 			//get field values
 			$this->form_fields = array();
 			foreach( $_REQUEST as $key => $value){
+				global $allowedposttags;
 				if( is_array($value) && in_array($key,$fields_map) ){
 					foreach($value as $item_index => $item_value){
-						$item_value = stripslashes(wp_kses_data($item_value));
+						$item_value = stripslashes(wp_kses($item_value, $allowedposttags));
 						$this->form_fields[$_REQUEST['fieldid'][$item_index]][$key] = $item_value;
 					}
 				}

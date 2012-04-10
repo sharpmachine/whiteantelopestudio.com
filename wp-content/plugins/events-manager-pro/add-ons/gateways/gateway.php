@@ -55,7 +55,7 @@ class EM_Gateway {
 			if(!empty($this->status_txt)){
 				//Booking UI
 				add_filter('em_my_bookings_booked_message',array(&$this,'em_my_bookings_booked_message'),10,2);
-				add_filter('em_my_bookings_booking_status',array(&$this,'em_my_bookings_booked_message'),10,2);
+				add_filter('em_booking_get_status',array(&$this,'em_booking_get_status'),10,2);
 			}
 		}
 	}
@@ -159,7 +159,7 @@ class EM_Gateway {
 	 * @param EM_Booking $EM_Booking
 	 * @return string
 	 */
-	function em_my_bookings_booked_message($message, $EM_Booking){
+	function em_booking_get_status($message, $EM_Booking){
 		if( !empty($this->status_txt) && $EM_Booking->booking_status == $this->status && $this->uses_gateway($EM_Booking) ){ 
 			return $this->status_txt; 
 		}
@@ -238,12 +238,17 @@ class EM_Gateway {
 		if( !empty($txn_id) ){
 			$existing = $wpdb->get_row( $wpdb->prepare( "SELECT transaction_id, transaction_status, transaction_gateway_id, transaction_total_amount FROM ".EM_TRANSACTIONS_TABLE." WHERE transaction_gateway = %s AND transaction_gateway_id = %s", $this->gateway, $txn_id ) );
 		}
+		$table = EM_TRANSACTIONS_TABLE;
+		if( is_multisite() && !EM_MS_GLOBAL && !empty($EM_Event->blog_id) && !is_main_site($EM_Event->blog_id) ){ 
+			//we must get the prefix of the transaction table for this event's blog if it is not the root blog
+			$table = $wpdb->get_blog_prefix($EM_Event->blog_id).'em_transactions';
+		}
 		if( !empty($existing->transaction_gateway_id) && $amount == $existing->transaction_total_amount && $status != $existing->transaction_status ) {
 			// Update only if txn id and amounts are the same (e.g. pending payments changing status)
-			$wpdb->update( EM_TRANSACTIONS_TABLE, $data, array('transaction_id' => $existing->transaction_id) );
+			$wpdb->update( $table, $data, array('transaction_id' => $existing->transaction_id) );
 		} else {
 			// Insert
-			$wpdb->insert( EM_TRANSACTIONS_TABLE, $data );
+			$wpdb->insert( $table, $data );
 		}
 	}
 

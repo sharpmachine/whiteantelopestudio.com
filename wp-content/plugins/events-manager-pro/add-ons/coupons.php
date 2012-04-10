@@ -20,7 +20,7 @@ class EM_Coupons extends EM_Object {
 		//hook into paypal gateway
 		add_filter('em_gateway_paypal_get_paypal_vars', array('EM_Coupons', 'paypal_vars'), 10, 2);
 		//hook into price calculator
-		add_filter('em_booking_get_price', array('EM_Coupons', 'em_booking_get_price'), 10, 5);
+		add_filter('em_booking_get_price', array('EM_Coupons', 'em_booking_get_price'), 10, 3);
 		//add coupon code info to individual booking
 		add_action('em_bookings_admin_ticket_totals_header', array('EM_Coupons', 'em_bookings_admin_ticket_totals_header'), 10, 2);
 		//add coupon info to CSV
@@ -31,6 +31,7 @@ class EM_Coupons extends EM_Object {
 		add_action('wp_ajax_nopriv_coupon_check',array('EM_Coupons', 'coupon_check'));
 		//add css for coupon field
 		add_action('wp_head',array('EM_Coupons', 'wp_head'));
+		add_action('admin_head',array('EM_Coupons', 'wp_head'));
 	}
 	
 	function em_bookings_admin_ticket_totals_header(){
@@ -46,19 +47,28 @@ class EM_Coupons extends EM_Object {
 			</tr>
 			<tr>
 				<th><?php _e('Coupon Discount','em-pro'); ?></th>
-				<th><?php echo $EM_Coupon->get_discount_text(); ?></th>
+				<th>
+					<a href="<?php echo admin_url('edit.php?post_type='.EM_POST_TYPE_EVENT.'&page=events-manager-coupons&action=view&coupon_id='.$EM_Coupon->coupon_id); ?>"><?php echo $EM_Coupon->coupon_code; ?></a> &ndash;
+					<?php echo $EM_Coupon->get_discount_text(); ?>
+				</th>
 				<th>- <?php echo em_get_currency_formatted($EM_Coupon->get_discount($EM_Booking->booking_meta['original_price'])); ?></th>
 			</tr>
 			<?php
 		}
 	}
 	
-	function em_booking_get_price( $price, $EM_Booking, $force_refresh=false, $format=false, $add_tax='x' ){
+	function em_booking_get_price( $price, $EM_Booking, $add_tax='x' ){
 		if( !empty($EM_Booking->booking_meta['coupon']) ){
+			if( $add_tax === true || get_option('dbem_bookings_tax_auto_add') ){
+				$price = $EM_Booking->booking_meta['original_price'];
+			}
 			//get coupon and calculate price
-			if( $price == $EM_Booking->booking_meta['original_price'] ){
+			if( $price == $EM_Booking->booking_meta['original_price'] ){ //only calculate if not done before
 				$EM_Coupon = new EM_Coupon($EM_Booking->booking_meta['coupon']);
-				return $EM_Coupon->apply_discount($price);
+				$price = $EM_Coupon->apply_discount($price);
+			}
+			if( $add_tax === true || get_option('dbem_bookings_tax_auto_add') ){
+				$price = round($price * (1 + get_option('dbem_bookings_tax')/100),2);
 			}
 		}
 		return $price;
@@ -190,7 +200,7 @@ class EM_Coupons extends EM_Object {
 				<input type="text" name="coupon_code" id="em-coupon-code" />
 			</p>
 			<?php
-			add_action('wp_footer', array('EM_Coupons', 'wp_footer') );
+			add_action('em_gateway_js', array('EM_Coupons', 'em_gateway_js') );
 		}
 	}
 	
@@ -207,36 +217,32 @@ class EM_Coupons extends EM_Object {
 		<?php
 	}
 	
-	function wp_footer(){
+	function em_gateway_js(){
 		?>
-		<script type="text/javascript">
-			jQuery(document).ready(function($){
-				$('#em-coupon-code').change(function(){
-					var formdata = $('#em-booking-form').serialize().replace('action=booking_add','action=coupon_check'); //simple way to change action of form
-					$.ajax({
-						url: EM.ajaxurl,
-						data: formdata,
-						dataType: 'jsonp',
-						type:'post',
-						beforeSend: function(formData, jqForm, options) {
-							$('.em-coupon-message').remove();
-							if($('#em-coupon-code').val() == ''){ return false; }
-							$('#em-coupon-code').after('<span id="em-coupon-loading"></span>');
-						},
-						success : function(response, statusText, xhr, $form) {
-							if(response.result){
-								$('#em-coupon-code').after('<span class="em-coupon-message em-coupon-success">'+response.message+'</span>');
-							}else{
-								$('#em-coupon-code').after('<span class="em-coupon-message em-coupon-error">'+response.message+'</span>');
-							}
-						},
-						complete : function() {
-							$('#em-coupon-loading').remove();
-						}
-					});
-				});
+		$('#em-coupon-code').change(function(){
+			var formdata = $('#em-booking-form').serialize().replace('action=booking_add','action=coupon_check'); //simple way to change action of form
+			$.ajax({
+				url: EM.ajaxurl,
+				data: formdata,
+				dataType: 'jsonp',
+				type:'post',
+				beforeSend: function(formData, jqForm, options) {
+					$('.em-coupon-message').remove();
+					if($('#em-coupon-code').val() == ''){ return false; }
+					$('#em-coupon-code').after('<span id="em-coupon-loading"></span>');
+				},
+				success : function(response, statusText, xhr, $form) {
+					if(response.result){
+						$('#em-coupon-code').after('<span class="em-coupon-message em-coupon-success">'+response.message+'</span>');
+					}else{
+						$('#em-coupon-code').after('<span class="em-coupon-message em-coupon-error">'+response.message+'</span>');
+					}
+				},
+				complete : function() {
+					$('#em-coupon-loading').remove();
+				}
 			});
-		</script>
+		});
 		<?php
 	}
 	
@@ -268,11 +274,12 @@ class EM_Coupons extends EM_Object {
 	function admin_meta_box($EM_Event){
 		//Get available coupons for user
 		global $wpdb;
-		if( $EM_Event->event_owner == get_current_user_id() ){
-			$coupons = EM_Coupons::get(array('owner'=>get_current_user_id()));
-		}elseif( current_user_can('manage_others_bookings') ){
-			//get owner's coupons
+		$coupons = array();
+		//get owner's coupons
+		if( current_user_can('manage_others_bookings') && !empty($EM_Event->event_owner) ){
 			$coupons = EM_Coupons::get(array('owner'=>$EM_Event->event_owner));			
+		}elseif( $EM_Event->event_owner == get_current_user_id() || empty($EM_Event->event_owner) ){
+			$coupons = EM_Coupons::get(array('owner'=>get_current_user_id()));
 		}
 		$global_coupons = array();
 		?>

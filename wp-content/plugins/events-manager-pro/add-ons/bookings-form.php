@@ -30,6 +30,7 @@ class EM_Booking_Form {
 		add_filter('em_booking_get_post', array('EM_Booking_Form', 'em_booking_get_post'), 1, 2); //get post data + validate
 		add_filter('em_booking_validate', array('EM_Booking_Form', 'em_booking_validate'), 1, 2); //validate object
 		add_filter('em_bookings_add', array('EM_Booking_Form', 'em_bookings_add'), 1, 1); //add extra use reg data
+		add_filter('em_register_new_user_pre', array('EM_Booking_Form', 'em_register_new_user_pre'), 10, 1); //add extra use reg data
 		//Placeholder overriding	
 		add_filter('em_booking_output_placeholder',array('EM_Booking_Form','placeholders'),1,3); //for emails
 		//custom form chooser in event bookings meta box:
@@ -139,6 +140,14 @@ class EM_Booking_Form {
 	
 	function em_booking_get_post_pre($EM_Booking){
 		self::$validate = false;  //no need for a filter, use the em_booking_get_post_pre filter
+	}
+	
+	function em_register_new_user_pre($user_array){
+		global $EM_Booking;
+		if( !empty($EM_Booking->booking_meta['registration']['user_login']) ){
+			$user_array['user_login'] = $EM_Booking->booking_meta['registration']['user_login'];
+		}
+		return $user_array;
 	}
 	
 	/**
@@ -470,7 +479,9 @@ class EM_Booking_Form {
 					self::$form_name = $booking_form_data['name'];
 					$saved = $wpdb->insert(EM_META_TABLE, array('meta_value'=>serialize($booking_form_data), 'meta_key'=>'booking-form','object_id'=>0));
 					self::$form_id = $wpdb->insert_id;
-					$EM_Notices->add_confirm(__('New form created. You are now editing your new form.', 'em-pro'));
+					$EM_Notices->add_confirm(__('New form created. You are now editing your new form.', 'em-pro'), true);
+					wp_redirect( add_query_arg(array('form_id'=>self::$form_id), wp_get_referer()) );
+					exit();
 				}
 			}
 		}	

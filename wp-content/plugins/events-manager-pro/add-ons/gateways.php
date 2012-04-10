@@ -1,6 +1,6 @@
 <?php
 if(!class_exists('EM_Gateways')) {
-class EM_Gateways {		
+class EM_Gateways {
 	/*
 	 * --------------------------------------------------
 	 * STATIC Functions - functions that don't need to be overriden
@@ -145,7 +145,7 @@ class EM_Gateways {
 	function booking_form_footer($EM_Event){
 		global $EM_Gateways;
 		//Display gateway input
-		if(!$EM_Event->is_free()){
+		if(!$EM_Event->is_free() ){
 			add_action('em_gateway_js', array('EM_Gateways','em_gateway_js'));
 			//Check if we can user quick pay buttons
 			if( get_option('dbem_gateway_use_buttons', 1) ){ //backward compatability
@@ -229,7 +229,7 @@ class EM_Gateways {
 	}
 	
 	function admin_menu($plugin_pages){
-		$plugin_pages[] = add_submenu_page('edit.php?post_type='.EM_POST_TYPE_EVENT, __('Payment Gateways'),__('Payment Gateways'),'activate_plugins','events-manager-gateways',array('EM_Gateways','handle_gateways_panel'));
+		$plugin_pages[] = add_submenu_page('edit.php?post_type='.EM_POST_TYPE_EVENT, __('Payment Gateways','em-pro'),__('Payment Gateways','em-pro'),'activate_plugins','events-manager-gateways',array('EM_Gateways','handle_gateways_panel'));
 		return $plugin_pages;
 	}
 

@@ -3,7 +3,7 @@ Contributors: netweblogic
 Tags: events, event, event registration, event calendar, events calendar, event management, paypal, registration, ticket, tickets, ticketing, tickets, theme, widget, locations, maps, booking, attendance, attendee, buddypress, calendar, gigs, payment, payments, sports,
 Requires at least: 3.1
 Tested up to: 3.3.1
-Stable tag: 2.1
+Stable tag: 2.1.2
 
 == Description ==
 
@@ -22,6 +22,18 @@ http://wp-events-plugin.com/support/
 Please visit http://wp-events-plugin.com/documentation/installation/
 
 == Changelog ==
+= 2.1.2 =
+* allowed form labels to accept HTML
+* fixed paypal resume payment button
+* fixed paypal payment status text
+* modified coupon calculation to add tax after discount, if tax is added seperately
+* made paypal bookings editable even if pending
+* fixed various form editor bugs
+* fixed email problems with paypal confirmations
+* manual bookings now accept coupons and anonymous registrations, as well as custom payment amounts
+* added more html css classes to booking form
+* made update notices more user-friendly if pro-api-key isn't valid
+
 = 2.1.1 =
 * fixed coupon pagination problem
 * fixed captcha failures due to duplicated checks

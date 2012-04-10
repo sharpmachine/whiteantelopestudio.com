@@ -20,6 +20,17 @@ class EM_Updates {
 			}
 			add_action('admin_init', array('EM_Updates','admin_options_save')); //before normal options are saved  	 		
 		}
+		add_action( 'in_plugin_update_message-events-manager-pro/events-manager-pro.php',  array('EM_Updates','update_notices'));
+	}
+	
+	/**
+	 * Add an extra update message to the update plugin notification. Thanks BP!
+	 */
+	function update_notices() {
+		if( !self::check_api_key()){
+			$admin_url = ( is_multisite() ) ? network_admin_url('admin.php?page=events-manager-options'):admin_url('edit.php?post_type='.EM_POST_TYPE_EVENT.'&page=events-manager-options');
+			echo '<p style="font-style:italic; border-top: 1px solid #ddd; padding-top: 3px">'.sprintf(__('Please enter a valid API key in your <a href="%s">settings page</a>.','em-pro'), $admin_url).'</p>';
+		}
 	}
 	
 	function admin_notices(){
@@ -166,7 +177,7 @@ class EM_Updates {
 			    $response = self::request( $args );
 			    // If response is false, don't alter the transient
 			    if( self::check_response($response) ) {
-			    	$result->valid = $response->result;   
+			    	$result->valid = $response->result;
 				    $result->checked = current_time('timestamp');    
 				    $result->response = $response;
 			   		set_site_transient('dbem_pro_api_key_check',$result,60*60*24);
@@ -206,7 +217,10 @@ class EM_Updates {
 	    
 	    // If response is false, don't alter the transient
 	    if( self::check_response($response) && version_compare($transient->checked[EMP_SLUG], $response->new_version) < 0) {
-	        $transient->response[EMP_SLUG] = $response;
+	        if( !self::check_api_key() ){
+	        	$response->package = '';
+	        }
+	    	$transient->response[EMP_SLUG] = $response;
 	    }
 	    
 	    return $transient;
