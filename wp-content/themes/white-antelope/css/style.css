@@ -928,4 +928,23 @@ span.wpcf7-not-valid-tip {
   text-transform: uppercase;
   color: #1a1a1a;
 }
+.city-state {
+  font-family: Georgia;
+  font-style: italic;
+}
+.single-post-event { width: 930px; }
+.single-post-event blockquote { width: 575px !important; }
+.single-post-event h3 {
+  font-weight: 600;
+  margin-bottom: 0;
+}
+.single-post-event a.maps {
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #1a1a1a;
+  text-transform: uppercase;
+}
+.single-post-event a.maps:link { text-decoration: underline; }
+.single-post-event a.maps:hover { text-decoration: none; }
 article#friends { margin-bottom: 120px; }

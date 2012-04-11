@@ -1,0 +1,59 @@
+<?php
+/**
+ * The loop that displays a single post.
+ *
+ * The loop displays the posts and the post content.  See
+ * http://codex.wordpress.org/The_Loop to understand it and
+ * http://codex.wordpress.org/Template_Tags to understand
+ * the tags used in it.
+ *
+ * This can be overridden in child themes with loop-single.php.
+ *
+ */
+?>
+
+<?php if ( have_posts() ) while ( have_posts() ) : the_post(); ?>
+
+				<div id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
+					<div id="single-post-img">
+						<?php if ( has_post_thumbnail() ) {
+							the_post_thumbnail( array (80, 80) );
+							} else { ?>
+							<img src="<?php bloginfo('template_directory'); ?>/images/default-post-thumb.jpg" alt="<?php the_title(); ?>" class="post-thumb" />
+					<?php } ?>
+					</div>
+					<div class="single-post-details">
+						<h1 class="entry-title"><?php the_title(); ?></h1>
+	
+						<div class="post-details">
+							<span class="date"><?php echo do_shortcode('[event post_id="'. get_the_ID() . '"]#m.#d.#y[/event]'); ?></span>
+						
+							<span class="city-state"><?php echo do_shortcode('[event post_id="'. get_the_ID() . '"]#_LOCATIONTOWN, #_LOCATIONSTATE[/event]'); ?></span> 
+						</div>
+						<div class="entry-utility">
+						<?php if ( count( get_the_category() ) ) : ?>
+							<span class="cat-links">
+								<img src="<?php bloginfo('template_directory'); ?>/images/categories.png" width="15" height="20" alt="Categories"><?php printf( __( '%2$s', 'twentyten' ), 'entry-utility-prep entry-utility-prep-cat-links', get_the_category_list( ', ' ) ); ?>
+							</span>
+						<?php endif; ?>
+						<?php
+							$tags_list = get_the_tag_list( '', ', ' );
+							if ( $tags_list ):
+						?>
+							<span class="tag-links">
+								<img src="<?php bloginfo('template_directory'); ?>/images/tags.png" width="13" height="18" alt="Tags"><?php printf( __( '%2$s', 'twentyten' ), 'entry-utility-prep entry-utility-prep-tag-links', $tags_list ); ?>
+							</span>
+						<?php endif; ?>
+						</div><!-- .entry-utility -->
+						<div class="clear"></div>
+					</div>
+					<div class="clear"></div>
+					
+					<div class="entry-content">
+						<?php the_content(); ?>
+						<?php wp_link_pages( array( 'before' => '<div class="page-link">' . __( 'Pages:', 'smm' ), 'after' => '</div>' ) ); ?>
+					</div><!-- .entry-content -->
+					<div class="clear"></div>
+				</div><!-- #post-## -->
+
+<?php endwhile; // end of the loop. ?>
