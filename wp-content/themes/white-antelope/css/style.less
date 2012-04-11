@@ -30,34 +30,53 @@ h2.entry-title
 	}
 }
 
+h2#site-description
+{
+	.georgia;
+	font-style: italic;
+	text-transform: none;
+	font-size: 14px;
+	margin: 0;
+	padding: 3px 0 0 130px;
+	color: @was-grey;
+}
+
+h1, 
+h2, 
+h3, 
+h4,
+h5,
+h6
+{
+	.open-sans;
+	font-weight: 400;
+	text-transform: uppercase;
+}
+
 h1
 {
-	
+	font-size: 24px;
 }
 
 h2
 {
-	
+	font-size: 18px;
 }
 
 h3
 {
-	
+	font-size: 16px;
 }
 
 h4
 {
-	
+	font-size: 14px;
 }
 
-h5
-{
-	
-}
-
+h5,
 h6
 {
-	
+	font-size: 12px;
 }
 
 blockquote
@@ -231,16 +250,6 @@ header
 	h1#site-title
 	{
 		margin: 0;
-	}
-	
-	h2#site-description
-	{
-		.georgia;
-		font-style: italic;
-		font-size: 14px;
-		margin: 0;
-		padding-left: 130px;
-		color: @was-grey;
 	}
 }
 
@@ -490,6 +499,11 @@ h2.entry-title
 	margin-left: 75px;
 	color: @was-grey;
 	
+	.entry-content
+	{
+		font-size: 14px;
+	}
+	
 	.entry-content,
 	#disqus_thread
 	{
@@ -557,7 +571,55 @@ h2.entry-title
 /*.......................................................the author*/
 #entry-author-info
 {
+	height: auto;
+	margin: 35px 0 10px 0;
 	
+	#author-avatar
+	{
+		width: 115px;
+		float: left;
+		margin-right: 20px;
+	}
+	
+	.author-archive
+	{
+		margin-bottom: 35px;
+	}
+	
+	#author-description
+	{
+		width: 500px;
+		float: left;
+		.georgia;
+		color: @was-black;
+		
+		h2
+		{
+			font-style: normal;
+		}
+		
+		a
+		{
+			.open-sans;
+			font-weight: 400;
+			font-style: normal;
+			text-transform: uppercase;
+			text-decoration: underline;
+			color: @was-black;
+			
+			:hover
+			{
+				color: #fff;
+				background-color: @was-black;
+				text-decoration: none;
+			}
+		}
+		
+		#author-link
+		{
+			margin-top: 25px;
+		}
+	}
 }
 
 /*.......................................................the footer*/
@@ -583,6 +645,13 @@ footer
 		text-decoration: none;
 		font-weight: normal;
 		
+		:link,
+		:visited
+		{
+			text-decoration: none;
+			color: @was-grey;
+		}
+		
 		:hover
 		{
 			background: none;
@@ -607,9 +676,21 @@ footer
 		.open-sans;
 		font-weight: 600;
 		text-transform: uppercase;
+		text-decoration: underline;
 		font-style: normal;
 		color: @was-black;
 		padding: 1px;
+		
+		:link
+		{
+			text-decoration: underline;
+		}
+		
+		:visited
+		{
+			color: @was-black;
+			text-decoration: underline;
+		}
 		
 		:hover
 		{
@@ -639,9 +720,19 @@ footer
 				text-decoration: none;
 				font-weight: normal;
 				
+				:link
+				{
+					text-decoration: none;
+				}
+				
 				:before
 				{
 					content: "+ ";
+				}
+				
+				:visited
+				{
+					color: @was-grey;
 				}
 				
 				:hover

@@ -35,5 +35,5 @@
 				<div class="clear"></div>
 			</article>
 		</section><!-- #page -->
-<?php get_sidebar(); ?>
+
 <?php get_footer(); ?>

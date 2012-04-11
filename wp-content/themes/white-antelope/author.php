@@ -16,11 +16,12 @@ if ( get_the_author_meta( 'description' ) ) : ?>
 					<div id="author-avatar">
 						<?php echo get_avatar( get_the_author_meta( 'user_email' ), apply_filters( 'smm_author_bio_avatar_size', 115 ) ); ?>
 					</div><!-- #author-avatar -->
-					<div id="author-description">
+					<div id="author-description" class="author-archive">
 						<h2><?php printf( __( 'About %s', 'smm' ), get_the_author() ); ?></h2>
 						<?php the_author_meta( 'description' ); ?>
 					</div><!-- #author-description	-->
 				</div><!-- #entry-author-info -->
+
 <?php endif; ?>
 
 <?php
