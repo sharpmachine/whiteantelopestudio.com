@@ -376,6 +376,8 @@ h2.entry-title { margin-bottom: 10px; }
   color: #1a1a1a;
   font-weight: 600;
 }
+#single-blog-post #disqus_thread a.dsq-subscribe-email em { font-weight: 600; }
+#single-blog-post #disqus_thread a.dsq-subscribe-rss em { font-weight: 600; }
 #single-blog-post #disqus_thread h3 {
   font-size: 12px;
   font-weight: 600;
