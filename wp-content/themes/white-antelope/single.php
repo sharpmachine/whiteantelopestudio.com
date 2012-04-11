@@ -1,6 +1,7 @@
 <?php get_header(); ?>
 
-		<section id="page" class="span-20">
+		<section id="page" class="span-18 append-1">
+			<article id="single-blog-post">
 
 			<?php
 			/* Run the loop to output the post.
@@ -9,7 +10,7 @@
 			 */
 			get_template_part( 'loop', 'single' );
 			?>
-
+			</article>
 		</section><!-- #page -->
 
 <?php get_sidebar(); ?>

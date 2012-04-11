@@ -14,18 +14,41 @@
 
 <?php if ( have_posts() ) while ( have_posts() ) : the_post(); ?>
 
-				<div id="nav-above" class="navigation">
-					<div class="nav-previous"><?php previous_post_link( '%link', '<span class="meta-nav">' . _x( '&larr;', 'Previous post link', 'smm' ) . '</span> %title' ); ?></div>
-					<div class="nav-next"><?php next_post_link( '%link', '%title <span class="meta-nav">' . _x( '&rarr;', 'Next post link', 'smm' ) . '</span>' ); ?></div>
-				</div><!-- #nav-above -->
-
 				<div id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
-					<h1 class="entry-title"><?php the_title(); ?></h1>
-
-					<div class="entry-meta">
-						<?php smm_posted_on(); ?>
-					</div><!-- .entry-meta -->
-
+					<div id="single-post-img">
+						<?php if ( has_post_thumbnail() ) {
+							the_post_thumbnail( array (80, 80) );
+							} else { ?>
+							<img src="<?php bloginfo('template_directory'); ?>/images/default-post-thumb.jpg" alt="<?php the_title(); ?>" class="post-thumb" />
+					<?php } ?>
+					</div>
+					<div class="single-post-details">
+						<h1 class="entry-title"><?php the_title(); ?></h1>
+	
+						<div class="post-details">
+							<span class="date"><?php the_time('m.d.y'); ?></span> 
+							<span class="author"><?php the_author_posts_link(); ?></span> 
+							<a href="<?php comments_link(); ?>" class="comment-count"><?php comments_number( ); ?></a>
+						</div>
+						<div class="entry-utility">
+						<?php if ( count( get_the_category() ) ) : ?>
+							<span class="cat-links">
+								<img src="<?php bloginfo('template_directory'); ?>/images/categories.png" width="15" height="20" alt="Categories"><?php printf( __( '%2$s', 'twentyten' ), 'entry-utility-prep entry-utility-prep-cat-links', get_the_category_list( ', ' ) ); ?>
+							</span>
+						<?php endif; ?>
+						<?php
+							$tags_list = get_the_tag_list( '', ', ' );
+							if ( $tags_list ):
+						?>
+							<span class="tag-links">
+								<img src="<?php bloginfo('template_directory'); ?>/images/tags.png" width="13" height="18" alt="Tags"><?php printf( __( '%2$s', 'twentyten' ), 'entry-utility-prep entry-utility-prep-tag-links', $tags_list ); ?>
+							</span>
+						<?php endif; ?>
+						</div><!-- .entry-utility -->
+						<div class="clear"></div>
+					</div>
+					<div class="clear"></div>
+					
 					<div class="entry-content">
 						<?php the_content(); ?>
 						<?php wp_link_pages( array( 'before' => '<div class="page-link">' . __( 'Pages:', 'smm' ), 'after' => '</div>' ) ); ?>
@@ -34,7 +57,7 @@
 <?php if ( get_the_author_meta( 'description' ) ) : // If a user has filled out their description, show a bio on their entries  ?>
 					<div id="entry-author-info">
 						<div id="author-avatar">
-							<?php echo get_avatar( get_the_author_meta( 'user_email' ), apply_filters( 'smm_author_bio_avatar_size', 60 ) ); ?>
+							<?php echo get_avatar( get_the_author_meta( 'user_email' ), apply_filters( 'smm_author_bio_avatar_size', 115 ) ); ?>
 						</div><!-- #author-avatar -->
 						<div id="author-description">
 							<h2><?php printf( esc_attr__( 'About %s', 'smm' ), get_the_author() ); ?></h2>
@@ -48,15 +71,7 @@
 					</div><!-- #entry-author-info -->
 <?php endif; ?>
 
-					<div class="entry-utility">
-						<?php smm_posted_in(); ?>
-					</div><!-- .entry-utility -->
 				</div><!-- #post-## -->
-
-				<div id="nav-below" class="navigation">
-					<div class="nav-previous"><?php previous_post_link( '%link', '<span class="meta-nav">' . _x( '&larr;', 'Previous post link', 'smm' ) . '</span> %title' ); ?></div>
-					<div class="nav-next"><?php next_post_link( '%link', '%title <span class="meta-nav">' . _x( '&rarr;', 'Next post link', 'smm' ) . '</span>' ); ?></div>
-				</div><!-- #nav-below -->
 
 				<?php comments_template( '', true ); ?>
 

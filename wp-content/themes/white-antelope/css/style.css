@@ -25,6 +25,16 @@ h1.entry-title a {
   color: #1a1a1a;
   text-decoration: none;
 }
+h1.page-title {
+  font-family: 'Open Sans', sans-serif;
+  text-transform: uppercase;
+  font-size: 36px;
+  line-height: 36px;
+}
+h1.page-title a {
+  color: #1a1a1a;
+  text-decoration: none;
+}
 h2.entry-title {
   font-family: 'Open Sans', sans-serif;
   text-transform: uppercase;
@@ -306,9 +316,9 @@ a.button {
   padding: 0 3px;
 }
 a.button:hover { background-color: #656565; }
-.blog-landing h2.entry-title { margin-bottom: 10px; }
-.blog-landing .post { margin-bottom: 25px; }
-.blog-landing .excerpt {
+h2.entry-title { margin-bottom: 10px; }
+.post { margin-bottom: 25px; }
+.excerpt {
   margin: 20px 0;
   width: 370px;
   font-family: Georgia;
@@ -340,6 +350,56 @@ a.button:hover { background-color: #656565; }
   text-transform: lowercase;
   position: relative;
   top: -2px;
+}
+#single-blog-post {
+  margin-left: 75px;
+  color: #656565;
+}
+#single-blog-post .entry-content {
+  background-color: #ffffff;
+  padding: 40px 65px;
+}
+#single-blog-post #disqus_thread {
+  background-color: #ffffff;
+  padding: 40px 65px;
+}
+#single-blog-post #single-post-img {
+  width: 80px;
+  height: 80px;
+  float: left;
+  margin-right: 47px;
+}
+#single-blog-post .single-post-details {
+  float: left;
+  width: 508px;
+  margin-bottom: 15px;
+}
+#single-blog-post .entry-utility { margin-top: 15px; }
+#single-blog-post h1.entry-title { margin-bottom: 5px; }
+#single-blog-post .tag-links { padding-right: 10px; }
+#single-blog-post .tag-links img {
+  position: relative;
+  top: 4px;
+  padding-right: 10px;
+}
+#single-blog-post .cat-links { padding-right: 10px; }
+#single-blog-post .cat-links img {
+  position: relative;
+  top: 4px;
+  padding-right: 10px;
+}
+#single-blog-post blockquote { width: 100%; }
+.tag-links { padding-right: 10px; }
+.tag-links img {
+  position: relative;
+  top: 4px;
+  padding-right: 10px;
+}
+.cat-links { padding-right: 10px; }
+.cat-links img {
+  position: relative;
+  top: 4px;
+  padding-right: 10px;
 }
 footer {
   width: 960px;
