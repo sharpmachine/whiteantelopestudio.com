@@ -1046,6 +1046,7 @@ span.wpcf7-not-valid-tip {
 .city-state {
   font-family: Georgia;
   font-style: italic;
+  padding: 0 15px;
 }
 .single-post-event { width: 930px; }
 .single-post-event blockquote { width: 575px !important; }
@@ -1102,4 +1103,28 @@ a.registration-button:hover {
   color: #1a1a1a;
 }
 .registration-form img.cc-logos { margin-left: 164px; }
+#post-10 h1.entry-title { display: none; }
+#em-wrapper h1 {
+  margin-bottom: 10px;
+  font-family: 'Open Sans', sans-serif;
+  text-transform: uppercase;
+  font-size: 36px;
+  line-height: 36px;
+}
+#em-wrapper h1 a {
+  color: #1a1a1a;
+  text-decoration: none;
+}
+#em-wrapper h1 a:hover {
+  background-color: #999999;
+  color: #ededed;
+}
+#em-wrapper .single-post-details { margin-bottom: 45px; }
+#em-wrapper .speakers {
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  position: relative;
+  top: -2px;
+}
 article#friends { margin-bottom: 120px; }
