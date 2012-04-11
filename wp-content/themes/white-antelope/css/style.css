@@ -246,6 +246,7 @@ nav ul li.current-menu-parent > a {
   font-family: Georgia;
   font-style: italic;
   font-size: 18px;
+  text-transform: none;
 }
 #page { margin: 78px 0; }
 .filter-by {
