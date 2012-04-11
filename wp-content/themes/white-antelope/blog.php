@@ -5,16 +5,6 @@
 get_header(); ?>
 
 		<section id="page" class="span-19  blog-landing">
-			<div class="filter-by">Filter by:
-				<ul>
-					<li>
-						<a href="<?php bloginfo('url'); ?>/blog">Recent</a>
-					</li>
-					<li>
-						<a href="<?php bloginfo('url'); ?>/category/tutorial/">Tutorials</a>
-					</li>
-				</ul>
-			</div>
 		<?php get_template_part( 'loop', 'blog' ); ?>
 		<?php rewind_posts(); ?>
 			

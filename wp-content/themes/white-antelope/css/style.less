@@ -70,20 +70,23 @@ blockquote
 
 a
 {
+	color: @was-grey;
+	text-decoration: none;
 	
 	:link
 	{
-		
+		color: @was-grey;
+		text-decoration: none;
 	}
 	
 	:visited
 	{
-		
+		color: @was-light-grey;
 	}
 	
 	:hover
 	{
-		
+		text-decoration: underline;
 	}
 	
 	:active
@@ -317,7 +320,37 @@ nav
 /*.......................................................the sidebar*/
 #sidebar
 {
-	margin: 75px 0;
+	margin: 81px 0;
+	
+	ul
+	{
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		
+		li.widget-container
+		{
+			margin-bottom: 30px;
+		}
+		
+		li
+		{
+			
+			a
+			{	
+				:hover
+				{
+					text-decoration: underline;
+				}
+			}
+		}
+	}
+	
+	h3
+	{
+		.georgia;
+		font-size: 18px;
+	}
 }
 
 /*.......................................................the page*/
@@ -326,7 +359,8 @@ nav
 	margin: 78px 0;
 }
 
-.filter-by
+.filter-by,
+.blog-filter
 {
 	text-align: right;
 	font-family: 'Open Sans', sans-serif;
@@ -354,7 +388,8 @@ nav
 		}
 	}
 	
-	li.current_page_item
+	li.current_page_item,
+	li.current-menu-item
 	{
 		color: #fff;
 		background-color: @was-black;
@@ -364,6 +399,12 @@ nav
 			color: #fff;
 		}
 	}
+}
+
+.blog-filter
+{
+	margin: 30px 0 -48px 0;
+	width: 875px;
 }
 
 #payment-buttons
@@ -408,19 +449,9 @@ a.button
 	}
 }
 
-.entry-utility
-{
-	color: @was-grey;
-	
-	a
-	{
-		text-decoration: none;
-	}
-}
-
 .post-img
 {
-	margin-top: 5px;
+	margin-top: 6px;
 }
 
 .post-details
@@ -443,8 +474,6 @@ a.button
 	.author a
 	{
 		.georgia;
-		color: @was-grey;
-		text-decoration: none;
 		padding: 0 15px;
 	}
 	
@@ -452,8 +481,9 @@ a.button
 	{
 		font-size: 12px;
 		color: @was-black;
-		text-decoration: none;
 		text-transform: lowercase;
+		position: relative;
+		top: -2px;
 	}
 }
 /*.......................................................the footer*/

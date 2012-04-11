@@ -1,7 +1,5 @@
-		<section id="sidebar" class="span-4 last">
-			<div id="primary" class="widget-area" role="complementary">
-				<ul class="xoxo">
-	
+		<section id="sidebar" class="span-5 last">
+			<ul>
 	<?php
 		/* When we call the dynamic_sidebar() function, it'll spit out
 		 * the widgets for that widget area. If it instead returns false,
@@ -33,16 +31,5 @@
 			<?php endif; // end primary widget area ?>
 				</ul>
 			</div><!-- #primary .widget-area -->
-	
-	<?php
-		// A second sidebar for widgets, just because.
-		if ( is_active_sidebar( 'secondary-widget-area' ) ) : ?>
-	
-			<div id="secondary" class="widget-area" role="complementary">
-				<ul class="xoxo">
-					<?php dynamic_sidebar( 'secondary-widget-area' ); ?>
-				</ul>
-			</div><!-- #secondary .widget-area -->
-	
-	<?php endif; ?>
+
 		</section><!-- #sidebar -->

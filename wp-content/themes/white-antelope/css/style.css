@@ -42,6 +42,16 @@ blockquote {
   font-family: Georgia;
   width: 580px;
 }
+a {
+  color: #656565;
+  text-decoration: none;
+}
+a:link {
+  color: #656565;
+  text-decoration: none;
+}
+a:visited { color: #999999; }
+a:hover { text-decoration: underline; }
 #wrapper {
   width: 1200px;
   min-height: 100%;
@@ -203,7 +213,19 @@ nav ul li.current-menu-parent > a {
 * html nav ul li.current-menu-item a { color: #000000; }
 * html nav ul li.current-menu-parent a { color: #000000; }
 * html nav ul li a:hover { color: #000000; }
-#sidebar { margin: 75px 0; }
+#sidebar { margin: 81px 0; }
+#sidebar ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+#sidebar ul li.widget-container { margin-bottom: 30px; }
+#sidebar ul li a:hover { text-decoration: underline; }
+#sidebar h3 {
+  font-family: Georgia;
+  font-style: italic;
+  font-size: 18px;
+}
 #page { margin: 78px 0; }
 .filter-by {
   text-align: right;
@@ -231,6 +253,46 @@ nav ul li.current-menu-parent > a {
   background-color: #1a1a1a;
 }
 .filter-by li.current_page_item a { color: #ffffff; }
+.filter-by li.current-menu-item {
+  color: #ffffff;
+  background-color: #1a1a1a;
+}
+.filter-by li.current-menu-item a { color: #ffffff; }
+.blog-filter {
+  text-align: right;
+  font-family: 'Open Sans', sans-serif;
+  text-transform: uppercase;
+  width: 960px;
+  margin-top: -18px;
+}
+.blog-filter ul {
+  float: right;
+  margin: 0;
+  padding: 0 0 0 6px;
+}
+.blog-filter li {
+  display: block;
+  float: left;
+}
+.blog-filter li a {
+  padding: 2px 5px;
+  color: #656565;
+  text-decoration: none;
+}
+.blog-filter li.current_page_item {
+  color: #ffffff;
+  background-color: #1a1a1a;
+}
+.blog-filter li.current_page_item a { color: #ffffff; }
+.blog-filter li.current-menu-item {
+  color: #ffffff;
+  background-color: #1a1a1a;
+}
+.blog-filter li.current-menu-item a { color: #ffffff; }
+.blog-filter {
+  margin: 30px 0 -48px 0;
+  width: 875px;
+}
 #payment-buttons {
   font-family: 'Open Sans', sans-serif;
   font-size: 18px;
@@ -252,9 +314,7 @@ a.button:hover { background-color: #656565; }
   font-family: Georgia;
   font-style: italic;
 }
-.entry-utility { color: #656565; }
-.entry-utility a { text-decoration: none; }
-.post-img { margin-top: 5px; }
+.post-img { margin-top: 6px; }
 .post-details {
   background-color: #ffffff;
   height: 25px;
@@ -272,15 +332,14 @@ a.button:hover { background-color: #656565; }
 .post-details .author a {
   font-family: Georgia;
   font-style: italic;
-  color: #656565;
-  text-decoration: none;
   padding: 0 15px;
 }
 .post-details .comment-count {
   font-size: 12px;
   color: #1a1a1a;
-  text-decoration: none;
   text-transform: lowercase;
+  position: relative;
+  top: -2px;
 }
 footer {
   width: 960px;

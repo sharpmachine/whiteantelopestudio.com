@@ -101,4 +101,11 @@
 					<h2 id="site-description"><?php bloginfo( 'description' ); ?></h2>
 				</hgroup>
 			</header>
+			<?php if(is_page('blog') || is_category('tutorial')): ?>
+			<div class="blog-filter">Filter by:
+				<?php wp_nav_menu( array('menu' => 'Blog Filter By', 'container' => 'false' )); ?>
+			</div>
+			<?php endif; ?>
+			
+			
 			
