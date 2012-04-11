@@ -495,7 +495,8 @@ h2.entry-title
 	}
 }
 
-#single-blog-post
+#single-blog-post,
+.single-blog-post
 {
 	margin-left: 75px;
 	color: @was-grey;
@@ -1201,7 +1202,8 @@ img.paypal-logo
 	margin-left: 5px;
 }
 /*.......................................................the contact form*/
-form.wpcf7-form
+form.wpcf7-form,
+form#em-booking-form
 	{
 		margin: 40px 0 40px 75px;
 		
@@ -1238,6 +1240,11 @@ form.wpcf7-form
 			width: 235px;
 			height: 30px;
 			padding: 0 5px;
+		}
+		
+		select.em-ticket-select
+		{
+			width: 55px;
 		}
 		
 		select
@@ -1337,6 +1344,7 @@ span.wpcf7-not-valid-tip
 		text-transform: uppercase;
 		color: @was-black;
 		text-transform: uppercase;
+		font-size: 12px;
 		
 		:link
 		{
@@ -1347,6 +1355,78 @@ span.wpcf7-not-valid-tip
 		{
 			text-decoration: none;
 		}
+	}
+}
+
+a img.print
+{
+	position: relative;
+	top: 5px;
+	margin-right: 10px;
+}
+
+a img.email
+{
+	position: relative;
+	top: 2px;
+}
+
+a.registration-button
+	{
+		.open-sans;
+		font-weight: 400;
+		font-size: 18px;
+		padding: 0 5px;
+		text-transform: uppercase;
+		color: @was-black;
+		background-color: @was-white;
+		display: block;
+		float: left;
+		margin-right: 30px;
+		
+		:hover
+		{
+			text-decoration: none;
+			color: @was-white;
+			background-color: @was-black;
+		}
+	}
+
+.registration-form
+{
+	margin-top: 50px;
+	
+	blockquote
+	{
+		margin-left: 75px;
+	}
+	
+	tbody tr:nth-child(even) td, tbody tr.even td
+	{
+		background: none;
+	}
+	
+	form#em-booking-form br
+	{
+		display: block;
+	}
+	
+	.ticket-desc
+	{
+		font-size: 10px;
+	}
+	
+	th
+	{
+		.open-sans;
+		text-transform: uppercase;
+		font-weight: 600;
+		color: @was-black;
+	}
+	
+	img.cc-logos
+	{
+		margin-left: 164px;
 	}
 }
 

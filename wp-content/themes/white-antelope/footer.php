@@ -1,5 +1,5 @@
 		
-			<footer role="contentinfo">
+			<footer role="contentinfo" id="footer">
 				<article class="span-5 colborder">
 					<?php if ( is_active_sidebar( 'first-footer-widget-area' ) ) : ?>
 						<?php dynamic_sidebar( 'first-footer-widget-area' ); ?>

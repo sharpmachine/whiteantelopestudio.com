@@ -418,6 +418,61 @@ h2.entry-title { margin-bottom: 10px; }
   padding-right: 10px;
 }
 #single-blog-post blockquote { width: 100%; }
+.single-blog-post {
+  margin-left: 75px;
+  color: #656565;
+}
+.single-blog-post .entry-content { font-size: 14px; }
+.single-blog-post #disqus_thread {
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.single-blog-post #disqus_thread a {
+  color: #1a1a1a;
+  font-weight: 600;
+}
+.single-blog-post #disqus_thread a.dsq-subscribe-email em { font-weight: 600; }
+.single-blog-post #disqus_thread a.dsq-subscribe-rss em { font-weight: 600; }
+.single-blog-post #disqus_thread p { text-transform: none; }
+.single-blog-post #disqus_thread h3 {
+  font-size: 12px;
+  font-weight: 600;
+}
+.single-blog-post .entry-content {
+  background-color: #ffffff;
+  padding: 40px 65px;
+}
+.single-blog-post #disqus_thread {
+  background-color: #ffffff;
+  padding: 40px 65px;
+}
+.single-blog-post #single-post-img {
+  width: 80px;
+  height: 80px;
+  float: left;
+  margin-right: 47px;
+}
+.single-blog-post .single-post-details {
+  float: left;
+  width: 508px;
+  margin-bottom: 15px;
+}
+.single-blog-post .entry-utility { margin-top: 15px; }
+.single-blog-post h1.entry-title { margin-bottom: 5px; }
+.single-blog-post .tag-links { padding-right: 10px; }
+.single-blog-post .tag-links img {
+  position: relative;
+  top: 4px;
+  padding-right: 10px;
+}
+.single-blog-post .cat-links { padding-right: 10px; }
+.single-blog-post .cat-links img {
+  position: relative;
+  top: 4px;
+  padding-right: 10px;
+}
+.single-blog-post blockquote { width: 100%; }
 .tag-links { padding-right: 10px; }
 .tag-links img {
   position: relative;
@@ -890,6 +945,7 @@ form.wpcf7-form input[type=text] {
   height: 30px;
   padding: 0 5px;
 }
+form.wpcf7-form select.em-ticket-select { width: 55px; }
 form.wpcf7-form select {
   width: 247px;
   height: 30px;
@@ -909,6 +965,65 @@ form.wpcf7-form input[type=submit] {
   text-transform: uppercase;
 }
 form.wpcf7-form br { display: none; }
+form#em-booking-form { margin: 40px 0 40px 75px; }
+form#em-booking-form p {
+  height: 30px;
+  margin-bottom: 20px;
+}
+form#em-booking-form label {
+  display: block;
+  float: left;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #1a1a1a;
+  font-size: 14px;
+  line-height: 30px;
+  width: 80px;
+}
+form#em-booking-form input[type=text] {
+  float: left;
+  margin: 0;
+  font-family: Georgia;
+  font-style: italic;
+}
+form#em-booking-form textarea {
+  float: left;
+  margin: 0;
+  font-family: Georgia;
+  font-style: italic;
+}
+form#em-booking-form select {
+  float: left;
+  margin: 0;
+  font-family: Georgia;
+  font-style: italic;
+}
+form#em-booking-form input[type=text] {
+  width: 235px;
+  height: 30px;
+  padding: 0 5px;
+}
+form#em-booking-form select.em-ticket-select { width: 55px; }
+form#em-booking-form select {
+  width: 247px;
+  height: 30px;
+}
+form#em-booking-form textarea {
+  width: 235px;
+  height: 160px;
+}
+form#em-booking-form input[type=submit] {
+  margin: 15px 0 0 80px;
+  font-size: 18px;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 400;
+  color: #ffffff;
+  border: none;
+  background-color: #1a1a1a;
+  text-transform: uppercase;
+}
+form#em-booking-form br { display: none; }
 div.wpcf7-validation-errors, div.wpcf7-mail-sent-ng, div.wpcf7-mail-sent-ok {
   border: none !important;
   position: relative;
@@ -944,7 +1059,47 @@ span.wpcf7-not-valid-tip {
   text-transform: uppercase;
   color: #1a1a1a;
   text-transform: uppercase;
+  font-size: 12px;
 }
 .single-post-event a.maps:link { text-decoration: underline; }
 .single-post-event a.maps:hover { text-decoration: none; }
+a img.print {
+  position: relative;
+  top: 5px;
+  margin-right: 10px;
+}
+a img.email {
+  position: relative;
+  top: 2px;
+}
+a.registration-button {
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 400;
+  font-size: 18px;
+  padding: 0 5px;
+  text-transform: uppercase;
+  color: #1a1a1a;
+  background-color: #ededed;
+  display: block;
+  float: left;
+  margin-right: 30px;
+}
+a.registration-button:hover {
+  text-decoration: none;
+  color: #ededed;
+  background-color: #1a1a1a;
+}
+.registration-form { margin-top: 50px; }
+.registration-form blockquote { margin-left: 75px; }
+.registration-form tbody tr:nth-child(even) td { background: none; }
+.registration-form tbody tr.even td { background: none; }
+.registration-form form#em-booking-form br { display: block; }
+.registration-form .ticket-desc { font-size: 10px; }
+.registration-form th {
+  font-family: 'Open Sans', sans-serif;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+.registration-form img.cc-logos { margin-left: 164px; }
 article#friends { margin-bottom: 120px; }

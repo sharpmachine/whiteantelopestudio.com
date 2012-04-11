@@ -11,7 +11,7 @@
  *
  */
 ?>
-
+			<article class="single-blog-post">
 <?php if ( have_posts() ) while ( have_posts() ) : the_post(); ?>
 
 				<div id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
@@ -26,7 +26,7 @@
 						<h1 class="entry-title"><?php the_title(); ?></h1>
 	
 						<div class="post-details">
-							<span class="date"><?php echo do_shortcode('[event post_id="'. get_the_ID() . '"]#m.#d.#y[/event]'); ?></span>
+							<span class="date"><?php echo do_shortcode('[event post_id="'. get_the_ID() . '"]#m.#d.#y - #@_{m.d.y}[/event]'); ?></span>
 						
 							<span class="city-state"><?php echo do_shortcode('[event post_id="'. get_the_ID() . '"]#_LOCATIONTOWN, #_LOCATIONSTATE[/event]'); ?></span> 
 						</div>
@@ -55,5 +55,22 @@
 					</div><!-- .entry-content -->
 					<div class="clear"></div>
 				</div><!-- #post-## -->
-
+			</article>
+		
+			<?php echo do_shortcode(
+					'[event post_id="'. get_the_ID() . '"]
+					{has_bookings}
+			<article class="single-blog-post registration-form">
+				<div class="entry-content">
+					<blockquote>
+						Please fill in your details below to register for this event.
+					</blockquote>
+					#_BOOKINGFORM
+					<img class="cc-logos" title="Credit Cards" src="http://localhost/whiteantelopestudio.com/wp-content/uploads/2011/06/cards.png" alt="Credit Cards" width="144" height="21" />All payments are processed by<img class="paypal-logo" title="Paypal Logo" src="http://localhost/whiteantelopestudio.com/wp-content/uploads/2011/06/paypal.png" alt="Paypal Logo" width="74" height="21" />
+				</div>
+			</article>
+					{/has_bookings}
+					[/event]'); 
+			?>
+				
 <?php endwhile; // end of the loop. ?>
