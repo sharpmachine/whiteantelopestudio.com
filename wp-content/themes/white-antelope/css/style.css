@@ -367,6 +367,18 @@ h2.entry-title { margin-bottom: 10px; }
   color: #656565;
 }
 #single-blog-post .entry-content { font-size: 14px; }
+#single-blog-post #disqus_thread {
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+#single-blog-post #disqus_thread h3:first-child {
+  font-family: Georgia;
+  font-style: italic;
+  text-transform: none;
+  font-size: 18px;
+}
+#single-blog-post #disqus_thread h3:last-child { font-size: 12px; }
 #single-blog-post .entry-content {
   background-color: #ffffff;
   padding: 40px 65px;
