@@ -379,10 +379,6 @@ h2.entry-title { margin-bottom: 10px; }
 #single-blog-post #disqus_thread a.dsq-subscribe-email em { font-weight: 600; }
 #single-blog-post #disqus_thread a.dsq-subscribe-rss em { font-weight: 600; }
 #single-blog-post #disqus_thread p { text-transform: none; }
-#single-blog-post #disqus_thread h3:nth-child(1) {
-  font-family: Georgia;
-  font-style: italic;
-}
 #single-blog-post #disqus_thread h3 {
   font-size: 12px;
   font-weight: 600;
