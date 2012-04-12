@@ -58,6 +58,8 @@ class Product extends WPShoppObject {
 		'post_date_gmt' => 'post_date_gmt',
 		'post_modified_gmt' => 'post_modified_gmt',
 		'post_content_filtered' => 'post_content_filtered',
+		'comment_status' => 'comment_status',
+		'ping_status' => 'ping_status',
 		'to_ping' => 'to_ping',
 		'pinged' => 'pinged'
 	);
@@ -189,6 +191,9 @@ class Product extends WPShoppObject {
 	function load_prices ($ids) {
 		if ( empty($ids) ) return;
 
+		// Reset price property
+		$this->prices = array();
+
 		// Reset summary properties for correct price range and stock sums in single product (product page) loading contexts
 		if (!empty($this->id) && $this->id == $ids) {
 			$this->load_summary($ids);
@@ -196,7 +201,7 @@ class Product extends WPShoppObject {
 		}
 
 		$Object = new Price();
-		DB::query("SELECT * FROM $Object->_table WHERE product IN ($ids) ORDER BY product",'array',array($this,'pricing'));
+		DB::query("SELECT * FROM $Object->_table WHERE product IN ($ids) ORDER BY product,optionkey",'array',array($this,'pricing'));
 
 		// Load price metadata that exists
 		if (!empty($this->priceid)) {
@@ -524,8 +529,6 @@ class Product extends WPShoppObject {
 		$variations = ((isset($target->variants) && $target->variants == 'on')
 							|| ($price->type != 'N/A' && $price->context == 'variation'));
 
-		$freeshipping = true;
-
 		// Force to floats
 		$price->price = (float)$price->price;
 		$price->saleprice = (float)$price->saleprice;
@@ -534,16 +537,6 @@ class Product extends WPShoppObject {
 
 		// Build secondary lookup table using the price id as the key
 		$target->priceid[$price->id] = $price;
-
-		if (defined('WP_ADMIN') && !isset($options['taxes'])) $options['taxes'] = true;
-		if ( isset($options['taxes']) && str_true($options['taxes']) && str_true($price->tax) ) {
-			if ( shopp_setting_enabled('tax_inclusive') && !str_true($target->excludetax)) {
-				$Taxes = new CartTax();
-				$taxrate = $Taxes->rate($target);
-				$price->price += $price->price*$taxrate;
-				$price->saleprice += $price->saleprice*$taxrate;
-			}
-		}
 
 		// Set promoprice before data aggregation
 		if (str_true($price->sale)) $price->promoprice = $price->saleprice;
@@ -563,17 +556,20 @@ class Product extends WPShoppObject {
 			$target->lowstock($price->stock,$price->stocked);
 		}
 
-		if (!isset($price->freeshipping) || !$price->freeshipping || str_true($price->shipping))
-			$freeshipping = false;
+		$freeshipping = false;
+		if (!str_true($price->shipping)) $freeshipping = true;
 
 		// Calculate catalog discounts if not already calculated
 		if (empty($price->promoprice)) {
 			$pricetag = str_true($price->sale)?$price->saleprice:$price->price;
-			if (!empty($price->discounts)) $price->promoprice = Promotion::pricing($pricetag,$price->discounts);
-			else $price->promoprice = $pricetag;
+			if (!empty($price->discounts)) {
+				$discount = Promotion::pricing($pricetag,$price->discounts);
+				if ($discount->freeship) $freeshipping = true;
+				$price->promoprice = $discount->pricetag;
+			} else $price->promoprice = $pricetag;
 		}
 
-		if ($price->promoprice < $price->price) $price->sale = $target->sale = 'on';
+		if ($price->promoprice < $price->price) $target->sale = 'on';
 
 		// Grab price and saleprice ranges (minimum - maximum)
 		if (!$price->price) $price->price = 0;
@@ -619,8 +615,9 @@ class Product extends WPShoppObject {
 			}
 		}
 
-		if ($target->inventory == 'on' && $target->stock <= 0) $target->outofstock = true;
-		$target->freeship = $freeshipping?'on':'off';
+		if ( str_true($target->inventory) ) $target->outofstock = ($target->stock <= 0);
+		if ( $freeshipping ) $target->freeship = 'on';
+
 	}
 
 	/**
@@ -701,6 +698,7 @@ class Product extends WPShoppObject {
 		$this->stock = $this->stocked = $this->sold = 0;
 		$this->maxprice = $this->minprice = false;
 		$this->min = $this->max = array();
+		$this->freeship = 'off';
 		foreach ( ProductSummary::$_ranges as $index ) {
 			$this->min[$index] = false;
 			$this->max[$index] = false;
@@ -990,7 +988,7 @@ class Product extends WPShoppObject {
 
 		// Delete assignment to taxonomies (categories, tags, custom taxonomies)
 		global $wpdb;
-		$tbale = $wpdb->term_relationships;
+		$table = $wpdb->term_relationships;
 		DB::query("DELETE LOW_PRIORITY FROM $table WHERE object_id='$id'");
 
 		// Delete prices
@@ -1059,10 +1057,22 @@ class Product extends WPShoppObject {
 
 		// Copy prices
 		foreach ($this->prices as $price) {
+
 			$Price = new Price();
 			$Price->copydata($price);
 			$Price->product = $this->id;
 			$Price->save();
+
+			// Copy Price record meta entries
+			$meta = array('donation','recurring','membership','dimensions');
+			$priceline['settings'] = array();
+			$settings = array();
+			foreach ($meta as $name)
+				if ( isset($price->$name) ) $settings[$name] = $price->$name;
+
+			shopp_set_meta($Price->id,'price','settings',$settings);
+			shopp_set_meta($Price->id,'price','options',$price->options);
+
 		}
 
 		// Copy taxonomy assignments

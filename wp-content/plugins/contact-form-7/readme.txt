@@ -4,7 +4,7 @@ Donate link: http://contactform7.com/donate/
 Tags: contact, form, contact form, feedback, email, ajax, captcha, akismet, multilingual
 Requires at least: 3.2
 Tested up to: 3.3.1
-Stable tag: 3.1.1
+Stable tag: 3.1.2
 
 Just another contact form plugin. Simple but flexible.
 
@@ -57,7 +57,7 @@ It is hard to continue development and support for this plugin without contribut
 * Japanese (ja) - [Takayuki Miyoshi](http://ideasilo.wordpress.com)
 * Korean (ko_KR) - Seong Eun Lee, [Jong-In Kim](http://incommunity.codex.kr/wordpress/)
 * Latvian (lv) - [Sandis Veinbergs](http://www.kleofass.lv/)
-* Lithuanian (lt_LT) - [Ernestas Kardzys](http://www.ernestas.info/)
+* Lithuanian (lt_LT) - [Ernestas Kardzys](http://www.ernestas.info/), [Vincent G](http://www.host1free.com/)
 * Macedonian (mk_MK) - [Darko](http://www.findermind.com/)
 * Malay (ms_MY) - [Zairul Azmil](http://www.zairul.com/)
 * Malayalam (ml_IN) - [RAHUL.S.A](http://www.infution.co.cc/)
@@ -71,7 +71,7 @@ It is hard to continue development and support for this plugin without contribut
 * Serbian (sr_RS) - [Vedran](http://www.seorabbit.com/), [Aleksandar Urošević](http://blog.urosevic.net/)
 * Sinhala (si_LK) - [Nitin Aggarwal](http://offshoreally.com/)
 * Slovak (sk_SK) - [Patrik Bóna](http://www.mrhead.sk/)
-* Slovene (sl_SI) - [Mihael Simonič](http://smihael.bplaced.net)
+* Slovene (sl_SI) - [Mihael Simonič](http://smihael.bplaced.net), Jani Roskar
 * Spanish (es_ES) - [Jordi Sancho](http://www.qasolutions.net/blog), [Vladimir Prieto](http://vladimir.prie.to/), [Federico Mikaelian](http://www.fedemika.com.ar/), [Matias Baldanza](http://matiasbaldanza.com/), [Carlos Agnese](http://albumdecarlitos.com.ar/)
 * Swedish (sv_SE) - [Fredrik Jonsson](http://www.fredda-o-ac.se/), [the Swedish community](http://wp-support.se/)
 * Tagalog (tl) - [Rupert Agnew Lanuza](http://wheretobuy.com.ph/)
@@ -112,6 +112,15 @@ Do you have questions or issues with Contact Form 7? Use these support channels 
 1. screenshot-1.png 
 
 == Changelog ==
+
+= 3.1.2 =
+
+* Auto-generate .htaccess file in the CAPTCHA’s temporary folder to hide answer files in it.
+* Make sure all fields given by form-tags are in the posted_data property.
+* Fix the RTL style sheet for admin pages.
+* Bug fixed: names of uploaded files don’t appear in mail body.
+* The jQuery Form Plugin (jquery.form.js) has been updated to 3.08.
+* Translations for German, Hungarian, Slovene, and Lithuanian have been updated.
 
 = 3.1.1 =
 

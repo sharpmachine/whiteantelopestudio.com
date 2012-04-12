@@ -1,8 +1,9 @@
 <div class="wrap shopp">
-	<?php if (!empty($Shopp->Notice)): ?><div id="message" class="updated fade"><p><?php echo $Shopp->Notice; ?></p></div><?php endif; ?>
 
 	<div class="icon32"></div>
 	<h2><?php _e('Product Editor','Shopp'); ?></h2>
+
+	<?php do_action('shopp_admin_notice'); ?>
 
 	<div id="ajax-response"></div>
 	<form name="product" id="product" action="<?php echo esc_url($this->url); ?>" method="post">
@@ -14,9 +15,9 @@
 
 			<div id="side-info-column" class="inner-sidebar">
 			<?php
-			do_action('submitpage_box');
-			do_meta_boxes('shopp_page_shopp-products', 'side', $Product);
-			do_meta_boxes($post_type, 'side', $Product);
+
+				do_action('submitpage_box');
+				do_meta_boxes(get_current_screen()->id, 'side', $Product);
 
 			?>
 			</div>
@@ -52,14 +53,12 @@
 				<?php the_editor($Product->description,'content','Description', false); ?>
 				</div>
 			<?php
-			do_meta_boxes('shopp_page_shopp-products', 'normal', $Product);
-			do_meta_boxes('shopp_page_shopp-products', 'advanced', $Product);
+			do_meta_boxes(get_current_screen()->id, 'normal', $Product);
+			do_meta_boxes(get_current_screen()->id, 'advanced', $Product);
 
 			do_meta_boxes($post_type, 'normal', $Product);
 			do_meta_boxes($post_type, 'advanced', $Product);
 
-			// @deprecated For CPT compatibility; deprecated in WP 2.5 remove later
-			do_action('dbx_post_sidebar');
 			?>
 			</div>
 			</div>
@@ -83,6 +82,7 @@ var flashuploader = <?php echo ($uploader == 'flash' && !(false !== strpos(strto
 	buttonrsrc = '<?php echo includes_url('images/upload.png'); ?>',
 	uidir = '<?php echo SHOPP_ADMIN_URI; ?>',
 	siteurl = '<?php bloginfo('url'); ?>',
+	screenid = '<?php echo get_current_screen()->id; ?>',
 	canonurl = '<?php echo trailingslashit(shoppurl()); ?>',
 	adminurl = '<?php echo SHOPP_WPADMIN_URL; ?>',
 	sugg_url = '<?php echo wp_nonce_url(admin_url('admin-ajax.php'), "wp_ajax_shopp_storage_suggestions"); ?>',

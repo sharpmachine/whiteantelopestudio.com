@@ -289,8 +289,15 @@ class ShoppProductThemeAPI implements ShoppAPI {
 
 		$string .= '<input type="hidden" name="products['.$O->id.'][product]" value="'.$O->id.'" />';
 
-		if (!empty($O->prices[0]) && $O->prices[0]->type != "N/A")
-			$string .= '<input type="hidden" name="products['.$O->id.'][price]" value="'.$O->prices[0]->id.'" />';
+		if (!str_true($O->variants)) {
+			foreach ($O->prices as $price) {
+				if ('product' == $price->context) {
+					$default = $price; break;
+				}
+			}
+
+			$string .= '<input type="hidden" name="products['.$O->id.'][price]" value="'.$default->id.'" />';
+		}
 
 		$collection = isset(ShoppCollection()->slug)?shopp('collection','get-slug'):false;
 		if (!empty($collection)) {
@@ -372,7 +379,7 @@ class ShoppProductThemeAPI implements ShoppAPI {
 
 	static function free_shipping ($result, $options, $O) {
 		if (empty($O->prices)) $O->load_data(array('prices'));
-		return (isset($O->freeshipping) && $O->freeshipping);
+		return str_true($O->freeship);
 	}
 
 	static function gallery ($result, $options, $O) {
@@ -577,8 +584,17 @@ class ShoppProductThemeAPI implements ShoppAPI {
 	}
 
 	static function has_variations ($result, $options, $O) {
-		if (str_true($O->variants) && empty($O->options)) $O->load_data(array('summary','meta','prices'));
-		return (str_true($O->variants) && (!empty($O->options['v']) || !empty($O->options)));
+
+		if (! str_true($O->variants)) return false;
+
+		// Only load again if needed
+		$load = array();
+		if (empty($O->options)) $load[] = 'meta';
+		if (empty($O->prices)) $load[] = 'prices';
+		if (!empty($load)) $O->load_data($load);
+
+		return (!empty($O->options['v']) || !empty($O->options));
+
 	}
 
 	static function id ($result, $options, $O) { return $O->id; }
@@ -841,7 +857,8 @@ class ShoppProductThemeAPI implements ShoppAPI {
 
 		$string = '';
 
-		if ($name && isset($O->specnames[$name])) {
+		if ( !empty($name) ) {
+			if ( ! isset($O->specnames[$name]) ) return apply_filters('shopp_product_spec',false);
 			$spec = $O->specnames[$name];
 			if (is_array($spec)) {
 				if ($index) {
@@ -1003,14 +1020,14 @@ class ShoppProductThemeAPI implements ShoppAPI {
 			$price = current($O->prices);
 
 			if ($price && ($price->type == 'N/A' || $price->context != 'variation'))
-				next($O->prices);
+				$price = next($O->prices);
 
-			if (current($O->prices) !== false) return true;
+			if ($price !== false) return true;
 			else {
 				unset($O->_prices_loop);
 				return false;
 			}
-			return true;
+			return false;
 		}
 
 		if ($O->outofstock) return false; // Completely out of stock, hide menus

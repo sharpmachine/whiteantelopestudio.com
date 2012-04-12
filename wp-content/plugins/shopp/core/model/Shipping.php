@@ -535,7 +535,10 @@ abstract class ShippingFramework {
 		// Evaluate each destination rule
 		foreach ($table as $index => $rate) {
 			$r = floatvalue(isset($rate['rate'])?$rate['rate']:0);
-			if (isset($rate['tiers'])) $r = $rate['tiers'];
+			if (isset($rate['tiers'])) {
+				$r = $rate['tiers'];
+				usort($r,array('ShippingFramework','_sorttier'));
+			}
 
 			$dr = strpos($rate['destination'],',') !== false ? explode(',',$rate['destination']) : array($rate['destination']);
 			$k = array_keys( array_slice($target, 0, count($dr) ) );
@@ -573,6 +576,7 @@ abstract class ShippingFramework {
 				else $postcodes = array($rule['postcode']);
 
 				foreach ($postcodes as $coderule) {
+					$coderule = trim($coderule);
 
 					// Match numeric postcode ranges (only works for pure numeric postcodes like US zip codes)
 					// Cannot be mixed with wildcard ranges (eg 55*-56* does not work, use 55000-56999)
@@ -585,8 +589,8 @@ abstract class ShippingFramework {
 
 					// Match wildcard postcode patterns
 					if (strpos($coderule,'*') !== false) {
-						$pattern = str_replace('*','\d+?',$coderule);
-						if (preg_match("/$pattern/i",$match['postcode']))
+						$pattern = str_replace('*','(.+?)',$coderule);
+						if (preg_match("/^$pattern$/i",$match['postcode']))
 							unset($d['postcode']); // Clear exception for match
 						continue;
 					}
@@ -657,6 +661,10 @@ abstract class ShippingFramework {
 		}
 
 		return ($c[0] < $c[1]);
+	}
+
+	static function _sorttier ($a, $b) {
+		return floatvalue($a['threshold']) < floatvalue($b['threshold']) ? -1 : 1;
 	}
 
 
@@ -892,8 +900,11 @@ class ShippingSettingsUI extends ModuleSettingsUI {
 		if (!$this->template) {
 			if (empty($table)) $_[] = $this->tablerate_row(0,$attributes,array());
 			else {
-				foreach ($table as $row => $setting)
+				usort($table,array('ShippingFramework','_sorttable'));
+				foreach ($table as $row => $setting) {
+					if ( isset($setting['tiers']) ) usort($setting['tiers'],array('ShippingFramework','_sorttier'));
 					$_[] = $this->tablerate_row($row,$attributes,$setting);
+				}
 			}
 
 		}
@@ -1769,7 +1780,7 @@ class ShippingPackage implements ShippingPackageInterface {
 	public function limits( &$Item ) {
 		if ( $this->is_full() ) return apply_filters( 'shopp_package_limit', false, $Item, $this->contents, $this->limits ); // full
 
-		list( $wtl, $wl, $hl, $ll ) = -1;
+		$wtl = $wl = $hl = $ll = -1;
 		extract($this->limits);
 
 		if ( -3 == array_sum(array($wl,$hl,$ll)) ) {
@@ -1893,19 +1904,7 @@ class ShippingPackage implements ShippingPackageInterface {
 	 *
 	 * @return bool true if the package has been marked full or if the weight or height limits have been met (or exceeded), else false
 	 **/
-	public function is_full () {
-		if ( $this->full ) return true;
-
-		if ( $this->dims && $wl > 0 && $hl > 0 && $ll > 0 && $this->h >= $hl ) {
-			return ($this->full = true);
-		}
-
-		if ( $wtl > 0 && $this->wt >= $wtl ) {
-			return ($this->full = true);
-		}
-
-		return ($this->full = false);
-	}
+	public function is_full () { return $this->full; }
 
 	/**
 	*

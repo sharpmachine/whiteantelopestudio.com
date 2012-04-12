@@ -122,7 +122,8 @@ class ProductCollection implements Iterator {
 
 				$limit = "$start,$this->pagination";
 			} else $limit = $hardlimit;
-		}
+			$limited = false;	// Flag that the result set does not have forced limits
+		} else $limited = true; // The result set has forced limits
 
 		// Core query components
 
@@ -188,7 +189,12 @@ class ProductCollection implements Iterator {
 
 			if ($ids) $cache->products = $this->products = DB::query($query,'array','col','ID');
 			else $cache->products = $this->products = DB::query($query,'array',array($Processing,'loader'));
+
 			$cache->total = $this->total = DB::found();
+
+			// If running a limited set, the reported total found should not exceed the limit (but can because of SQL_CALC_FOUND_ROWS)
+			// Don't use the limit if it is offset
+			if ($limited && false === strpos($limit,',')) $cache->total = $this->total = min($limit,$this->total);
 
 			wp_cache_set($cachehash,$cache,'shopp_collection');
 
@@ -581,6 +587,8 @@ class ProductTaxonomy extends ProductCollection {
 		$properties = array('name'=>null,'slug'=>null,'description'=>null,'parent'=>null);
 		$updates = array_intersect_key(get_object_vars($this),$properties);
 
+		remove_filter('pre_term_description','wp_filter_kses'); // Allow HTML in category descriptions
+
 		if ($this->id) wp_update_term($this->id,$this->taxonomy,$updates);
 		else list($this->id, $this->term_taxonomy_id) = array_values(wp_insert_term($this->name, $this->taxonomy, $updates));
 
@@ -858,7 +866,7 @@ class ProductCategory extends ProductTaxonomy {
 		// Load price facet filters first
 		if ('disabled' != $this->pricerange && isset($this->facets['price'])) {
 			$Facet = $this->facets['price'];
-			$Facet->link = add_query_arg(array('s_ff'=>'on',$Facet->slug => ''),shopp('category','get-url'));
+			$Facet->link = add_query_arg(array('s_ff'=>'on',urlencode($Facet->slug) => ''),shopp('category','get-url'));
 
 			if (!$this->loaded) $this->load();
 			if ('auto' == $this->pricerange) $ranges = auto_ranges($this->pricing->average,$this->pricing->max,$this->pricing->min);
@@ -906,7 +914,7 @@ class ProductCategory extends ProductTaxonomy {
 			$slug = sanitize_title_with_dashes($spec['name']);
 			if (!isset($this->facets[ $slug ])) continue;
 			$Facet = &$this->facets[ $slug ];
-			$Facet->link = add_query_arg(array('s_ff'=>'on',$Facet->slug => ''),shopp('category','get-url'));
+			$Facet->link = add_query_arg(array('s_ff'=>'on',urlencode($Facet->slug) => ''),shopp('category','get-url'));
 
 			// For custom menu presets
 
@@ -1676,6 +1684,7 @@ class RandomProducts extends SmartCollection {
 		$this->slug = $this->uri = self::$_slug;
 		$this->name = __("Random Products","Shopp");
 		$this->loading = array('order'=>'random');
+
 		if (isset($options['exclude'])) {
 			$where = array();
 			$excludes = explode(",",$options['exclude']);
@@ -1685,6 +1694,7 @@ class RandomProducts extends SmartCollection {
 			if (in_array('onsale',$excludes)) $where[] = "(pd.sale='off' OR pr.discount=0)";
 			$this->loading['where'] = $where;
 		}
+
 		if (isset($options['columns'])) $this->loading['columns'] = $options['columns'];
 	}
 }

@@ -334,7 +334,7 @@ class ShoppInstallation extends FlowController {
 		ShoppSettings()->setup('dashboard','on');
 
 		// Preferences
-		ShoppSettings()->setup('order_confirmation','ontax');
+		ShoppSettings()->setup('order_confirmation','');
 		ShoppSettings()->setup('receipt_copy','1');
 		ShoppSettings()->setup('account_system','none');
 		ShoppSettings()->setup('shopping_cart','on');
@@ -343,7 +343,7 @@ class ShoppInstallation extends FlowController {
 			__('Wrong size','Shopp'),
 			__('Found better prices elsewhere','Shopp'),
 			__('Product is missing parts','Shopp'),
-			__('Product is defective or damaaged','Shopp'),
+			__('Product is defective or damaged','Shopp'),
 			__('Took too long to deliver','Shopp'),
 			__('Item out of stock','Shopp'),
 			__('Customer request to cancel','Shopp'),
