@@ -66,6 +66,10 @@ function smm_setup() {
 	register_nav_menus( array(
 		'blog-filter' => __( 'Blog Filter By', 'smm' ),
 	) );
+	
+	register_nav_menus( array(
+		'shopp-filter' => __( 'Gallery Filter By', 'smm' ),
+	) );
 }
 endif;
 
