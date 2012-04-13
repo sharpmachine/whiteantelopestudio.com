@@ -51,6 +51,6 @@
 			
 	<?php else : ?>
 			
-		<?php // No Posts Found ?>
+		<p>No posts yet!  Check back soon.</p>
 			
 <?php endif; ?>

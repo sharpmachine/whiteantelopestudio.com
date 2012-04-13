@@ -31,6 +31,7 @@ h1.shopp, h2.shopp { display: none; }
 }
 #shopp .category .gallery-box h2 { text-align: center; }
 #shopp .category .gallery-box .inner .gallery-icons { padding-left: 40px; }
+#shopp #piece-info { padding: 0 20px; }
 #shopp .shopp-gallery-images {
   height: 350px;
   background-color: #ffffff;
@@ -38,7 +39,7 @@ h1.shopp, h2.shopp { display: none; }
   margin-bottom: 30px;
 }
 #shopp .gallery-functions {
-  width: 595px;
+  width: 555px;
   float: left;
 }
 #shopp .gallery-functions h3 {
