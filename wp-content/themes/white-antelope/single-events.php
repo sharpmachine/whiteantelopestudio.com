@@ -13,7 +13,7 @@ get_header(); ?>
 			 * called loop-single.php and that will be used instead.
 			 */
 			get_template_part( 'loop', 'single' );
-			?>POOOP
+			?>
 			</article>
 		</section><!-- #page -->
 

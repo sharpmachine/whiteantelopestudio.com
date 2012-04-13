@@ -378,6 +378,44 @@ h1.shopp, h2.shopp { display: none; }
   padding: 0.5em;
   margin-bottom: 1em;
 }
+form#checkout input[type=text] {
+  float: left;
+  margin: 0;
+  font-family: Georgia;
+  font-style: italic;
+}
+form#checkout textarea {
+  float: left;
+  margin: 0;
+  font-family: Georgia;
+  font-style: italic;
+}
+form#checkout select {
+  float: left;
+  margin: 0;
+  font-family: Georgia;
+  font-style: italic;
+}
+form#checkout input[type=text] {
+  height: 30px;
+  padding: 0 5px;
+  margin-bottom: 8px;
+}
+form#checkout select {
+  height: 30px;
+  margin-bottom: 8px;
+}
+form#checkout input[type="submit"] {
+  font-size: 18px;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 400;
+  color: white;
+  border: none;
+  background-color: #1a1a1a;
+  text-transform: uppercase;
+  position: relative;
+  top: 2px;
+}
 #shopp #receipt {
   position: relative;
   margin: 20px 0;

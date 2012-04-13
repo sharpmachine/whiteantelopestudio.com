@@ -56,7 +56,6 @@
 					<div class="clear"></div>
 				</div><!-- #post-## -->
 			</article>
-		
 			<?php echo do_shortcode(
 					'[event post_id="'. get_the_ID() . '"]
 					{has_bookings}
@@ -66,7 +65,7 @@
 						Please fill in your details below to register for this event.
 					</blockquote>
 					#_BOOKINGFORM
-					<img class="cc-logos" title="Credit Cards" src="http://localhost/whiteantelopestudio.com/wp-content/uploads/2011/06/cards.png" alt="Credit Cards" width="144" height="21" />All payments are processed by<img class="paypal-logo" title="Paypal Logo" src="http://localhost/whiteantelopestudio.com/wp-content/uploads/2011/06/paypal.png" alt="Paypal Logo" width="74" height="21" />
+					<img class="cc-logos" title="Credit Cards" src="'. get_bloginfo('url') . '/wp-content/uploads/2011/06/cards.png" alt="Credit Cards" width="144" height="21" />All payments are processed by<img class="paypal-logo" title="Paypal Logo" src="'. get_bloginfo('url') . '/wp-content/uploads/2011/06/paypal.png" alt="Paypal Logo" width="74" height="21" />
 				</div>
 			</article>
 					{/has_bookings}
