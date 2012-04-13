@@ -1102,6 +1102,7 @@ a.registration-button {
   display: block;
   float: left;
   margin-right: 30px;
+  text-decoration: none;
 }
 a.registration-button:hover {
   text-decoration: none;
