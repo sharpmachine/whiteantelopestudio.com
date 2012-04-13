@@ -2,8 +2,7 @@
 	<div class="category">
 
 		<?php while(shopp('category','products')): ?>
-			
-			
+				
 			<a href="<?php shopp('product','url'); ?>">
 					<div class="small-box photo-box float-left gallery-box">
 						<div class="image">
@@ -20,19 +19,12 @@
 						</div>
 					</div>
 				</a>
-			
-			
-			
-
-						
-				
-
 		<?php endwhile; ?>
 
-</div>
+	</div>
 	<div class="alignright"><?php shopp('category','pagination','show=10'); ?></div>
 
-	</div>
+
 <?php else: ?>
 	<?php if (!shopp('catalog','is-landing')): ?>
 	<?php shopp('catalog','breadcrumb'); ?>

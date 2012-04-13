@@ -75,16 +75,11 @@ blockquote {
   font-family: Georgia;
   width: 580px;
 }
-a {
-  color: #656565;
-  text-decoration: none;
-}
-a:link {
-  color: #656565;
-  text-decoration: none;
-}
+a { color: #656565; }
+a:link { color: #656565; }
 a:visited { color: #999999; }
-a:hover { text-decoration: underline; }
+a:hover { text-decoration: none; }
+a:active { text-decoration: underline; }
 #wrapper {
   width: 1200px;
   min-height: 100%;
@@ -127,13 +122,6 @@ a:hover { text-decoration: underline; }
   position: relative;
   top: 2px;
   padding-right: 10px;
-}
-#top-bar-wrapper #top-bar .colborder {
-  -webkit-border-image: url("../images/top-bar-divider.png");
-  -moz-border-image: url("../images/top-bar-divider.png");
-  -o-border-image: url("../images/top-bar-divider.png");
-  -ms-border-image: url("../images/top-bar-divider.png");
-  border-image: url("../images/top-bar-divider.png");
 }
 #top-bar-wrapper #top-bar .social-media a { float: right; }
 #top-bar-wrapper #top-bar .social-media a img { padding: 0 0 0 19px; }
@@ -212,6 +200,8 @@ nav a {
 nav li:hover > a { color: #1a1a1a; }
 nav ul ul:hover > a { color: #1a1a1a; }
 nav ul li:hover > ul { display: block; }
+nav li:active > a { text-decoration: none; }
+nav ul ul:active > a { text-decoration: none; }
 nav ul li.current_page_item > a {
   color: #ededed;
   background: #1a1a1a;
@@ -244,6 +234,7 @@ nav ul li.current-menu-parent > a {
   padding: 0;
 }
 #sidebar ul li.widget-container { margin-bottom: 30px; }
+#sidebar ul li a { text-decoration: none; }
 #sidebar ul li a:hover { text-decoration: underline; }
 #sidebar h3 {
   font-family: Georgia;
@@ -318,6 +309,16 @@ nav ul li.current-menu-parent > a {
   margin: 30px 0 -48px 0;
   width: 875px;
 }
+.blog-filter a {
+  text-decoration: none;
+  padding-left: 5px;
+  color: #656565;
+  padding: 0 5px;
+}
+.blog-filter a.all {
+  color: #ffffff;
+  background-color: #1a1a1a;
+}
 #payment-buttons {
   font-family: 'Open Sans', sans-serif;
   font-size: 18px;
@@ -350,6 +351,8 @@ h2.entry-title { margin-bottom: 10px; }
   padding: 0 5px;
   margin-bottom: -10px;
 }
+.post-details a { text-decoration: none; }
+.post-details a:hover { text-decoration: underline; }
 .post-details .date {
   font-family: 'Open Sans', sans-serif;
   font-weight: 400;
@@ -409,12 +412,16 @@ h2.entry-title { margin-bottom: 10px; }
 #single-blog-post .entry-utility { margin-top: 15px; }
 #single-blog-post h1.entry-title { margin-bottom: 5px; }
 #single-blog-post .tag-links { padding-right: 10px; }
+#single-blog-post .tag-links a { text-decoration: none; }
+#single-blog-post .tag-links a:hover { text-decoration: underline; }
 #single-blog-post .tag-links img {
   position: relative;
   top: 4px;
   padding-right: 10px;
 }
 #single-blog-post .cat-links { padding-right: 10px; }
+#single-blog-post .cat-links a { text-decoration: none; }
+#single-blog-post .cat-links a:hover { text-decoration: underline; }
 #single-blog-post .cat-links img {
   position: relative;
   top: 4px;
@@ -464,12 +471,16 @@ h2.entry-title { margin-bottom: 10px; }
 .single-blog-post .entry-utility { margin-top: 15px; }
 .single-blog-post h1.entry-title { margin-bottom: 5px; }
 .single-blog-post .tag-links { padding-right: 10px; }
+.single-blog-post .tag-links a { text-decoration: none; }
+.single-blog-post .tag-links a:hover { text-decoration: underline; }
 .single-blog-post .tag-links img {
   position: relative;
   top: 4px;
   padding-right: 10px;
 }
 .single-blog-post .cat-links { padding-right: 10px; }
+.single-blog-post .cat-links a { text-decoration: none; }
+.single-blog-post .cat-links a:hover { text-decoration: underline; }
 .single-blog-post .cat-links img {
   position: relative;
   top: 4px;
@@ -477,12 +488,16 @@ h2.entry-title { margin-bottom: 10px; }
 }
 .single-blog-post blockquote { width: 100%; }
 .tag-links { padding-right: 10px; }
+.tag-links a { text-decoration: none; }
+.tag-links a:hover { text-decoration: underline; }
 .tag-links img {
   position: relative;
   top: 4px;
   padding-right: 10px;
 }
 .cat-links { padding-right: 10px; }
+.cat-links a { text-decoration: none; }
+.cat-links a:hover { text-decoration: underline; }
 .cat-links img {
   position: relative;
   top: 4px;
@@ -719,10 +734,10 @@ body.home #wrapper {
   display: table-cell;
   vertical-align: middle;
 }
-.photo-box .content .inner h2 { color: #ededed; }
+.photo-box .content .inner h2 { color: #ffffff; }
 .photo-box:hover .content {
-  opacity: 0.6;
-  filter: alpha(opacity = 60);
+  opacity: 0.8;
+  filter: alpha(opacity = 80);
   -webkit-transition: all 0.5s ease;
   -moz-transition: all 0.5s ease;
   -o-transition: all 0.5s ease;

@@ -92,12 +92,10 @@ blockquote
 a
 {
 	color: @was-grey;
-	text-decoration: none;
 	
 	:link
 	{
 		color: @was-grey;
-		text-decoration: none;
 	}
 	
 	:visited
@@ -107,12 +105,12 @@ a
 	
 	:hover
 	{
-		text-decoration: underline;
+		text-decoration: none;
 	}
 	
 	:active
 	{
-		
+		text-decoration: underline;
 	}
 }
 
@@ -180,15 +178,6 @@ a
 			position: relative;
 			top: 2px;
 			padding-right: 10px;
-		}
-
-		.colborder 
-		{
-			-webkit-border-image:url("../images/top-bar-divider.png");
-			-moz-border-image:url("../images/top-bar-divider.png");
-			-o-border-image:url("../images/top-bar-divider.png");
-			-ms-border-image:url("../images/top-bar-divider.png");
-			border-image:url("../images/top-bar-divider.png");
 		}
 
 		.social-media
@@ -309,6 +298,11 @@ nav
 		display: block;
 	}
 	
+	li:active > a, ul ul :active > a
+	{
+		text-decoration: none;
+	}
+	
 	ul li.current_page_item > a,
 	ul li.current-menu-ancestor > a,
 	ul li.current-menu-item > a,
@@ -348,7 +342,9 @@ nav
 		{
 			
 			a
-			{	
+			{
+				text-decoration: none;
+					
 				:hover
 				{
 					text-decoration: underline;
@@ -417,6 +413,20 @@ nav
 {
 	margin: 30px 0 -48px 0;
 	width: 875px;
+	
+	a
+	{
+		text-decoration: none;
+		padding-left: 5px;
+		color: @was-grey;
+		padding: 0 5px;
+	}
+	
+	a.all
+	{
+		color: #fff;
+		background-color: @was-black;
+	}
 }
 
 #payment-buttons
@@ -473,6 +483,16 @@ h2.entry-title
 	font-size: 18px;
 	padding: 0 5px;
 	margin-bottom: -10px;
+	
+	a
+	{
+		text-decoration: none;
+		
+		:hover
+		{
+			text-decoration: underline;
+		}
+	}
 	
 	.date
 	{
@@ -574,6 +594,16 @@ h2.entry-title
 	{
 		padding-right: 10px;
 		
+		a
+		{
+			text-decoration: none;
+			
+			:hover
+			{
+				text-decoration: underline;
+			}
+		}
+		
 		img
 		{
 			position: relative;
@@ -592,6 +622,16 @@ h2.entry-title
 .cat-links
 {
 	padding-right: 10px;
+	
+		a
+		{
+			text-decoration: none;
+			
+			:hover
+			{
+				text-decoration: underline;
+			}
+		}
 		
 	img
 	{
@@ -916,7 +956,7 @@ body.home #wrapper
     	
 	    	h2
 	    	{
-	    		color: @was-white;
+	    		color: #fff;
 	    	}
 		}
 	}
@@ -925,10 +965,9 @@ body.home #wrapper
 	{
 		.content
 		{
-			opacity: 0.6;
-			filter: alpha(opacity = 60);
+			opacity: 0.8;
+			filter: alpha(opacity = 80);
 			.transition;
-			
 		}
 	}
 }
