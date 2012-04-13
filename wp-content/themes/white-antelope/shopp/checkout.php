@@ -1,3 +1,4 @@
+<article id="content">
 <form action="<?php shopp('checkout','url'); ?>" method="post" class="shopp validate" id="checkout">
 <?php shopp('checkout','cart-summary'); ?>
 
@@ -148,3 +149,4 @@
 
 <?php endif; ?>
 </form>
+</article>

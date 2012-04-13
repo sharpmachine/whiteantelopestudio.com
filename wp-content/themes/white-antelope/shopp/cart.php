@@ -32,15 +32,15 @@
 				<td class="money"><?php shopp('cartitem','total'); ?></td>
 			</tr>
 		<?php endwhile; ?>
-	
+			
 		<?php while(shopp('cart','promos')): ?>
 			<tr><td colspan="4" class="money"><?php shopp('cart','promo-name'); ?><strong><?php shopp('cart','promo-discount',array('before' => '&nbsp;&mdash;&nbsp;')); ?></strong></td></tr>
 		<?php endwhile; ?>
 	
-		<tr class="totals">
+		<tr class="totals first">
 			<td colspan="2" rowspan="5">
 				<?php if (shopp('cart','needs-shipping-estimates')): ?>
-				<small>Estimate shipping &amp; taxes for:</small>
+				Estimate shipping &amp; taxes for:
 				<?php shopp('cart','shipping-estimates'); ?>
 				<?php endif; ?>
 				<?php shopp('cart','promo-code'); ?>
@@ -73,15 +73,21 @@
 		</tr>
 	</table>	
 	</form>
-	
-	<?php else: ?>
-		<p class="warning">There are currently no items in your shopping cart.</p>
-		<p><a href="<?php shopp('catalog','url'); ?>">&laquo; Continue Shopping</a></p>
-	<?php endif; ?>
-	
 	<div class="cart-functions bottom">
 		<a href="<?php shopp('checkout','url'); ?>" class="right button"><img src="<?php bloginfo('template_directory'); ?>/images/gallery-cart.png" width="18" height="13" alt="Gallery Cart">Checkout</a>
 		<a href="<?php shopp('cart','referrer'); ?>" class="right">Continue Shopping</a>
 	</div>
+	<?php else: ?>
+		
+		
+		<div class="cart-functions bottom">
+			<h1 class="entry-title">Shopping Cart</h1>
+			
+			<a href="<?php shopp('cart','referrer'); ?>" class="right">Continue Shopping</a>
+			<p class="warning">There are currently no items in your shopping cart.</p>
+	</div>
+	<?php endif; ?>
+	
+	
 	
 </article>

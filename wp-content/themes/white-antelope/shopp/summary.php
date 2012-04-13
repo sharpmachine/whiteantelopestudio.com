@@ -1,4 +1,5 @@
 <?php if (shopp('cart','hasitems')): ?>
+
 <div id="cart" class="shopp">
 <table>
 	<tr>
@@ -9,7 +10,7 @@
 	</tr>
 
 	<?php while(shopp('cart','items')): ?>
-		<tr>
+		<tr class="gallery-cart-item">
 			<td>
 				<a href="<?php shopp('cartitem','url'); ?>"><?php shopp('cartitem','name'); ?></a>
 				<?php shopp('cartitem','options','show=selected&before= (&after=)'); ?>
@@ -26,7 +27,7 @@
 		<tr><td colspan="4" class="money"><?php shopp('cart','promo-name'); ?><strong><?php shopp('cart','promo-discount',array('before' => '&nbsp;&mdash;&nbsp;')); ?></strong></td></tr>
 	<?php endwhile; ?>
 
-	<tr class="totals">
+	<tr class="totals first">
 		<td colspan="2" rowspan="5">
 			<?php if ((shopp('cart','has-shipping-methods'))): ?>
 			<small>Select a shipping method:</small>

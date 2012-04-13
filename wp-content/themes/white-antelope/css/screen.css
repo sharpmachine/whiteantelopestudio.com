@@ -52,9 +52,6 @@ caption, th, td {
 	font-weight: normal; 
 	float:none !important; 
 }
-table, th, td { 
-	vertical-align: middle; 
-}
 
 /* Remove possible quote marks (") from <q>, <blockquote>. */
 blockquote:before, blockquote:after, q:before, q:after { content: ''; }

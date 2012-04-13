@@ -276,8 +276,30 @@ h1.shopp, h2.shopp { display: none; }
 #shopp #cart table tr.gallery-cart-item td {
   border-bottom: 1px solid #656565;
   padding: 20px 0;
+  vertical-align: middle;
 }
-#shopp #cart table tr.totals td.money { vertical-align: bottom; }
+#shopp #cart table tr.first td { padding-top: 35px; }
+#shopp #cart table tr.totals th {
+  font-family: 'Open Sans', sans-serif;
+  font-style: normal;
+  text-transform: uppercase;
+  font-size: 18px;
+}
+#shopp #cart table tr.totals td.money {
+  font-weight: bold;
+  color: #1a1a1a;
+}
+#shopp #cart table input[type="submit"] {
+  font-size: 18px;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 400;
+  color: white;
+  border: none;
+  background-color: #1a1a1a;
+  text-transform: uppercase;
+  position: relative;
+  top: 2px;
+}
 #shopp #cart table a.remove {
   font-family: 'Open Sans', sans-serif;
   font-weight: 600;
@@ -296,6 +318,18 @@ h1.shopp, h2.shopp { display: none; }
   text-align: center;
   font-family: 'Open Sans', sans-serif;
 }
+#shopp #cart table input#shipping-postcode {
+  width: 45px;
+  background-color: #ffffff;
+  border: 1px solid #1a1a1a;
+  color: #1a1a1a;
+  height: 22px;
+  margin-left: 5px;
+}
+#shopp #cart table select {
+  height: 26px;
+  border: 1px solid #1a1a1a;
+}
 #shopp #cart th {
   font-family: Georgia;
   font-style: italic;
@@ -303,7 +337,6 @@ h1.shopp, h2.shopp { display: none; }
   font-weight: normal;
   font-size: 16px;
   color: #1a1a1a;
-  padding-bottom: 50px !important;
 }
 #shopp #cart th { padding: 3px; }
 #shopp #cart td { padding: 3px; }
@@ -312,16 +345,10 @@ h1.shopp, h2.shopp { display: none; }
   text-align: right;
   white-space: nowrap;
 }
-#shopp #cart .totals th {
-  text-align: right;
-  white-space: nowrap;
-}
 #shopp #cart .buttons td {
   text-align: right;
   white-space: nowrap;
 }
-#shopp #cart .totals.total th { font-size: 130%; }
-#shopp #cart .totals.total td { font-size: 130%; }
 #shopp #cart .remove { font-size: 9px; }
 #shopp #cart address { font-style: normal; }
 #shopp #cart big {
