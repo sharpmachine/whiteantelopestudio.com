@@ -270,17 +270,6 @@ function smm_widgets_init() {
 		'after_title' => '</h3>',
 	) );
 
-	// Area 2, located below the Primary Widget Area in the sidebar. Empty by default.
-	register_sidebar( array(
-		'name' => __( 'Secondary Widget Area', 'smm' ),
-		'id' => 'secondary-widget-area',
-		'description' => __( 'The secondary widget area', 'smm' ),
-		'before_widget' => '<li id="%1$s" class="widget-container %2$s">',
-		'after_widget' => '</li>',
-		'before_title' => '<h3 class="widget-title">',
-		'after_title' => '</h3>',
-	) );
-
 	// Area 3, located in the footer. Empty by default.
 	register_sidebar( array(
 		'name' => __( 'First Footer Widget Area', 'smm' ),
