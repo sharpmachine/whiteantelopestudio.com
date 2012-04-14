@@ -24,11 +24,12 @@ function help_dashboard_widget_function() {
 			<li><a href="#" target="_blank">Site Overview</a></li>
 			<li><a href="http://www.youtube.com/watch?v=IE_10_nwe0c" target="_blank">SEO Ultimate Tutorial</a></li>
 			<li><a href="http://www.youtube.com/watch?v=5PKsUaxSCNk" target="_blank">Managing Your Store With Shopp</a></li>
+			<li><a href="#" target="_blank">Managing Homepage Options</a></li>
 			<li><a href="#" target="_blank">Managing Friends</a></li>
 			<li><a href="#" target="_blank">Managing Events</a></li>
 			<li><a href="#" target="_blank">Managing Footer</a></li>
 			<li><a href="#" target="_blank">Managing Support Buttons</a></li>
-			<li><a href="#" target="_blank">Managing Pages with Images</a></li>
+			<li><a href="http://youtu.be/N8YIVpwanyY" target="_blank">Managing Pages with Images</a></li>
 		</ul>
 		
 		<p style="clear:both;padding-top:5px;margin-bottom:0.5em;color:#666;font-size:14px;">Helpful Quick Links:</p>
@@ -39,7 +40,7 @@ function help_dashboard_widget_function() {
 		<a href="http://google.com/analytics" target="_blank">Analytics Login</a> | 	
 		<a href="http://mail.'. substr(get_bloginfo('url'), 7).'" target="_blank">Mail Login</a>
 		
-		<p>Still stuck?  Give us a call at <strong>(480) 648-8229</strong> or email us at <a href="mailto:info@sharpmachinemedia.com?subject=Help!"><strong>info@sharpmachinemedia.com</strong></a>.
+		<p>Still stuck?  Give us a call at <strong>(530) 638-3581</strong> or email us at <a href="mailto:info@sharpmachinemedia.com?subject=Help!"><strong>info@sharpmachinemedia.com</strong></a>.
 	';
 } 
 
