@@ -77,3 +77,25 @@ form.inline input.button, form.inline button {
   margin:0.5em 0;
 }
 button, input.button { position:relative;top:0.25em; }
+
+footer p.footer-excerpt a {
+width: 135px;
+}
+
+#top-bar-wrapper #top-bar img {
+padding-right: 8px;
+}
+
+#top-bar-wrapper #top-bar a {
+font-size: 11px;
+}
+
+#shopp #cart table input#shipping-postcode {
+position: relative;
+top: -3px;
+}
+
+#shopp #cart table select#shipping-country {
+position: relative;
+top: 3px;
+}

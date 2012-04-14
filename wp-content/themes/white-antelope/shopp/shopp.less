@@ -36,7 +36,8 @@ h2.shopp
 		
 		h2
 		{
-			text-align: center;
+			/*text-align: center;*/
+			margin-left: 35px;
 		}
 		
 		.inner
@@ -65,7 +66,7 @@ h2.shopp
 	
 	.gallery-functions
 	{
-		width: 555px;
+		width: 530px;
 		float: left;
 		
 		h3
@@ -89,7 +90,7 @@ h2.shopp
 	form.product
 	{
 		float: right;
-		width: 365px;
+		width: 390px;
 		.open-sans;
 		font-weight: 400;
 		font-size: 18px;
@@ -97,18 +98,13 @@ h2.shopp
 		
 		select
 		{
-			-webkit-appearance: none;
-			-moz-appearance: none;
-			-ms-appearance: none;
-			-o-appearance: none;
-			appearance: none;
 			.open-sans;
 			font-weight: 400;
 			font-size: 18px;
 			text-transform: uppercase;
 			border: none;
 			margin: 0;
-			width: 30px;
+			width: 50px;
 			text-align: center;
 		}
 		
@@ -158,10 +154,16 @@ h2.shopp
 			float: right;
 			.open-sans;
 			text-transform: uppercase;
+			text-decoration: none;
 			font-size: 18px;
 			color: @was-black;
 			position: relative;
 			top: 5px;
+			
+			:hover
+			{
+				text-decoration: underline;
+			}
 		}
 		
 		a.button
@@ -173,6 +175,7 @@ h2.shopp
 			:hover
 			{
 				background-color: @was-black;
+				text-decoration: none;
 			}
 			
 			img
@@ -339,6 +342,11 @@ ul.shopp_categories li ul.active { display: block; }
 		border-bottom: 1px solid @was-grey;
 		padding: 20px 0;
 		vertical-align: middle; 
+		
+		a
+		{
+			text-decoration: none;
+		}
 	}
 	
 	tr.first td
@@ -383,7 +391,7 @@ ul.shopp_categories li ul.active { display: block; }
 		font-weight: 600;
 		font-size: 12px;
 		text-transform: uppercase;
-		text-decoration: underline;
+		text-decoration: underline !important;
 		color: @was-black;
 	}
 	
@@ -403,7 +411,7 @@ ul.shopp_categories li ul.active { display: block; }
 	{
 		width: 45px;
 		background-color: #fff;
-		border: 1px solid @was-black;
+		border: 1px solid #BBB;
 		color: @was-black;
 		height: 22px;
 		margin-left: 5px;
@@ -412,7 +420,7 @@ ul.shopp_categories li ul.active { display: block; }
 	select
 	{
 		height: 26px;
-		border: 1px solid @was-black;
+		border: 1px solid #BBB;
 	}
 }
 #shopp #cart th 

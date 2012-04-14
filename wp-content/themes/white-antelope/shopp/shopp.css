@@ -29,7 +29,7 @@ h1.shopp, h2.shopp { display: none; }
   margin: 0 1px 1px 0;
   width: 239px;
 }
-#shopp .category .gallery-box h2 { text-align: center; }
+#shopp .category .gallery-box h2 { margin-left: 35px; }
 #shopp .category .gallery-box .inner .gallery-icons { padding-left: 40px; }
 #shopp #piece-info { padding: 0 20px; }
 #shopp .shopp-gallery-images {
@@ -39,7 +39,7 @@ h1.shopp, h2.shopp { display: none; }
   margin-bottom: 30px;
 }
 #shopp .gallery-functions {
-  width: 555px;
+  width: 530px;
   float: left;
 }
 #shopp .gallery-functions h3 {
@@ -57,25 +57,20 @@ h1.shopp, h2.shopp { display: none; }
 }
 #shopp form.product {
   float: right;
-  width: 365px;
+  width: 390px;
   font-family: 'Open Sans', sans-serif;
   font-weight: 400;
   font-size: 18px;
   text-transform: uppercase;
 }
 #shopp form.product select {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  -ms-appearance: none;
-  -o-appearance: none;
-  appearance: none;
   font-family: 'Open Sans', sans-serif;
   font-weight: 400;
   font-size: 18px;
   text-transform: uppercase;
   border: none;
   margin: 0;
-  width: 30px;
+  width: 50px;
   text-align: center;
 }
 #shopp form.product input[type="submit"] {
@@ -106,17 +101,22 @@ h1.shopp, h2.shopp { display: none; }
   float: right;
   font-family: 'Open Sans', sans-serif;
   text-transform: uppercase;
+  text-decoration: none;
   font-size: 18px;
   color: #1a1a1a;
   position: relative;
   top: 5px;
 }
+#shopp .cart-functions a:hover { text-decoration: underline; }
 #shopp .cart-functions a.button {
   margin-left: 30px;
   color: #ededed;
   padding: 0 5px;
 }
-#shopp .cart-functions a.button:hover { background-color: #1a1a1a; }
+#shopp .cart-functions a.button:hover {
+  background-color: #1a1a1a;
+  text-decoration: none;
+}
 #shopp .cart-functions a.button img { padding-right: 3px; }
 #shopp .bottom { height: 50px; }
 #shopp .views {
@@ -279,6 +279,7 @@ h1.shopp, h2.shopp { display: none; }
   padding: 20px 0;
   vertical-align: middle;
 }
+#shopp #cart table tr.gallery-cart-item td a { text-decoration: none; }
 #shopp #cart table tr.first td { padding-top: 35px; }
 #shopp #cart table tr.totals th {
   font-family: 'Open Sans', sans-serif;
@@ -306,7 +307,7 @@ h1.shopp, h2.shopp { display: none; }
   font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
-  text-decoration: underline;
+  text-decoration: underline !important;
   color: #1a1a1a;
 }
 #shopp #cart table input[type="text"] {
@@ -322,14 +323,14 @@ h1.shopp, h2.shopp { display: none; }
 #shopp #cart table input#shipping-postcode {
   width: 45px;
   background-color: #ffffff;
-  border: 1px solid #1a1a1a;
+  border: 1px solid #bbbbbb;
   color: #1a1a1a;
   height: 22px;
   margin-left: 5px;
 }
 #shopp #cart table select {
   height: 26px;
-  border: 1px solid #1a1a1a;
+  border: 1px solid #bbbbbb;
 }
 #shopp #cart th {
   font-family: Georgia;

@@ -46,8 +46,9 @@
 <link rel="stylesheet" href="<?php bloginfo('template_directory'); ?>/css/screen.css" type="text/css" media="screen, projection">
 <link rel="stylesheet" href="<?php bloginfo('template_directory'); ?>/css/print.css" type="text/css" media="print">
 <link rel="stylesheet" href="<?php bloginfo('template_directory'); ?>/css/style.css">
-<!--[if lt IE 8]><link rel="stylesheet" href="<?php bloginfo('template_directory'); ?>/css/ie.css" type="text/css" media="screen, projection"><![endif]-->
-	
+<!--[if lte IE 8]><link rel="stylesheet" href="<?php bloginfo('template_directory'); ?>/css/ie.css" type="text/css" media="screen, projection"><![endif]-->
+<!--[if IE 7]><BODY onLoad="window.alert('Whoa there!  It looks like you are browsing the web with IE7.  You should know that is a super old browser. This site will not look right with your browser.  Why not update your browser to something more...modern?');"><![endif]-->
+
 <!-- Hashgrid - remove before moving to productions -->
 <link rel="stylesheet" href="<?php bloginfo('template_directory'); ?>/css/hashgrid.css">
 	

@@ -21,7 +21,7 @@
 						<?php if (have_posts()) : ?>
 							<?php while (have_posts()) : the_post(); ?>	
 								<h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
-								<p><?php echo get_footer_excerpt(); ?></p>
+								<p class="footer-excerpt"><?php echo get_footer_excerpt(); ?></p>
 							<?php endwhile; else : ?>
 								<p>Bummer, no posts yet!</p>
 						<?php endif; ?>

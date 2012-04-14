@@ -14,6 +14,7 @@ html, body { height: 100%; }
 body {
   background-color: #ededed;
   color: #1a1a1a;
+  font-size: 12px;
 }
 h1.entry-title {
   font-family: 'Open Sans', sans-serif;
@@ -574,6 +575,10 @@ footer p a {
   display: inline-block;
   margin-top: 1.5em;
 }
+footer p.footer-excerpt a {
+  display: block;
+  width: 120px;
+}
 footer a {
   font-family: 'Open Sans', sans-serif;
   font-weight: 600;
@@ -1061,6 +1066,7 @@ span.wpcf7-not-valid-tip {
   text-transform: uppercase;
   color: #1a1a1a;
 }
+select { border: 1px solid #bbbbbb; }
 .city-state {
   font-family: Georgia;
   font-style: italic;
