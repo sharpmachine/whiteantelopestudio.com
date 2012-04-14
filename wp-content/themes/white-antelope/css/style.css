@@ -198,6 +198,7 @@ nav a {
   padding: 0 2px;
   text-decoration: none;
 }
+nav a:visited { color: #999999; }
 nav li:hover > a { color: #1a1a1a; }
 nav ul ul:hover > a { color: #1a1a1a; }
 nav ul li:hover > ul { display: block; }
