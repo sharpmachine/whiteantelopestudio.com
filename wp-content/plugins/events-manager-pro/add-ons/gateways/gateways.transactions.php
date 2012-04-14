@@ -18,6 +18,9 @@ class EM_Gateways_Transactions{
 			add_action('em_bookings_person_footer', array(&$this, 'output'),10,1);
 			add_action('em_bookings_event_footer', array(&$this, 'output'),10,1);
 		}
+		//Booking Tables UI
+		add_filter('em_bookings_table_rows_col', array(&$this,'em_bookings_table_rows_col'),10,5);
+		add_filter('em_bookings_table_cols_template', array(&$this, 'em_bookings_table_cols_template'),10,2);
 		add_action('wp_ajax_em_transactions_table', array(&$this, 'ajax'),10,1);
 	}
 	
@@ -315,6 +318,36 @@ class EM_Gateways_Transactions{
 		$this->total_transactions = $wpdb->get_var( "SELECT FOUND_ROWS();" );
 		return $return;
 	}	
+
+	
+	/*
+	 * ----------------------------------------------------------
+	 * Booking Table and CSV Export
+	 * ----------------------------------------------------------
+	 */
+	
+	function em_bookings_table_rows_col($value, $col, $EM_Booking, $EM_Bookings_Table, $csv){
+		global $EM_Event;
+		if( $col == 'gateway_txn_id' ){
+			//get latest transaction with an ID
+			$old_limit = $this->limit;
+			$old_orderby = $this->orderby;
+			$this->limit = 1;
+			$this->orderby = 'booking_date';
+			$transactions = $this->get_transactions($EM_Booking);
+			if(count($transactions) > 0){
+				$value = $transactions[0]->transaction_gateway_id;
+			}
+			$this->limit = $old_limit;
+			$this->orderby = $old_orderby;
+		}
+		return $value;
+	}
+	
+	function em_bookings_table_cols_template($template, $EM_Bookings_Table){
+		$template['gateway_txn_id'] = __('Transaction ID');
+		return $template;
+	}
 }
 global $EM_Gateways_Transactions;
 $EM_Gateways_Transactions = new EM_Gateways_Transactions();

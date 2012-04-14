@@ -20,7 +20,7 @@ class EM_Booking extends EM_Object{
 		'booking_meta' => array('name'=>'meta','type'=>'%s')
 	);
 	//Other Vars
-	var $notes = array(); //loaded from em_meta table in construct
+	var $notes; //loaded from em_meta table in construct
 	var $timestamp;
 	var $person;
 	var $required_fields = array('booking_id', 'event_id', 'person_id', 'booking_spaces');
@@ -66,23 +66,16 @@ class EM_Booking extends EM_Object{
 	 */
 	function EM_Booking( $booking_data = false ){
 		//Get the person for this booking
+		global $wpdb;
 	  	if( $booking_data !== false ){
 			//Load booking data
 			$booking = array();
 			if( is_array($booking_data) ){
 				$booking = $booking_data;
 			}elseif( is_numeric($booking_data) ){
-				//Retreiving from the database		
-				global $wpdb;			
+				//Retreiving from the database				
 				$sql = "SELECT * FROM ". EM_BOOKINGS_TABLE ." LEFT JOIN ". EM_META_TABLE ." ON object_id=booking_id WHERE booking_id ='$booking_data'";
 				$booking = $wpdb->get_row($sql, ARRAY_A);
-				//Custom Fields
-				$custom = $wpdb->get_row("SELECT meta_key, meta_value FROM ". EM_BOOKINGS_TABLE ." LEFT JOIN ". EM_META_TABLE ." ON object_id=booking_id WHERE booking_id ='$booking_data' AND meta_key='booking_custom'");
-			  	//Booking notes
-			  	$notes = $wpdb->get_results("SELECT * FROM ". EM_META_TABLE ." WHERE meta_key='booking-note' AND object_id ='$booking_data'", ARRAY_A);
-			  	foreach($notes as $note){
-			  		$this->notes[] = unserialize($note['meta_value']);
-			  	}
 			}
 			//booking meta
 			$booking['booking_meta'] = (!empty($booking['booking_meta'])) ? unserialize($booking['booking_meta']):array();
@@ -91,10 +84,6 @@ class EM_Booking extends EM_Object{
 			$this->previous_status = $this->booking_status;
 			$this->get_person();
 			$this->timestamp = !empty($booking['booking_date']) ? strtotime($booking['booking_date']):false;
-			//Add custom booking data
-			if( !empty($custom['meta_key']) && $custom['meta_key'] == 'booking_custom' && is_serialized($custom['meta_value']) ){
-				$this->custom = unserialize($custom['meta_value']);
-			}
 		}
 		//Do it here so things appear in the po file.
 		$this->status_array = array(
@@ -107,6 +96,20 @@ class EM_Booking extends EM_Object{
 		);
 		$this->compat_keys();
 		do_action('em_booking', $this, $booking_data);
+	}
+	
+	function get_notes(){
+		global $wpdb;
+		if( !is_array($this->notes) && !empty($this->booking_id) ){
+		  	$notes = $wpdb->get_results("SELECT * FROM ". EM_META_TABLE ." WHERE meta_key='booking-note' AND object_id ='{$this->booking_id}'", ARRAY_A);
+		  	$this->notes = array();
+		  	foreach($notes as $note){
+		  		$this->notes[] = unserialize($note['meta_value']);
+		  	}
+		}elseif( empty($this->booking_id) ){
+			$this->notes = array();
+		}
+		return $this->notes;
 	}
 	
 	/**
@@ -478,6 +481,7 @@ class EM_Booking extends EM_Object{
 	function add_note( $note_text ){
 		global $wpdb;
 		if( $this->can_manage() ){
+			$this->get_notes();
 			$note = array('author'=>get_current_user_id(),'note'=>$note_text,'timestamp'=>current_time('timestamp'));
 			$this->notes[] = $note;
 			$this->feedback_message = __('Booking note successfully added.','dbem');
@@ -490,6 +494,7 @@ class EM_Booking extends EM_Object{
 	 	preg_match_all("/(#@?_?[A-Za-z0-9]+)({([^}]+)})?/", $format, $placeholders);
 		foreach( $this->get_tickets() as $EM_Ticket){ break; } //Get first ticket for single ticket placeholders
 		$output_string = $format;
+		$replaces = array();
 		foreach($placeholders[1] as $key => $result) {
 			$replace = '';
 			$full_result = $placeholders[0][$key];		
@@ -531,6 +536,9 @@ class EM_Booking extends EM_Object{
 				case '#_BOOKINGPRICE':
 					$replace = em_get_currency_symbol(true)." ". number_format($this->get_price(),2);
 					break;
+				case '#_BOOKINGTICKETNAME':
+					$replace = $EM_Ticket->name;
+					break;
 				case '#_BOOKINGTICKETDESCRIPTION':
 					$replace = $EM_Ticket->description;
 					break;
@@ -555,9 +563,15 @@ class EM_Booking extends EM_Object{
 					$replace = $full_result;
 					break;
 			}
-			$replace = apply_filters('em_booking_output_placeholder', $replace, $this, $full_result, $target);
-			$output_string = str_replace($full_result, $replace , $output_string );
+			$replaces[$key] = apply_filters('em_booking_output_placeholder', $replace, $this, $full_result, $target);
 		}
+		//sort out replacements so that 
+		krsort($replaces);
+		foreach($replaces as $key => $value){
+			$full_result = $placeholders[0][$key];
+			$output_string = str_replace($full_result, $value , $output_string );
+		}
+		//run event output too, since this is never run from within events and will not infinitely loop
 		$output_string = $this->get_event()->output($output_string, $target);
 		return apply_filters('em_booking_output', $output_string, $this, $format, $target);	
 	}
@@ -636,9 +650,9 @@ class EM_Booking extends EM_Object{
 						}
 					}
 					//email admin
-					if( get_option('dbem_bookings_notify_admin') != '' && preg_match('/^[_\.0-9a-z-]+@([0-9a-z][0-9a-z-]+\.)+[a-z]{2,3}$/', get_option('dbem_bookings_notify_admin')) ){
+					if( get_option('dbem_bookings_notify_admin') != '' && preg_match('/^([_\.0-9a-z-]+@([0-9a-z][0-9a-z-]+\.)+[a-z]{2,3},?)+$/', get_option('dbem_bookings_notify_admin')) ){
 						$admin_emails =  get_option('dbem_bookings_notify_admin');
-						if( strstr($admin_emails, ',') !== false ){ $admin_emails = explode(',', $admin_emails); } //supply emails
+						$admin_emails = explode(',', $admin_emails); //supply emails as array 
 						if( !$this->email_send( $msg['admin']['subject'], $msg['admin']['body'], $admin_emails) ){
 							$this->errors[] = __('Confirmation email could not be sent to admin. Registrant should have gotten their email (only admin see this warning).','dbem');
 							return false;

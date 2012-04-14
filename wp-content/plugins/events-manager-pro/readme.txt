@@ -3,7 +3,7 @@ Contributors: netweblogic
 Tags: events, event, event registration, event calendar, events calendar, event management, paypal, registration, ticket, tickets, ticketing, tickets, theme, widget, locations, maps, booking, attendance, attendee, buddypress, calendar, gigs, payment, payments, sports,
 Requires at least: 3.1
 Tested up to: 3.3.1
-Stable tag: 2.1.2
+Stable tag: 2.1.3
 
 == Description ==
 
@@ -22,6 +22,10 @@ http://wp-events-plugin.com/support/
 Please visit http://wp-events-plugin.com/documentation/installation/
 
 == Changelog ==
+= 2.1.3 =
+* added gateway transaction id to booking collumns
+* fixed form editor validation problems
+
 = 2.1.2 =
 * allowed form labels to accept HTML
 * fixed paypal resume payment button

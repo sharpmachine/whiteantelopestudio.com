@@ -311,6 +311,7 @@ class EM_Form extends EM_Object {
 	function validate(){
 		foreach( array_keys($this->form_fields) as $field_id ){
 			$value = ( array_key_exists($field_id, $this->field_values) ) ? $this->field_values[$field_id] : '';
+			$this->validate_field($field_id, $value);
 		}
 		if( count($this->get_errors()) > 0 ){
 			return false;
