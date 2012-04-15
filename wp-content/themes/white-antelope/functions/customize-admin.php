@@ -54,6 +54,9 @@ function remove_admin_bar_links() {
 	$wp_admin_bar->remove_menu('wporg');
 	$wp_admin_bar->remove_menu('support-forums');
 	$wp_admin_bar->remove_menu('feedback');
+	$wp_admin_bar->remove_menu('new-link');
+	$wp_admin_bar->remove_menu('new-location');
+	$wp_admin_bar->remove_menu('new-event-recurring');
 }
 add_action( 'wp_before_admin_bar_render', 'remove_admin_bar_links' );
 
