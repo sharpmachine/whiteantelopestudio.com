@@ -49,13 +49,6 @@
 <!--[if lte IE 8]><link rel="stylesheet" href="<?php bloginfo('template_directory'); ?>/css/ie.css" type="text/css" media="screen, projection"><![endif]-->
 <!--[if IE 7]><BODY onLoad="window.alert('Whoa there!  It looks like you are browsing the web with IE7.  You should know that is a super old browser. This site will not look right with your browser.  Why not update your browser to something more...modern?');"><![endif]-->
 
-<!-- Hashgrid - remove before moving to productions -->
-<link rel="stylesheet" href="<?php bloginfo('template_directory'); ?>/css/hashgrid.css">
-	
-<!-- Uncomment for mobile browsers
-<link rel="stylesheet" type="text/css" media="only screen and (max-width: 480px), only screen and (max-device-width: 480px)" href="<?php bloginfo('template_directory'); ?>/css/handheld.css" />
--->
-	
 <link rel="pingback" href="<?php bloginfo( 'pingback_url' ); ?>" />
 <link rel="self" type="application/rss+xml" title="Revival Cry &raquo; Events Feed" href="<?php bloginfo('url'); ?>/events/rss" />
 	

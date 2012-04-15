@@ -7,14 +7,14 @@
 <style type="text/css">
 	body
 	{
-		background-color: #000;
+		background-color: #EDEDED;
 		color: #fff;
 		font-family: Arial, Helvetica, sans-serif;
 	}
 	
 	#logo
 	{
-		width: 355px;
+		width: 410px;
 		margin: 50px auto;
 	}
 	
@@ -29,7 +29,7 @@
 <body>
 		
 	<div id="logo">
-		<img src="http://www.domain.com/wp-content/themes/project_theme/images/logo.png" width="335" height="52" alt="Logo">
+		<img src="http://beta.whiteantelopestudio.com/wp-content/themes/white-antelope/images/logo.png" width="410" height="200" alt="Logo">
 		<p>We are currently undergoing routine maintenance.  Please check back soon.</p>
 	</div>
 		
