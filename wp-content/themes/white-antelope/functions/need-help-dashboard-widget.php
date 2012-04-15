@@ -25,10 +25,10 @@ function help_dashboard_widget_function() {
 			<li><a href="http://www.youtube.com/watch?v=IE_10_nwe0c" target="_blank">SEO Ultimate Tutorial</a></li>
 			<li><a href="http://www.youtube.com/watch?v=5PKsUaxSCNk" target="_blank">Managing Your Store With Shopp</a></li>
 			<li><a href="http://youtu.be/UywmOitsQZ4" target="_blank">Managing Homepage Options</a></li>
-			<li><a href="#" target="_blank">Managing Friends</a></li>
+			<li><a href="http://youtu.be/K0lCp1bU1iw" target="_blank">Managing Friends</a></li>
 			<li><a href="http://youtu.be/XU5vZMjcFHo" target="_blank">Managing Events</a></li>
-			<li><a href="#" target="_blank">Managing Footer</a></li>
-			<li><a href="#" target="_blank">Managing Support Buttons</a></li>
+			<li><a href="http://youtu.be/CvEpapem5RM" target="_blank">Managing the Footer</a></li>
+			<li><a href="http://youtu.be/iu3qJNXpDgc" target="_blank">Managing Support Buttons</a></li>
 			<li><a href="http://youtu.be/N8YIVpwanyY" target="_blank">Managing Pages with Images</a></li>
 		</ul>
 		
