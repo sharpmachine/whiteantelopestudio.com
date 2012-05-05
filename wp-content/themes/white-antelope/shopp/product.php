@@ -31,7 +31,7 @@
 			<?php endif; ?>
 	
 			<p>Quantity<?php shopp('product','quantity','class=selectall&input=menu'); ?>
-			<?php shopp('product','addtocart'); ?><a href="http://pinterest.com/pin/create/button/?url=<?php bloginfo('url'); ?>/&media=<?php shopp('product','coverimage','width=500&height=500&fit=crop&quality=100&class=product-image&property=url'); ?>&description=<?php shopp('product','name'); ?>" class="pin-it-button" count-layout="horizontal"><img border="0" src="//assets.pinterest.com/images/PinExt.png" title="Pin It" /></a>
+			<?php shopp('product','addtocart'); ?><a href="http://pinterest.com/pin/create/button/?url=<?php the_permalink(); ?>&media=<?php shopp('product','coverimage','width=500&height=500&fit=crop&quality=100&class=product-image&property=url'); ?>&description=<?php shopp('product','name'); ?>" class="pin-it-button" count-layout="horizontal"><img border="0" src="//assets.pinterest.com/images/PinExt.png" title="Pin It" /></a>
 			</p>
 		
 		</form>
