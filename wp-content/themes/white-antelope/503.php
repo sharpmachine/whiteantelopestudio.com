@@ -29,7 +29,7 @@
 <body>
 		
 	<div id="logo">
-		<img src="http://beta.whiteantelopestudio.com/wp-content/themes/white-antelope/images/logo.png" width="410" height="200" alt="Logo">
+		<img src="http://whiteantelopestudio.com/wp-content/themes/white-antelope/images/logo.png" width="410" height="200" alt="Logo">
 		<p>We are currently undergoing routine maintenance.  Please check back soon.</p>
 	</div>
 		
