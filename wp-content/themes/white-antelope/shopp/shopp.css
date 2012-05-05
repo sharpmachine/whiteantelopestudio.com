@@ -1,40 +1,80 @@
-.open-sans { font-family: 'Open Sans', sans-serif; }
+/**
+ * shopp.css
+ * Generic layout & styles for Shopp pages
+ *
+ * @author Jonathan Davis
+ * @package shopp
+ **/
+/* Generic Shopp Styles */
+/*.......................................................the LESS colors*/
+/*.......................................................the LESS font families*/
+.open-sans {
+  font-family: 'Open Sans', sans-serif;
+}
 .georgia {
   font-family: Georgia;
   font-style: italic;
 }
-#shopp .submit { text-align: right; }
-#shopp form { text-align: left; }
-#shopp form.product ul.options { list-style: none; }
-#shopp form ul { line-height: 1; }
+/*.......................................................the misc LESS mixins & variables*/
+/* LESS colors, font families, mixins and variables */
+#shopp .submit {
+  text-align: right;
+}
+#shopp form {
+  text-align: left;
+}
+#shopp form.product ul.options {
+  list-style: none;
+}
+#shopp form ul {
+  line-height: 1;
+}
 #shopp form label {
   font-size: 14px;
   font-weight: bold;
   padding-bottom: 3px;
 }
-#shopp form ul li span label {
-  font-size: 11px;
-  font-weight: normal;
-  padding-bottom: 8px;
-}
+#shopp form ul li span label,
 #shopp form div label {
   font-size: 11px;
   font-weight: normal;
   padding-bottom: 8px;
 }
-h1.shopp, h2.shopp { display: none; }
-.categories ul li a.current { font-weight: bold; }
-#shopp .category { position: relative; }
+h1.shopp,
+h2.shopp {
+  display: none;
+}
+/**
+ * Catalog/Category
+ **/
+p.freeshipping {
+  font-family: Georgia;
+  font-style: italic;
+}
+.categories ul li a.current {
+  font-weight: bold;
+}
+#shopp .category {
+  position: relative;
+}
 #shopp .category .gallery-box {
   margin: 0 1px 1px 0;
   width: 239px;
 }
-#shopp .category .gallery-box h2 { margin-left: 35px; }
-#shopp .category .gallery-box .inner .gallery-icons { padding-left: 40px; }
-#shopp #piece-info { padding: 0 20px; }
+#shopp .category .gallery-box h2 {
+  /*text-align: center;*/
+
+  margin-left: 35px;
+}
+#shopp .category .gallery-box .inner .gallery-icons {
+  padding-left: 40px;
+}
+#shopp #piece-info {
+  padding: 0 20px;
+}
 #shopp .shopp-gallery-images {
   height: 350px;
-  background-color: #ffffff;
+  background-color: #fff;
   padding: 20px;
   margin-bottom: 30px;
 }
@@ -94,8 +134,12 @@ h1.shopp, h2.shopp { display: none; }
   font-size: 14px;
   width: 500px;
 }
-#shopp .gallery-cart { padding: 40px; }
-#shopp .cart-functions h1.entry-title { display: inline-block; }
+#shopp .gallery-cart {
+  padding: 40px;
+}
+#shopp .cart-functions h1.entry-title {
+  display: inline-block;
+}
 #shopp .cart-functions a {
   display: block;
   float: right;
@@ -107,18 +151,24 @@ h1.shopp, h2.shopp { display: none; }
   position: relative;
   top: 5px;
 }
-#shopp .cart-functions a:hover { text-decoration: underline; }
+#shopp .cart-functions a :hover {
+  text-decoration: underline;
+}
 #shopp .cart-functions a.button {
   margin-left: 30px;
   color: #ededed;
   padding: 0 5px;
 }
-#shopp .cart-functions a.button:hover {
+#shopp .cart-functions a.button :hover {
   background-color: #1a1a1a;
   text-decoration: none;
 }
-#shopp .cart-functions a.button img { padding-right: 3px; }
-#shopp .bottom { height: 50px; }
+#shopp .cart-functions a.button img {
+  padding-right: 3px;
+}
+#shopp .bottom {
+  height: 50px;
+}
 #shopp .views {
   display: inline;
   position: absolute;
@@ -134,10 +184,14 @@ h1.shopp, h2.shopp { display: none; }
 }
 #shopp .views button.hover {
   background-color: #ebebeb;
-  border: 1px solid #777777;
+  border: 1px solid #777;
 }
-#shopp .views li { display: inline; }
-#shopp .orderby { float: right; }
+#shopp .views li {
+  display: inline;
+}
+#shopp .orderby {
+  float: right;
+}
 #shopp .category .subcategories {
   padding: 10px 0;
   margin-bottom: 10px;
@@ -151,53 +205,69 @@ h1.shopp, h2.shopp { display: none; }
   margin-right: 20px;
   vertical-align: top;
 }
-#shopp .slideshow {
-  margin: 20px 0;
-  overflow: hidden;
-}
+#shopp .slideshow,
 #shopp .carousel {
   margin: 20px 0;
   overflow: hidden;
 }
-#shopp ul.products li.product div.frame { padding: 10px; }
-#shopp ul.products li .name {
-  margin-top: 0;
-  margin-bottom: 0;
+/* Each product in a category has a containing frame */
+#shopp ul.products li.product div.frame {
+  padding: 10px;
 }
-#shopp ul.products li .summary {
-  margin-top: 0;
-  margin-bottom: 0;
-}
-#shopp ul.products li .savings {
-  margin-top: 0;
-  margin-bottom: 0;
-}
+#shopp ul.products li .name,
+#shopp ul.products li .summary,
+#shopp ul.products li .savings,
 #shopp ul.products li .price {
   margin-top: 0;
   margin-bottom: 0;
 }
-#shopp ul.products li .details { float: none; }
-#shopp ul.products li .summary { display: none; }
-#shopp ul.products li .listview { display: none; }
-#shopp ul.products img { display: block; }
+#shopp ul.products li .details {
+  float: none;
+}
+/* Hide the product summary in the grid view */
+#shopp ul.products li .summary {
+  display: none;
+}
+#shopp ul.products li .listview {
+  display: none;
+}
+#shopp ul.products img {
+  display: block;
+}
 #shopp .price {
   font-weight: bold;
   line-height: 1.5;
   margin: 0;
 }
-#shopp .original { text-decoration: line-through; }
-#shopp .sale { font-size: 150%; }
-.filters a.cancel:before { content: "["; }
-.filters a.cancel { font-weight: bold; }
-.filters a.cancel:after { content: "]"; }
-.filters a.cancel:hover { text-decoration: none; }
+#shopp .original {
+  text-decoration: line-through;
+}
+#shopp .sale {
+  font-size: 150%;
+}
+/* Faceted menu cancel filter link styles */
+.filters a.cancel:before {
+  content: "[";
+}
+.filters a.cancel {
+  font-weight: bold;
+}
+.filters a.cancel:after {
+  content: "]";
+}
+.filters a.cancel:hover {
+  text-decoration: none;
+}
+/* Product List View */
 #shopp.list ul.products li {
   float: none;
   width: 100%;
   overflow: hidden;
   padding-bottom: 10px;
 }
-#shopp.list ul.products li.product { border-bottom: 1px solid #dddddd; }
+#shopp.list ul.products li.product {
+  border-bottom: 1px solid #ddd;
+}
 #shopp.list ul.products li div.frame {
   width: 100%;
   text-align: left;
@@ -210,8 +280,12 @@ h1.shopp, h2.shopp { display: none; }
   float: left;
   width: 65%;
 }
-#shopp.list ul.products li .listview { display: block; }
-#shopp ul.breadcrumb { margin: 10px 0; }
+#shopp.list ul.products li .listview {
+  display: block;
+}
+#shopp ul.breadcrumb {
+  margin: 10px 0;
+}
 #shopp ul.breadcrumb li {
   background: none;
   padding: 0;
@@ -223,19 +297,59 @@ h1.shopp, h2.shopp { display: none; }
   float: left;
   margin-right: 20px;
 }
-#shopp .column { float: left; }
-#shopp .column.first { width: 65%; }
+/* Category Pagination */
+#shopp ul.paging {
+  /* placeholder for your styles - inherited defaults: clear: none; display: inline-block; */
+}
+#shopp ul.paging li {
+  /* placeholder for your styles - inherited defaults: display: inline-block; margin-left: 5px; */
+}
+#shopp ul.paging li a {
+  /* page links default styling */
+}
+#shopp ul.paging li a:hover {
+  /* page links hover styling */
+}
+#shopp ul.paging li.active {
+  /* currrent page style */
+}
+#shopp ul.paging li.disabled {
+  /* style for disabled previous/next links */
+}
+#shopp ul.paging li.previous a,
+#shopp ul.paging li.next a {
+  /* previous/next link style */
+}
+/**
+ * Product Pages
+ **/
+#shopp .column {
+  float: left;
+}
+#shopp .column.first {
+  width: 65%;
+}
 #shopp .column.second {
   float: right;
   width: 35%;
 }
-#shopp .original { text-decoration: line-through; }
-#shopp form.product ul { clear: none; }
-#shopp form.product ul li { clear: none; }
-#shopp form.product ul li label { clear: none; }
-#shopp form.product ul { width: auto; }
-#shopp ul.variations label { display: block; }
-#shopp dl { overflow: hidden; }
+#shopp .original {
+  text-decoration: line-through;
+}
+#shopp form.product ul,
+#shopp form.product ul li,
+#shopp form.product ul li label {
+  clear: none;
+}
+#shopp form.product ul {
+  width: auto;
+}
+#shopp ul.variations label {
+  display: block;
+}
+#shopp dl {
+  overflow: hidden;
+}
 #shopp dt {
   clear: left;
   float: left;
@@ -261,26 +375,86 @@ h1.shopp, h2.shopp { display: none; }
   display: block;
   margin: 0 0 1px 0;
 }
-#shopp .gallery ul.previews li.thumbnails ul { margin: 10px 0 10px 0; }
-#shopp .gallery ul.previews li.thumbnails li { margin: 0 5px 0 0; }
-.sideproduct { margin-top: 20px; }
-.sideproduct h3 { margin-top: 0; }
+#shopp .gallery ul.previews li.thumbnails ul {
+  margin: 10px 0 10px 0;
+}
+#shopp .gallery ul.previews li.thumbnails li {
+  margin: 0 5px 0 0;
+}
+/**
+ * Category List Widget
+ **/
+ul.shopp_categories {
+  /* category list container */
+}
+ul.shopp_categories li {
+  /* category listing containers */
+}
+ul.shopp_categories li a {
+  /* category link default styles */
+}
+ul.shopp_categories li a:hover {
+  /* category link hover styles */
+}
+ul.shopp_categories li span {
+  /* categpry product count styles */
+}
+ul.shopp_categories li.current {
+  /* currently viewed category container */
+}
+ul.shopp_categories li.current a {
+  /* currently viewed category link style */
+}
+ul.shopp_categories li.current a:hover {
+  /* currently viewed category link hover style */
+}
+ul.shopp_categories li ul.children {
+  /* sub-category list container */
+}
+ul.shopp_categories li ul.children li {
+  /* sub-category listing container */
+}
+ul.shopp_categories li ul.active {
+  /* active sub-category container */
+}
+/* Collapsed sub-category menus example
+ul.shopp_categories li ul.children { display: none; }
+ul.shopp_categories li ul.active { display: block; }
+*/
+/**
+ * Side Products Widget
+ **/
+.sideproduct {
+  margin-top: 20px;
+}
+.sideproduct h3 {
+  margin-top: 0;
+}
+/**
+ * Shopping Cart
+ **/
 #shopp #cart {
   width: 775px;
   padding: 40px;
-  background-color: #ffffff;
+  background-color: #fff;
   color: #656565;
   font-size: 14px;
   margin-bottom: 27px;
 }
-#shopp #cart table { width: 100%; }
+#shopp #cart table {
+  width: 100%;
+}
 #shopp #cart table tr.gallery-cart-item td {
   border-bottom: 1px solid #656565;
   padding: 20px 0;
   vertical-align: middle;
 }
-#shopp #cart table tr.gallery-cart-item td a { text-decoration: none; }
-#shopp #cart table tr.first td { padding-top: 35px; }
+#shopp #cart table tr.gallery-cart-item td a {
+  text-decoration: none;
+}
+#shopp #cart table tr.first td {
+  padding-top: 35px;
+}
 #shopp #cart table tr.totals th {
   font-family: 'Open Sans', sans-serif;
   font-style: normal;
@@ -297,7 +471,7 @@ h1.shopp, h2.shopp { display: none; }
   font-weight: 400;
   color: white;
   border: none;
-  background-color: #1a1a1a;
+  background-color: #1A1A1A;
   text-transform: uppercase;
   position: relative;
   top: 2px;
@@ -322,15 +496,15 @@ h1.shopp, h2.shopp { display: none; }
 }
 #shopp #cart table input#shipping-postcode {
   width: 45px;
-  background-color: #ffffff;
-  border: 1px solid #bbbbbb;
+  background-color: #fff;
+  border: 1px solid #BBB;
   color: #1a1a1a;
   height: 22px;
   margin-left: 5px;
 }
 #shopp #cart table select {
   height: 26px;
-  border: 1px solid #bbbbbb;
+  border: 1px solid #BBB;
 }
 #shopp #cart th {
   font-family: Georgia;
@@ -340,35 +514,60 @@ h1.shopp, h2.shopp { display: none; }
   font-size: 16px;
   color: #1a1a1a;
 }
-#shopp #cart th { padding: 3px; }
-#shopp #cart td { padding: 3px; }
-#shopp #cart .item { width: 50%; }
-#shopp #cart .money {
-  text-align: right;
-  white-space: nowrap;
+#shopp #cart th,
+#shopp #cart td {
+  padding: 3px;
 }
+#shopp #cart .item {
+  width: 50%;
+}
+#shopp #cart .money,
 #shopp #cart .buttons td {
   text-align: right;
   white-space: nowrap;
 }
-#shopp #cart .remove { font-size: 9px; }
-#shopp #cart address { font-style: normal; }
+#shopp #cart .remove {
+  font-size: 9px;
+}
+#shopp #cart address {
+  font-style: normal;
+}
 #shopp #cart big {
   display: block;
   margin: 10px 0;
 }
-#shopp #cart big a.right { float: right; }
-#shopp-cart.widget p.status { margin-bottom: 10px; }
+#shopp #cart big a.right {
+  float: right;
+}
+/**
+ * Shopping Cart Widget
+ **/
+#shopp-cart.widget p.status {
+  margin-bottom: 10px;
+}
 #shopp ul.account li {
   display: inline-block;
   width: 200px;
   padding-top: 18px;
 }
-#shopp #shipping-methods { padding-left: 30px; }
-#shopp #shipping-methods li { margin-top: 5px; }
-#shopp #shipping-methods input { margin-left: -16px; }
-#shopp .shopp-errors { color: #990000; }
-#shopp input.error { background: #ffdddd; }
+/**
+ * Checkout
+ **/
+#shopp #shipping-methods {
+  padding-left: 30px;
+}
+#shopp #shipping-methods li {
+  margin-top: 5px;
+}
+#shopp #shipping-methods input {
+  margin-left: -16px;
+}
+#shopp .shopp-errors {
+  color: #990000;
+}
+#shopp input.error {
+  background: #ffdddd;
+}
 #shopp label.error {
   color: #990000;
   font-weight: bold;
@@ -376,22 +575,12 @@ h1.shopp, h2.shopp { display: none; }
 .clickwrap-terms {
   overflow: auto;
   height: 200px;
-  border: 1px solid #333333;
+  border: 1px solid #333;
   padding: 0.5em;
   margin-bottom: 1em;
 }
-form#checkout input[type=text] {
-  float: left;
-  margin: 0;
-  font-family: Georgia;
-  font-style: italic;
-}
-form#checkout textarea {
-  float: left;
-  margin: 0;
-  font-family: Georgia;
-  font-style: italic;
-}
+form#checkout input[type=text],
+form#checkout textarea,
 form#checkout select {
   float: left;
   margin: 0;
@@ -413,43 +602,70 @@ form#checkout input[type="submit"] {
   font-weight: 400;
   color: white;
   border: none;
-  background-color: #1a1a1a;
+  background-color: #1A1A1A;
   text-transform: uppercase;
   position: relative;
   top: 2px;
 }
+/**
+ * Order Receipt
+ **/
 #shopp #receipt {
   position: relative;
   margin: 20px 0;
 }
-#shopp #receipt address { font-style: normal; }
+#shopp #receipt address {
+  font-style: normal;
+}
 #shopp #receipt fieldset {
   padding: 10px;
   border: 1px solid #dadada;
   margin: 20px 0 30px;
 }
-#shopp #receipt fieldset legend { display: block; }
-#shopp #receipt table { overflow: hidden; }
-#shopp #receipt table.transaction th { text-align: left; }
-#shopp #receipt .labels { width: 100%; }
-#shopp #receipt table.labels td { vertical-align: top; }
+#shopp #receipt fieldset legend {
+  display: block;
+}
+#shopp #receipt table {
+  overflow: hidden;
+}
+#shopp #receipt table.transaction th {
+  text-align: left;
+}
+#shopp #receipt .labels {
+  width: 100%;
+}
+#shopp #receipt table.labels td {
+  vertical-align: top;
+}
 #shopp #receipt .order {
   width: 100%;
   overflow: hidden;
   border: none;
 }
-#shopp #receipt td { border: none; }
+#shopp #receipt td {
+  border: none;
+}
 #shopp #receipt th {
   font-weight: bold;
   text-align: left;
   border: none;
 }
-#shopp #receipt th { padding: 3px 0; }
-#shopp #receipt td { padding: 3px 0; }
-#shopp #receipt .order .item { width: 50%; }
-#shopp #receipt .order td.qty { text-align: center; }
-#shopp #receipt .order .money { text-align: right; }
-#shopp #receipt .order .total { text-align: right; }
-#shopp #receipt .order .buttons td { text-align: right; }
-#shopp #receipt .order .totals.total th { font-size: 130%; }
-#shopp #receipt .order .totals.total td { font-size: 130%; }
+#shopp #receipt th,
+#shopp #receipt td {
+  padding: 3px 0;
+}
+#shopp #receipt .order .item {
+  width: 50%;
+}
+#shopp #receipt .order td.qty {
+  text-align: center;
+}
+#shopp #receipt .order .money,
+#shopp #receipt .order .total,
+#shopp #receipt .order .buttons td {
+  text-align: right;
+}
+#shopp #receipt .order .totals.total th,
+#shopp #receipt .order .totals.total td {
+  font-size: 130%;
+}
