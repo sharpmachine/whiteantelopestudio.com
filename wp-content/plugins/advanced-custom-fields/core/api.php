@@ -22,10 +22,7 @@ function get_fields($post_id = false)
 	{
 		$post_id = $post->ID;
 	}
-	elseif($post_id == "options")
-	{
-		$post_id = 999999999;
-	}
+	
 	
 	// default
 	$value = array();
@@ -70,12 +67,16 @@ function get_field($field_name, $post_id = false)
 	if(!$post_id) 
 	{ 
 		$post_id = $post->ID; 
-	} 
-	elseif($post_id == "options") 
-	{ 
-		$post_id = 999999999; 
-	} 
-	 
+	}
+	
+	
+	// allow for option == options
+	if( $post_id == "option" )
+	{
+		$post_id = "options";
+	}
+	
+	
 	// return cache 
 	$cache = wp_cache_get('acf_get_field_' . $post_id . '_' . $field_name); 
 	if($cache) 
@@ -86,9 +87,19 @@ function get_field($field_name, $post_id = false)
 	// default 
 	$value = ""; 
 	 
-	// get value 
-	$field_key = get_post_meta($post_id, '_' . $field_name, true); 
 	 
+	// get value
+	$field_key = "";
+	if( is_numeric($post_id) )
+	{
+		$field_key = get_post_meta($post_id, '_' . $field_name, true); 
+	}
+	else
+	{
+		$field_key = get_option('_' . $post_id . '_' . $field_name); 
+	}
+
+	
 	if($field_key != "") 
 	{ 
 		// we can load the field properly! 
@@ -98,7 +109,15 @@ function get_field($field_name, $post_id = false)
 	else 
 	{ 
 		// just load the text version 
-		$value = get_post_meta($post_id, $field_name, true); 
+		if( is_numeric($post_id) )
+		{
+			$value = get_post_meta($post_id, $field_name, true);
+		}
+		else
+		{
+			$value = get_option($post_id . '_' . $field_name); 
+		}
+		 
 	} 
 	 
 	// no value? 
@@ -287,6 +306,16 @@ function register_field_group($array)
 		$array['id'] = uniqid();
 	}
 	
+
+	// 3.2.5 - changed show_on_page option
+	if( !isset($array['options']['hide_on_screen']) && isset($array['options']['show_on_page']) )
+	{
+		$show_all = array('the_content', 'discussion', 'custom_fields', 'comments', 'slug', 'author');
+		$array['options']['hide_on_screen'] = array_diff($show_all, $array['options']['show_on_page']);
+		unset( $array['options']['show_on_page'] );
+	}
+
+
 	$GLOBALS['acf_register_field_group'][] = $array;
 }
 
@@ -344,7 +373,7 @@ add_filter('acf_register_options_page', 'acf_register_options_page');
 
 /*--------------------------------------------------------------------------------------
 *
-*	get_sub_field
+*	get_row_layout
 *
 *	@author Elliot Condon
 *	@since 1.0.3
@@ -423,10 +452,6 @@ function acf_form_head()
 	{
 		$post_id = $_POST['post_id'];
 		
-		// save
-		// strip slashes
-		$_POST = array_map('stripslashes_deep', $_POST);
-		
 		// save fields
 		$fields = $_POST['fields'];
 		
@@ -453,11 +478,10 @@ function acf_form_head()
 	
 		
 	// register css / javascript
-	foreach($acf->fields as $field)
-	{
-		$acf->fields[$field->name]->admin_print_scripts();
-		$acf->fields[$field->name]->admin_print_styles();
-	}
+	do_action('acf_print_scripts-input');
+	do_action('acf_print_styles-input');
+	
+	// need wp styling
 	wp_enqueue_style(array(
 		'colors-fresh'
 	));
@@ -473,14 +497,7 @@ function acf_form_wp_head()
 	// global vars
 	global $post, $acf;
 	
-	
-	// fields admin_head
-	foreach($acf->fields as $field)
-	{
-		$acf->fields[$field->name]->admin_head();
-	}
-	
-	
+
 	// Style
 	echo '<link rel="stylesheet" type="text/css" href="'.$acf->dir.'/css/global.css?ver=' . $acf->version . '" />';
 	echo '<link rel="stylesheet" type="text/css" href="'.$acf->dir.'/css/input.css?ver=' . $acf->version . '" />';
@@ -494,6 +511,10 @@ function acf_form_wp_head()
 		acf.editor_mode = "wysiwyg";
 		acf.admin_url = "' . admin_url() . '";
 	</script>';
+	
+	
+	// add user js + css
+	do_action('acf_head-input');
 }
 
 
@@ -536,13 +557,6 @@ function acf_form($options = null)
 	else
 	{
 		$options = $defaults;
-	}
-	
-	
-	// post_id for options page
-	if($options['post_id'] == "options")
-	{
-		$options['post_id'] = 999999999;
 	}
 	
 	
@@ -596,40 +610,9 @@ function acf_form($options = null)
 			{
 				
 				echo '<div class="options" data-layout="' . $field_group['options']['layout'] . '"></div>';
-				foreach($field_group['fields'] as $field)
-				{
-					// if they didn't select a type, skip this field
-					if($field['type'] == 'null') continue;
-					
-					// set value
-					$field['value'] = $acf->get_value($options['post_id'], $field);
-					
-					// required
-					if(!isset($field['required']))
-					{
-						$field['required'] == "0";
-					}
-					
-					$required_class = "";
-					$required_label = "";
-					
-					if($field['required'] == "1")
-					{
-						$required_class = ' required';
-						$required_label = ' <span class="required">*</span>';
-					}
-					
-					echo '<div class="field field-' . $field['type'] . $required_class . '">';
-									
-						echo '<label class="field_label" for="fields[' . $field['key'] . ']">' . $field['label'] . $required_label . '</label>';
-						if($field['instructions']) echo '<p class="instructions">' . $field['instructions'] . '</p>';
-						
-						$field['name'] = 'fields[' . $field['key'] . ']';
-						$acf->create_field($field);
-					
-					echo '</div>';
-					
-				}
+				
+				$acf->render_fields_for_input($field_group['fields'], $options['post_id']);
+				
 			}
 			
 		endforeach;
@@ -651,5 +634,60 @@ function acf_form($options = null)
 	
 }
 
+
+/*--------------------------------------------------------------------------------------
+*
+*	update_field
+*
+*	@author Elliot Condon
+*	@since 3.1.9
+* 
+*-------------------------------------------------------------------------------------*/
+
+function update_field($field_name, $value, $post_id = false)
+{
+	global $post, $acf; 
+	 
+	if(!$post_id) 
+	{ 
+		$post_id = $post->ID; 
+	}
+	
+	
+	// allow for option == options
+	if( $post_id == "option" )
+	{
+		$post_id = "options";
+	}
+	 
+	 
+	// get value
+	$field_key = "";
+	if( is_numeric($post_id) )
+	{
+		$field_key = get_post_meta($post_id, '_' . $field_name, true); 
+	}
+	else
+	{
+		$field_key = get_option('_' . $post_id . '_' . $field_name); 
+	}
+
+	
+	// create default field to save the data as plain text
+	$field = array(
+		'type' => 'text',
+		'name' => $field_name,
+		'key' => ''
+	);
+	
+	if($field_key != "") 
+	{ 
+		// we can load the field properly! 
+		$field = $acf->get_acf_field($field_key); 
+	} 
+	
+	
+	$acf->update_value($post_id, $field, $value);
+}
 
 ?>

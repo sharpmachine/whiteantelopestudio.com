@@ -7,6 +7,6 @@ $(document).bind('em_booking_gateway_add_paypal', function(event, response){
 			ppForm.append('<input type="hidden" name="'+index+'" value="'+value+'" />');
 		});
 		ppForm.append('<input id="em-paypal-submit" type="submit" style="display:none" />');
-		ppForm.insertAfter('#em-booking-form').trigger('submit');
+		ppForm.appendTo('body').trigger('submit');
 	}
 });

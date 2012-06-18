@@ -75,6 +75,8 @@ class SU_ContentAutolinksSettings extends SU_Module {
 		
 		$this->checkboxes($siloing_checkboxes, __('Siloing', 'seo-ultimate'));
 		
+		$this->textbox('autolink_class', __('CSS Class for Autolinks', 'seo-ultimate'));
+		
 		$this->admin_form_table_end();
 	}
 }

@@ -32,11 +32,11 @@ class Jetpack_XMLRPC_Server {
 		}
 
 		return apply_filters( 'jetpack_xmlrpc_methods', array(
-			'jetpack.testConnection'    => array( &$this, 'test_connection' ),
-			'jetpack.featuresAvailable' => array( &$this, 'features_available' ),
-			'jetpack.featuresEnabled'   => array( &$this, 'features_enabled' ),
-			'jetpack.getPost'           => array( &$this, 'get_post' ),
-			'jetpack.getComment'        => array( &$this, 'get_comment' ),  
+			'jetpack.testConnection'    => array( $this, 'test_connection' ),
+			'jetpack.featuresAvailable' => array( $this, 'features_available' ),
+			'jetpack.featuresEnabled'   => array( $this, 'features_enabled' ),
+			'jetpack.getPost'           => array( $this, 'get_post' ),
+			'jetpack.getComment'        => array( $this, 'get_comment' ),  
 		) );
 	}
 
@@ -45,7 +45,7 @@ class Jetpack_XMLRPC_Server {
 	 */
 	function bootstrap_xmlrpc_methods() {
 		return array(
-			'jetpack.verifyRegistration' => array( &$this, 'verify_registration' ),
+			'jetpack.verifyRegistration' => array( $this, 'verify_registration' ),
 		);
 	}
 
@@ -185,17 +185,8 @@ class Jetpack_XMLRPC_Server {
 		$jetpack = Jetpack::init();
 		$post = $jetpack->get_post( $id );
 
-		if (
-			is_array( $post )
-		&&
-			empty( $post['post_password'] )
-		&&
-			in_array( $post['post_type'], get_post_types( array( 'public' => true ) ) )
-		&&
-			in_array( $post['post_status'], get_post_stati( array( 'public' => true ) ) )
-		) {
+		if ( $jetpack->is_post_public( $post ) )
 			return $post;
-		}
 
 		return false;
 	}

@@ -82,7 +82,7 @@ class EM_Coupons extends EM_Object {
 	 * @param EM_Event $EM_Event
 	 * @return EM_Coupon|boolean
 	 */
-	function verify_code($code, $EM_Event){
+	function get_coupon($code, $EM_Event){
 		foreach($EM_Event->coupons as $EM_Coupon){
 			if($EM_Coupon->coupon_code == $code){
 				return $EM_Coupon;
@@ -98,13 +98,16 @@ class EM_Coupons extends EM_Object {
 	 */
 	function em_booking_get_post($result, $EM_Booking){ 
 		if( !empty($_REQUEST['coupon_code']) ){
-			$EM_Coupon = EM_Coupons::verify_code($_REQUEST['coupon_code'], $EM_Booking->get_event());
+			$EM_Coupon = EM_Coupons::get_coupon($_REQUEST['coupon_code'], $EM_Booking->get_event());
+			if( $EM_Coupon === false && !empty($EM_Booking->booking_id) ){ //if a previously saved booking, account for the fact it may not work
+				$EM_Coupon = new EM_Coupon($EM_Booking->booking_meta['coupon']);
+			}
 			if( $EM_Coupon !== false ){
 				$EM_Booking->booking_meta['original_price'] = $EM_Booking->get_price(); //get original price before we add coupon codes to this
 				$EM_Booking->booking_meta['coupon'] = $EM_Coupon->to_array(); //we add an clean a coupon array here for the first time
 				$EM_Booking->get_price(true); //refresh price
-			}else{	
-				$EM_Booking->add_error(__('Invalid coupon code provided','em-pro'));
+			}else{
+				$EM_Booking->booking_meta['coupon'] = array('coupon_code'=>$_REQUEST['coupon_code']); //will not validate later
 			}
 		}
 		$result = self::em_booking_validate($result, $EM_Booking); //validate here as well
@@ -113,7 +116,10 @@ class EM_Coupons extends EM_Object {
 	
 	function em_booking_validate($result, $EM_Booking){
 		if( !empty($EM_Booking->booking_meta['coupon']) ){
-			$EM_Coupon = self::verify_code($EM_Booking->booking_meta['coupon']['coupon_code'], $EM_Booking->get_event());
+			$EM_Coupon = self::get_coupon($EM_Booking->booking_meta['coupon']['coupon_code'], $EM_Booking->get_event());
+			if( $EM_Coupon === false && !empty($EM_Booking->booking_id) ){ //if a previously saved booking, account for the fact it may not work
+				$EM_Coupon = new EM_Coupon($EM_Booking->booking_meta['coupon']);
+			}
 			if( $EM_Coupon === false || !$EM_Coupon->is_valid() ){
 				$EM_Booking->add_error(__('Invalid coupon code provided','em-pro'));
 				return false;
@@ -195,9 +201,9 @@ class EM_Coupons extends EM_Object {
 	function em_booking_form_footer($EM_Event){
 		if( count($EM_Event->coupons) > 0 ){
 			?>
-			<p>
+			<p class="em-bookings-form-coupon">
 				<label><?php _e('Coupon Code','em-pro'); ?></label>
-				<input type="text" name="coupon_code" id="em-coupon-code" />
+				<input type="text" name="coupon_code" class="input em-coupon-code" />
 			</p>
 			<?php
 			add_action('em_gateway_js', array('EM_Coupons', 'em_gateway_js') );
@@ -208,7 +214,7 @@ class EM_Coupons extends EM_Object {
 		//override this with CSS in your own theme
 		?>
 		<style type="text/css">
-			#em-coupon-code { width:150px; }
+			.em-coupon-code { width:150px; }
 			#em-coupon-loading { display:inline-block; width:16px; height: 16px; margin-left:4px; background:url(<?php echo plugins_url('events-manager-pro/includes/images/spinner.gif','events-manager-pro'); ?>)}
 			.em-coupon-message { display:inline-block; margin:5px 0px 0px 105px; text-indent:22px; }
 			.em-coupon-success { color:green; background:url(<?php echo plugins_url('events-manager-pro/includes/images/success.png','events-manager-pro'); ?>) 0px 0px no-repeat }
@@ -219,8 +225,9 @@ class EM_Coupons extends EM_Object {
 	
 	function em_gateway_js(){
 		?>
-		$('#em-coupon-code').change(function(){
-			var formdata = $('#em-booking-form').serialize().replace('action=booking_add','action=coupon_check'); //simple way to change action of form
+		$('.em-coupon-code').change(function(){
+			var coupon_el = $(this); 
+			var formdata = coupon_el.parents('.em-booking-form').serialize().replace('action=booking_add','action=coupon_check'); //simple way to change action of form
 			$.ajax({
 				url: EM.ajaxurl,
 				data: formdata,
@@ -228,14 +235,14 @@ class EM_Coupons extends EM_Object {
 				type:'post',
 				beforeSend: function(formData, jqForm, options) {
 					$('.em-coupon-message').remove();
-					if($('#em-coupon-code').val() == ''){ return false; }
-					$('#em-coupon-code').after('<span id="em-coupon-loading"></span>');
+					if(coupon_el.val() == ''){ return false; }
+					coupon_el.after('<span id="em-coupon-loading"></span>');
 				},
 				success : function(response, statusText, xhr, $form) {
 					if(response.result){
-						$('#em-coupon-code').after('<span class="em-coupon-message em-coupon-success">'+response.message+'</span>');
+						coupon_el.after('<span class="em-coupon-message em-coupon-success">'+response.message+'</span>');
 					}else{
-						$('#em-coupon-code').after('<span class="em-coupon-message em-coupon-error">'+response.message+'</span>');
+						coupon_el.after('<span class="em-coupon-message em-coupon-error">'+response.message+'</span>');
 					}
 				},
 				complete : function() {
@@ -546,9 +553,9 @@ class EM_Coupons extends EM_Object {
 		?>
 		<div class='wrap nosubsub'>
 			<div class="icon32" id="icon-bookings"><br></div>
-			<h2><?php _e('Coupon Useage History','em-pro'); ?></h2>
+			<h2><?php _e('Coupon Usage History','em-pro'); ?></h2>
 			<?php echo $EM_Notices; ?>
-			<p><?php echo sprintf(__('You are viewing the details of coupon %s - <a href="%s">edit</a>','em-pro'),'<code>'.$EM_Coupon->coupon_code.'</code>', add_query_arg(array('action'=>'view'))); ?></p>
+			<p><?php echo sprintf(__('You are viewing the details of coupon %s - <a href="%s">edit</a>','em-pro'),'<code>'.$EM_Coupon->coupon_code.'</code>', add_query_arg(array('action'=>'edit'))); ?></p>
 			<p>
 				<strong><?php echo __('Uses', 'em-pro'); ?>:</strong> 
 				<?php
@@ -764,7 +771,7 @@ class EM_Coupons extends EM_Object {
 	
 	function em_csv_bookings_loop_after($file, $EM_Ticket_Booking, $EM_Booking){
 		if( !empty($EM_Booking->booking_meta['coupon']) ){
-			$EM_Coupon = self::verify_code($EM_Booking->booking_meta['coupon']['coupon_code'], $EM_Booking->get_event());
+			$EM_Coupon = self::get_coupon($EM_Booking->booking_meta['coupon']['coupon_code'], $EM_Booking->get_event());
 			$file .= '"' .  preg_replace("/\n\r|\r\n|\n|\r/", ".     ", $EM_Coupon->coupon_name) . '",'; 
 		}
 		return $file; //no filter needed, use the em_csv_bookings_loop_after filter instead

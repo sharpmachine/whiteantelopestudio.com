@@ -270,7 +270,7 @@ class SU_InternalLinkAliases extends SU_Module {
 		
 		$attrs = "{$matches[1]}href={$matches[2]}{$new_url}{$matches[4]}{$matches[5]}";
 		
-		if ($this->get_setting('nofollow_aliased_links', false) && $this->plugin->module_exists('link-nofollow'))
+		if ($old_url != $new_url && $this->get_setting('nofollow_aliased_links', false) && $this->plugin->module_exists('link-nofollow'))
 			$this->plugin->call_module_func('link-nofollow', 'nofollow_attributes_string', $attrs, $attrs);
 		
 		return "<a $attrs>";

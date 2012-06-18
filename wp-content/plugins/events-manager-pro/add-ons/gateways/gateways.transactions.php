@@ -98,6 +98,7 @@ class EM_Gateways_Transactions{
 		$columns['gateway'] = __('Gateway','em-pro');
 		$columns['status'] = __('Status','em-pro');
 		$columns['note'] = __('Notes','em-pro');
+		$columns['actions'] = '';
 
 		$trans_navigation = paginate_links( array(
 			'base' => add_query_arg( 'paged', '%#%' ),
@@ -221,7 +222,7 @@ class EM_Gateways_Transactions{
 							echo "&nbsp;" . number_format($amount, 2, '.', ',');
 						?>
 					</td>
-					<td class="column-transid">
+					<td class="column-gateway-trans-id">
 						<?php
 							if(!empty($transaction->transaction_gateway_id)) {
 								echo $transaction->transaction_gateway_id;
@@ -230,7 +231,7 @@ class EM_Gateways_Transactions{
 							}
 						?>
 					</td>
-					<td class="column-transid">
+					<td class="column-gateway">
 						<?php
 							if(!empty($transaction->transaction_gateway)) {
 								echo $transaction->transaction_gateway;
@@ -239,7 +240,7 @@ class EM_Gateways_Transactions{
 							}
 						?>
 					</td>
-					<td class="column-transid">
+					<td class="column-trans-status">
 						<?php
 							if(!empty($transaction->transaction_status)) {
 								echo $transaction->transaction_status;
@@ -248,7 +249,7 @@ class EM_Gateways_Transactions{
 							}
 						?>
 					</td>
-					<td class="column-transid">
+					<td class="column-trans-note-id">
 						<?php
 							if(!empty($transaction->transaction_note)) {
 								echo esc_html($transaction->transaction_note);
@@ -256,6 +257,11 @@ class EM_Gateways_Transactions{
 								echo __('None','em-pro');
 							}
 						?>
+					</td>
+					<td class="column-trans-note-id">
+						<?php if( $EM_Booking->can_manage() ): ?>
+						<span class="trash"><a class="em-transaction-delete" href="<?php echo em_add_get_params($_SERVER['REQUEST_URI'], array('action'=>'transaction_delete', 'txn_id'=>$transaction->transaction_id, '_wpnonce'=>wp_create_nonce('transaction_delete_'.$transaction->transaction_id.'_'.get_current_user_id()))); ?>"><?php _e('Delete','dbem'); ?></a></span>
+						<?php endif; ?>
 					</td>
 			    </tr>
 				<?php
@@ -352,3 +358,24 @@ class EM_Gateways_Transactions{
 global $EM_Gateways_Transactions;
 $EM_Gateways_Transactions = new EM_Gateways_Transactions();
 }
+
+/**
+ * Checks for any deletions requested 
+ */
+function emp_transactions_init(){
+	if( !empty($_REQUEST['action']) && $_REQUEST['action'] == 'transaction_delete' && wp_verify_nonce($_REQUEST['_wpnonce'], 'transaction_delete_'.$_REQUEST['txn_id'].'_'.get_current_user_id()) ){
+		//get booking from transaction, ensure user can manage it before deleting
+		global $wpdb;
+		$booking_id = $wpdb->get_var('SELECT booking_id FROM '.EM_TRANSACTIONS_TABLE." WHERE transaction_id='".$_REQUEST['txn_id']."'");
+		if( !empty($booking_id) ){
+			$EM_Booking = new EM_Booking($booking_id);
+			if( !empty($EM_Booking->booking_id) && $EM_Booking->can_manage()){
+				//all good, delete it
+				$wpdb->query('DELETE FROM '.EM_TRANSACTIONS_TABLE." WHERE transaction_id='".$_REQUEST['txn_id']."'");
+				_e('Transaction deleted','em-pro');
+				exit();
+			}
+		} 
+	}
+}
+add_action('init','emp_transactions_init');

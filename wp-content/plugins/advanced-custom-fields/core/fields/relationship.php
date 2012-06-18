@@ -80,7 +80,7 @@ class acf_Relationship extends acf_Field
 			'post_type'		=>	$field['post_type'],
 			'orderby'		=>	'title',
 			'order'			=>	'ASC',
-			'post_status' => array('publish', 'private', 'draft'),
+			'post_status' => array('publish', 'private', 'draft', 'inherit'),
 			//'meta_key'		=>	$field['meta_key'],
 			//'meta_value'	=>	$field['meta_value'],
 		));
@@ -131,7 +131,7 @@ class acf_Relationship extends acf_Field
 					<thead>
 						<tr>
 							<th>
-								<label class="relationship_label" for="relationship_<?php echo $field['name']; ?>">Search...</label>
+								<label class="relationship_label" for="relationship_<?php echo $field['name']; ?>"><?php _e("Search",'acf'); ?>...</label>
 								<input class="relationship_search" type="text" id="relationship_<?php echo $field['name']; ?>" />
 								<div class="clear_relationship_search"></div>
 							</th>
@@ -247,7 +247,7 @@ class acf_Relationship extends acf_Field
 			</td>
 			<td>
 				<?php 
-				$post_types = array('' => '- All -');
+				$post_types = array('' => __("All",'acf'));
 				
 				foreach (get_post_types(array('public' => true)) as $post_type ) {
 				  $post_types[$post_type] = $post_type;
@@ -298,7 +298,7 @@ class acf_Relationship extends acf_Field
 				<?php 
 				$choices = array(
 					'' => array(
-						'all' => '- All -'
+						'all' => __("All",'acf')
 					)
 				);
 				$choices = array_merge($choices, $this->parent->get_taxonomies_for_select());
@@ -316,7 +316,7 @@ class acf_Relationship extends acf_Field
 		<tr class="field_option field_option_<?php echo $this->name; ?>">
 			<td class="label">
 				<label><?php _e("Maximum posts",'acf'); ?></label>
-				<p class="description"><?php _e("Set to -1 for inifinit",'acf'); ?></p>
+				<p class="description"><?php _e("Set to -1 for infinite",'acf'); ?></p>
 			</td>
 			<td>
 				<?php 
@@ -362,7 +362,12 @@ class acf_Relationship extends acf_Field
 			$return = array();
 			foreach($value as $v)
 			{
-				$return[] = get_post($v);
+				$p = get_post($v);
+				
+				if( $p && in_array( $p->post_status, array('publish', 'private', 'draft', 'inherit')) )
+				{
+					$return[] = $p;
+				}
 			}
 		}
 		else

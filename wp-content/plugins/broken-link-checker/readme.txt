@@ -3,8 +3,8 @@ Contributors: whiteshadow
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=A6P9S6CE3SRSW
 Tags: links, broken, maintenance, blogroll, custom fields, admin, comments, posts
 Requires at least: 3.2
-Tested up to: 3.4-alpha
-Stable tag: 1.5
+Tested up to: 3.4-beta4
+Stable tag: 1.5.5
 
 This plugin will check your posts, comments and other content for broken links and missing images, and notify you if any are found. 
 
@@ -89,6 +89,24 @@ To upgrade your installation
 1. Reactivate the plugin. Your settings will be retained from the previous version.
 
 == Changelog ==
+
+= 1.5.5 =
+* Fix broken image on the settings page.
+
+= 1.5.3 =
+* Fixed a bug that would cause the donation flag to be recorded incorrectly. Apologies to everyone who donated.
+
+= 1.5.2 =
+* A few minor comment fixes.
+* Move certain styles to a separate CSS file, which is where they belong.
+* Replace the ThemeFuse banner with one from ManageWP (will go live on June 5).
+* Instead of displaying several plugins in the "More plugins by Janis Elsts" box, sometimes display just one plugin (AME).
+
+= 1.5.1 =
+* Updated Portuguese translation.
+* Updated German translation.
+* Fixed the donation link to properly return to the Dashboard upon completion.
+* Do not display ads to users who have donated.
 
 = 1.5 =
 * Added a FileServe checker.

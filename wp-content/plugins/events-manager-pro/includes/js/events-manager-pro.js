@@ -7,4 +7,14 @@ jQuery(document).ready(function($){
 			return false;
 		}
 	});
+	//Approve/Reject Links
+	$(document).delegate('.em-transaction-delete', 'click', function(){
+		var el = $(this); 
+		if( !confirm(EM.transaction_delete) ){ return false; }
+		var url = em_ajaxify( el.attr('href'));		
+		var td = el.parents('td').first();
+		td.html(EM.txt_loading);
+		td.load( url );
+		return false;
+	});
 });

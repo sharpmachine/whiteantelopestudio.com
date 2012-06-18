@@ -1790,7 +1790,7 @@ class SU_Module {
 	}
 	
 	/**
-	 * Outputs a dropdown into an admin form and saves the set's value into the database after form submission.
+	 * Outputs a dropdown into an admin form and saves the dropdown's value into the database after form submission.
 	 * 
 	 * @since 3.7
 	 * @uses is_action()
@@ -1800,9 +1800,10 @@ class SU_Module {
 	 * @uses su_esc_attr()
 	 * @uses get_setting()
 	 * 
-	 * @param string $name The name of the set of radio buttons.
-	 * @param array $values The keys of this array are the radio button values, and the array values are the label strings.
-	 * @param string|false $grouptext The text to display in a table cell to the left of the one containing the radio buttons. Optional.
+	 * @param string $name The name of the setting which the dropdown is supposed to set.
+	 * @param array $values The keys of this array are the possible dropdown option values, and the array values are the option label strings.
+	 * @param string|false $grouptext The text to display in a table cell to the left of the one containing the dropdown. Optional.
+	 * @param string $text A printf-style format string in which "%s" is replaced with the dropdown. Use this to put text before or after the dropdown.
 	 */
 	function dropdown($name, $values, $grouptext=false, $text='%s') {
 		

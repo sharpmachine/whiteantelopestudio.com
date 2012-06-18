@@ -21,16 +21,13 @@ class EM_Gateway_Offline extends EM_Gateway {
 		add_filter('em_booking_set_status',array(&$this,'em_booking_set_status'),1,2);
 		add_filter('em_bookings_pending_count', array(&$this, 'em_bookings_pending_count'),1,1);
 		add_filter('em_bookings_get_pending_spaces', array(&$this, 'em_bookings_get_pending_spaces'),1,2);
-		//Booking UI
-		if($this->is_active()) { //only if active
-			//Bookings Table
-			add_filter('em_bookings_table_booking_actions_5', array(&$this,'bookings_table_actions'),1,2);
-			add_filter('em_wp_localize_script', array(&$this,'em_wp_localize_script'),1,1);
-		}
+		add_filter('em_bookings_table_booking_actions_5', array(&$this,'bookings_table_actions'),1,2);
+		add_filter('em_wp_localize_script', array(&$this,'em_wp_localize_script'),1,1);
 		add_action('em_admin_event_booking_options_buttons', array(&$this, 'event_booking_options_buttons'),10);
 		add_action('em_admin_event_booking_options', array(&$this, 'event_booking_options'),10);
 		add_action('em_bookings_single_metabox_footer', array(&$this, 'add_payment_form'),1,1); //add payment to booking
 		add_action('em_bookings_manual_booking', array(&$this, 'add_booking_form'),1,1);
+		add_filter('em_booking_get_post', array(&$this,'em_booking_get_post'),1,2);
 	}
 	
 	/**
@@ -60,6 +57,8 @@ class EM_Gateway_Offline extends EM_Gateway {
 					unset($_POST['action']);
 				}
 			}
+		}elseif( !empty($_REQUEST['manual_booking']) && wp_verify_nonce($_REQUEST['manual_booking'], 'em_manual_booking_'.$_REQUEST['event_id']) ){
+		    add_action('pre_option_dbem_bookings_double',create_function('','return true;')); //so we don't get a you're already booked here message
 		}
 	}
 	
@@ -86,7 +85,10 @@ class EM_Gateway_Offline extends EM_Gateway {
 	function booking_form_feedback( $return, $EM_Booking = false ){
 		if( !empty($return['result']) && !empty($EM_Booking->booking_meta['gateway']) && !empty($EM_Booking->booking_status) ){ //check emtpies
 			if( $EM_Booking->booking_status == 5 && $this->uses_gateway($EM_Booking) ){ //check values
-				$return['message'] = get_option('em_'.$this->gateway.'_booking_feedback');	
+				$return['message'] = get_option('em_'.$this->gateway.'_booking_feedback');
+				if( !empty($EM_Booking->email_not_sent) ){
+					$return['message'] .=  ' '.get_option('dbem_booking_feedback_nomail');
+				}
 				return apply_filters('em_gateway_offline_booking_add', $return, $EM_Booking->get_event(), $EM_Booking);
 			}
 		}						
@@ -153,7 +155,7 @@ class EM_Gateway_Offline extends EM_Gateway {
 	 */
 	function event_booking_options_buttons(){
 		global $EM_Event;
-		?><a href="<?php echo EM_ADMIN_URL; ?>&amp;page=events-manager-bookings&amp;action=manual_booking&amp;event_id=<?php echo $EM_Event->event_id ?>" class="button add-new-h2"><?php _e('Add Booking','dbem') ?></a><?php	
+		?><a href="<?php echo em_add_get_params($EM_Event->get_bookings_url(), array('action'=>'manual_booking','event_id'=>$EM_Event->event_id)); ?>" class="button add-new-h2"><?php _e('Add Booking','dbem') ?></a><?php	
 	}
 	
 	/**
@@ -161,7 +163,7 @@ class EM_Gateway_Offline extends EM_Gateway {
 	 */
 	function event_booking_options(){
 		global $EM_Event;
-		?><a href="<?php echo EM_ADMIN_URL; ?>&amp;page=events-manager-bookings&amp;action=manual_booking&amp;event_id=<?php echo $EM_Event->event_id ?>"><?php _e('add booking','dbem') ?></a><?php	
+		?><a href="<?php echo em_add_get_params($EM_Event->get_bookings_url(), array('action'=>'manual_booking','event_id'=>$EM_Event->event_id)); ?>"><?php _e('add booking','dbem') ?></a><?php	
 	}
 	
 	/**
@@ -228,6 +230,7 @@ class EM_Gateway_Offline extends EM_Gateway {
 		}
 		$EM_Tickets = $EM_Event->get_bookings()->get_tickets();	
 		$back_to_button = '<a href="'.$EM_Event->get_bookings_url().'" class="button add-new-h2">'. sprintf(__('Go back to &quot;%s&quot; bookings','em-pro'), $EM_Event->name) .'</a>';
+		add_action('pre_option_dbem_bookings_double',create_function('','return true;')); //so we don't get a you're already booked here message
 		?>
 		<div class='wrap'>
 			<div class="icon32" id="icon-plugins"><br></div>
@@ -236,20 +239,12 @@ class EM_Gateway_Offline extends EM_Gateway {
 			<script type="text/javascript">
 				jQuery(document).ready(function($){
 					$('.em-tickets').addClass('widefat');
-					$('#em-payment-full').click(function(e){
-						if( $(this).is(':checked') ){
-							$('#em-payment-amount').val('');
-							$('#em-payment-amount').attr('readonly',true);
-						}else{
-							$('#em-payment-amount').attr('readonly',false);
-						}
-					});
 					$('select#person_id').change(function(e){
 						var person_id  = $('select#person_id option:selected').val();
 						if( person_id > 0 ){
-							$('#em-booking-form p.input-user-field').hide();
+							$('.em-booking-form p.input-user-field').hide();
 						}else{
-							$('#em-booking-form p.input-user-field').show();							
+							$('.em-booking-form p.input-user-field').show();							
 						}
 					});
 				});
@@ -274,11 +269,9 @@ class EM_Gateway_Offline extends EM_Gateway {
 			//validate post
 			if( !empty($_REQUEST['payment_amount']) && !is_numeric($_REQUEST['payment_amount'])){
 				$EM_Booking->add_error( 'Invalid payment amount, please provide a number only.', 'em-pro' );
-			}
-			if( !empty($_REQUEST['payment_amount']) || !empty($_REQUEST['payment_full']) ){				
-				//add em_event_save filter if payments are being made
-				add_filter('em_booking_save', array(&$this, 'em_booking_save'), 10, 2);
-			}
+			}				
+			//add em_event_save filter to log transactions etc.
+			add_filter('em_booking_save', array(&$this, 'em_booking_save'), 10, 2);
 			//set flag that we're manually booking here, and set gateway to offline
 			if( !defined('EM_FORCE_REGISTRATION') && (empty($_REQUEST['person_id']) || $_REQUEST['person_id'] < 0) ) define('EM_FORCE_REGISTRATION', true);
 		}
@@ -290,10 +283,11 @@ class EM_Gateway_Offline extends EM_Gateway {
 	 * @param EM_Booking $EM_Booking
 	 */
 	function em_booking_save( $result, $EM_Booking ){
-		if( $result && (!empty($_REQUEST['payment_amount']) || !empty($_REQUEST['payment_full'])) ){
+		if( $result && !empty($_REQUEST['manual_booking']) && wp_verify_nonce($_REQUEST['manual_booking'], 'em_manual_booking_'.$_REQUEST['event_id']) ){
 			remove_filter('em_booking_set_status',array(&$this,'em_booking_set_status'),1,2);
 			if( !empty($_REQUEST['payment_full']) ){
-				$this->record_transaction($EM_Booking, $EM_Booking->get_price(false, false, true), get_option('dbem_bookings_currency'), current_time('mysql'), '', 'Completed', __('Manual booking.','em-pro'));
+				$price = ( !empty($_REQUEST['payment_amount']) && is_numeric($_REQUEST['payment_amount']) ) ? $_REQUEST['payment_amount']:$EM_Booking->get_price(false, false, true);
+				$this->record_transaction($EM_Booking, $price, get_option('dbem_bookings_currency'), current_time('mysql'), '', 'Completed', __('Manual booking.','em-pro'));
 				$EM_Booking->set_status(1,false);
 			}elseif( !empty($_REQUEST['payment_amount']) && is_numeric($_REQUEST['payment_amount']) ){
 				$this->record_transaction($EM_Booking, $_REQUEST['payment_amount'], get_option('dbem_bookings_currency'), current_time('mysql'), '', 'Completed', __('Manual booking.','em-pro'));
@@ -304,6 +298,23 @@ class EM_Gateway_Offline extends EM_Gateway {
 			add_filter('em_booking_set_status',array(&$this,'em_booking_set_status'),1,2);
 			$add_txt = '<a href=\"'.wp_get_referer().'\">'.__('Add another booking','em-pro').'</a>';
 			add_filter('em_action_booking_add', create_function('$feedback', '$feedback["message"] = $feedback["message"] . "<p>'.$add_txt.'</p>"; return $feedback;'));
+		}
+		return $result;
+	}
+	
+	/**
+	 * @param boolean $result
+	 * @param EM_Booking $EM_Booking
+	 */
+	function em_booking_get_post( $result, $EM_Booking ){
+		if( $result && !empty($_REQUEST['manual_booking']) && wp_verify_nonce($_REQUEST['manual_booking'], 'em_manual_booking_'.$_REQUEST['event_id']) ){
+			if( !empty($_REQUEST['person_id']) ){
+				$person = new EM_Person($_REQUEST['person_id']);
+				if( !empty($person->ID) ){
+					$EM_Booking->person = $person;
+					$EM_Booking->person_id = $person->ID;
+				}
+			}
 		}
 		return $result;
 	}
@@ -336,7 +347,8 @@ class EM_Gateway_Offline extends EM_Gateway {
 			<p class="em-booking-gateway" id="em-booking-gateway">
 				<label><?php _e('Amount Paid','em-pro'); ?></label>
 				<input type="text" name="payment_amount" id="em-payment-amount" value="<?php if(!empty($_REQUEST['payment_amount'])) echo $_REQUEST['payment_amount']; ?>">
-				<?php _e('Fully Paid','em-pro'); ?> <input type="checkbox" name="payment_full" id="em-payment-full" value="1">
+				<?php _e('Fully Paid','em-pro'); ?> <input type="checkbox" name="payment_full" id="em-payment-full" value="1"><br />
+				<em><?php _e('If you check this as fully paid, and leave the amount paid blank, it will be assumed the full payment has been made.' ,'em-pro'); ?></em>
 			</p>
 			<?php
 		}

@@ -90,6 +90,8 @@ class SU_ContentAutolinks extends SU_Module {
 			}
 		}
 		
+		$autolink_class = $this->get_setting('autolink_class', '');
+		
 		$post = get_post($id);
 		
 		$i=0;
@@ -151,10 +153,11 @@ class SU_ContentAutolinks extends SU_Module {
 				$rel	= $data['nofollow'] ? ' rel="nofollow"' : '';
 				$target	= ($data['target'] == 'blank') ? ' target="_blank"' : '';
 				$title	= strlen($titletext = su_esc_attr($data['title'])) ? " title=\"$titletext\"" : '';
+				$class  = $autolink_class ? ' class="' . su_esc_attr($autolink_class) . '"' : '';
 				$a_url  = su_esc_attr($url);
 				$h_anchor = esc_html($anchor);
 				
-				$link = "<a href=\"$a_url\"$title$rel$target>$1</a>";
+				$link = "<a href=\"$a_url\"$title$rel$target$class>$1</a>";
 				
 				$lpa_lpu_limits = array();
 				if ($lpa_limit_enabled) $lpa_lpu_limits[] = $lpa_limit;

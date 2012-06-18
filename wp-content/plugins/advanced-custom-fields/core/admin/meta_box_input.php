@@ -4,6 +4,8 @@
 $fields = isset($args['args']['fields']) ? $args['args']['fields'] : false ;	
 $options = isset($args['args']['options']) ? $args['args']['options'] : false;
 $show = isset($args['args']['show']) ? $args['args']['show'] : "false";
+$post_id = isset($args['args']['post_id']) ? $args['args']['post_id'] : false;
+
 
 // defaults
 if(!$options)
@@ -12,7 +14,7 @@ if(!$options)
 		'layout'	=>	'default'
 	);
 }
-$post_id = $post ? $post->ID : 999999999;
+
 	
 if($fields)
 {

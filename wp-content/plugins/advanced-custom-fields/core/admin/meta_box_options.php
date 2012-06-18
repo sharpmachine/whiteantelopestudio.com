@@ -37,8 +37,8 @@ $options = $this->get_acf_options($post->ID);
 				'name'	=>	'options[position]',
 				'value'	=>	$options['position'],
 				'choices' => array(
-					'normal'	=>	'Normal',
-					'side'		=>	'Side',
+					'normal'	=>	__("Normal",'acf'),
+					'side'		=>	__("Side",'acf'),
 				)
 			));
 
@@ -57,8 +57,8 @@ $options = $this->get_acf_options($post->ID);
 				'name'	=>	'options[layout]',
 				'value'	=>	$options['layout'],
 				'choices' => array(
-					'default'	=>	'Standard Metabox',
-					'no_box'	=>	'No Metabox',
+					'default'	=>	__("Standard Metabox",'acf'),
+					'no_box'	=>	__("No Metabox",'acf'),
 				)
 			));
 			
@@ -67,24 +67,27 @@ $options = $this->get_acf_options($post->ID);
 	</tr>
 	<tr>
 		<td class="label">
-			<label for="post_type"><?php _e("Show on page",'acf'); ?></label>
-			<p class="description"><?php _e("Deselect items to hide them on the edit page",'acf'); ?></p>
-			<p class="description"><?php _e("If multiple ACF groups appear on an edit page, the first ACF group's options will be used. The first ACF group is the one with the lowest order number.",'acf'); ?></p>
+			<label for="post_type"><?php _e("Hide on screen",'acf'); ?></label>
+			<p class="description"><?php _e("<b>Select</b> items to <b>hide</b> them from the edit screen",'acf'); ?></p>
+			<p class="description"><?php _e("If multiple field groups appear on an edit screen, the first field group's options will be used. (the one with the lowest order number)",'acf'); ?></p>
 		</td>
 		<td>
 			<?php 
 			
 			$this->create_field(array(
 				'type'	=>	'checkbox',
-				'name'	=>	'options[show_on_page]',
-				'value'	=>	$options['show_on_page'],
+				'name'	=>	'options[hide_on_screen]',
+				'value'	=>	$options['hide_on_screen'],
 				'choices' => array(
-					'the_content'	=>	'Content Editor',
-					'custom_fields'	=>	'Custom Fields',
-					'discussion'	=>	'Discussion',
-					'comments'		=>	'Comments',
-					'slug'			=>	'Slug',
-					'author'		=>	'Author'
+					'the_content'		=>	__("Content Editor",'acf'),
+					'excerpt'			=>	__("Excerpt"),
+					'custom_fields'		=>	__("Custom Fields"),
+					'discussion'		=>	__("Discussion"),
+					'comments'			=>	__("Comments"),
+					'slug'				=>	__("Slug"),
+					'author'			=>	__("Author"),
+					'format'			=>	__("Format"),
+					'featured_image'	=>	__("Featured Image")
 				)
 			));
 			

@@ -324,14 +324,17 @@ class wsBrokenLinkChecker {
         	array($options_page_hook, $links_page_hook)
 		);
 		
-        //Make the Settings page link to the link list, and vice versa
-        add_screen_meta_link(
-        	'blc-more-plugins-link',
-			__('More plugins by Janis Elsts', 'broken-link-checker'),
-			'http://w-shadow.com/MoreWpPlugins/',
-			$links_page_hook,
-			array('style' => 'font-weight: bold;')
-		);
+        if ( !$this->conf->get('user_has_donated') ) {
+	        add_screen_meta_link(
+	            'blc-more-plugins-link',
+				__('More plugins by Janis Elsts', 'broken-link-checker'),
+				'http://w-shadow.com/MoreWpPlugins/',
+				$links_page_hook,
+				array('style' => 'font-weight: bold;')
+			);
+        }
+
+	    //Make the Settings page link to the link list
 		add_screen_meta_link(
         	'blc-links-page-link',
 			__('Go to Broken Links', 'broken-link-checker'),
@@ -381,6 +384,18 @@ class wsBrokenLinkChecker {
 			);
 			echo '<br>', __('Try deactivating and then reactivating the plugin.', 'broken-link-checker');
 		}
+
+	    //Prior to 1.5.2 (released 2012-05-27), there was a bug that would cause the donation flag to be
+	    //set incorrectly. So we'll unset the flag in that case.
+	    $reset_donation_flag =
+	    	($this->conf->get('first_installation_timestamp', 0) < strtotime('2012-05-27 00:00')) &&
+	    	!$this->conf->get('donation_flag_fixed', false);
+
+	    if ( $reset_donation_flag) {
+		    $this->conf->set('user_has_donated', false);
+		    $this->conf->set('donation_flag_fixed', true);
+		    $this->conf->save_options();
+	    }
     	
         if (isset($_POST['recheck']) && !empty($_POST['recheck']) ){
             $this->initiate_recheck();
@@ -525,7 +540,8 @@ class wsBrokenLinkChecker {
         //Show a thank-you message when a donation is made.
         if ( !empty($_GET['donated']) ){
         	echo '<div id="message" class="updated fade"><p><strong>',__('Thank you for your donation!', 'broken-link-checker'), '</strong></p></div>';
-        	
+        	$this->conf->set('user_has_donated', true);
+	        $this->conf->save_options();
         }
         
         //Show one when recheck is started, too. 
@@ -1146,7 +1162,7 @@ class wsBrokenLinkChecker {
      * @return void
      */
     function options_page_css(){
-    	wp_enqueue_style('blc-options-page', plugins_url('css/options-page.css', BLC_PLUGIN_FILE), array(), '0.9.7' );
+    	wp_enqueue_style('blc-options-page', plugins_url('css/options-page.css', BLC_PLUGIN_FILE), array(), '20120527' );
     	wp_enqueue_style('dashboard');
 	}
 	

@@ -186,11 +186,11 @@ class EM_Gateway_Authorize_AIM extends EM_Gateway {
 	function booking_form(){
 		echo get_option('em_'.$this->gateway.'_form');
 		?>
-        <p>
+        <p class="em-bookings-form-gateway-cardno">
           <label><?php  _e('Credit Card Number','em-pro'); ?></label>
-          <input type="text" size="15" name="x_card_num" value="" />
+          <input type="text" size="15" name="x_card_num" value="" class="input" />
         </p>
-        <p>
+        <p class="em-bookings-form-gateway-expiry">
           <label><?php  _e('Expiry Date','em-pro'); ?></label>
           <select name="x_exp_date_month" >
           	<?php 
@@ -209,9 +209,9 @@ class EM_Gateway_Authorize_AIM extends EM_Gateway {
           	?>
           </select>
         </p>
-        <p>
+        <p class="em-bookings-form-ccv">
           <label><?php  _e('CCV','em-pro'); ?></label>
-          <input type="text" size="4" name="x_card_code" value="" />
+          <input type="text" size="4" name="x_card_code" value="" class="input" />
         </p>
 		<?php
 	}
@@ -227,7 +227,9 @@ class EM_Gateway_Authorize_AIM extends EM_Gateway {
 	 * @return AuthorizeNetAIM
 	 */
 	function get_api(){
-		require_once('anet_php_sdk/AuthorizeNet.php');        
+		if( !class_exists('AuthorizeNetAIM') ){
+			require_once('anet_php_sdk/AuthorizeNet.php'); 
+		}       
         //Basic Credentials
 		$sale = new AuthorizeNetAIM(get_option('em_'.$this->gateway.'_api_user'), get_option('em_'.$this->gateway.'_api_key'));
 		if(get_option('em_'.$this->gateway.'_mode') == 'live'){
@@ -270,7 +272,8 @@ class EM_Gateway_Authorize_AIM extends EM_Gateway {
 		foreach( $EM_Booking->get_tickets_bookings()->tickets_bookings as $EM_Ticket_Booking ){
 			$price = $EM_Ticket_Booking->get_ticket()->get_price();
 			if( $price > 0 ){
-        		$sale->addLineItem($EM_Ticket_Booking->get_ticket()->ticket_id, $EM_Ticket_Booking->get_ticket()->ticket_name, $EM_Ticket_Booking->get_ticket()->ticket_description, $EM_Ticket_Booking->get_spaces(), $price, $tax_enabled);
+				$ticket_name = substr($EM_Ticket_Booking->get_ticket()->ticket_name, 0, 31);
+        		$sale->addLineItem($EM_Ticket_Booking->get_ticket()->ticket_id, $ticket_name, $EM_Ticket_Booking->get_ticket()->ticket_description, $EM_Ticket_Booking->get_spaces(), $price, $tax_enabled);
 			}
 		}
 

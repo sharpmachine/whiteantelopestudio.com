@@ -8,6 +8,7 @@ class EM_Gateways {
 	 */
 	
 	function init(){
+	    add_filter('em_wp_localize_script', array('EM_Gateways','em_wp_localize_script'),10,1);
 		//add to booking interface (menu options, booking statuses)
 		add_action('em_bookings_table',array('EM_Gateways','em_bookings_table'),10,1);
 		//WP_Query/Rewrite
@@ -21,6 +22,7 @@ class EM_Gateways {
 		//Booking interception
 		add_filter('em_booking_add', array('EM_Gateways', 'em_booking_add'), 10, 3);
 		add_filter('em_action_booking_add', array('EM_Gateways','em_action_booking_add'),1,2); //adds gateway var to feedback
+		add_filter('em_booking_delete', array('EM_Gateways', 'em_booking_delete'), 10, 2);
 		// Payment return
 		add_action('parse_query', array('EM_Gateways', 'handle_payment_gateways'), 10 ); //just in case
 		add_action('wp_ajax_em_payment', array('EM_Gateways', 'handle_payment_gateways'), 10 );
@@ -29,6 +31,12 @@ class EM_Gateways {
 			add_filter('em_booking_form_buttons', array('EM_Gateways','booking_form_buttons'),10,2); //Replace button with booking buttons
 			//new way, with payment selector
 			add_action('em_booking_form_footer', array('EM_Gateways','booking_form_footer'),10,2);
+	}
+	
+	function em_wp_localize_script( $vars ){
+	    $vars['booking_delete'] .= ' '.__('All transactional history associated with this booking will also be deleted.','em-pro');
+	    $vars['transaction_delete'] = __('Are you sure you want to delete? This may make your transaction history out of sync with your payment gateway provider.', 'em-pro');
+	    return $vars;
 	}
 	
 	function em_bookings_table($EM_Bookings_Table){
@@ -188,6 +196,21 @@ class EM_Gateways {
 			}
 		}
 		return; //for filter compatibility
+	}
+	
+	/**
+	 * Cleans up Pro-added features in the database, such as deleting transactions for this booking.
+	 * @param boolean $result
+	 * @param EM_Booking $EM_Booking
+	 * @return boolean
+	 */
+	function em_booking_delete($result, $EM_Booking){
+		if($result){
+			//TODO decouple transaction logic from gateways
+			global $wpdb;
+			$wpdb->query('DELETE FROM '.EM_TRANSACTIONS_TABLE." WHERE booking_id = '".$EM_Booking->booking_id."'");
+		}
+		return $result;
 	}
 	
 	function em_action_booking_add($return){
@@ -470,7 +493,7 @@ class EM_Gateways {
 				$button = '<div class="em-gateway-buttons"><div class="em-gateway-button first">'. implode('</div><div class="em-gateway-button">', $gateway_buttons).'</div></div>';			
 			}
 		}
-		if($button != '') $button .= '<style type="text/css">input#em-booking-submit { display:none; }</style>'; //hide normal button if we have buttons
+		if($button != '') $button .= '<style type="text/css">input.em-booking-submit { display:none; } .em-gateway-button input.em-booking-submit { display:block; }</style>'; //hide normal button if we have buttons
 		return apply_filters('em_gateway_booking_form_buttons', $button, $gateway_buttons);
 	}
 }

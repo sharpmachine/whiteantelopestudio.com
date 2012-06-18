@@ -102,7 +102,7 @@ class EM_Booking_Form {
 		?>		
 		<script type="text/javascript">
 			jQuery(document).ready( function($){
-				$('#em-booking-form select.em-ticket-select').change( function(e){
+				$('.em-booking-form select.em-ticket-select').change( function(e){
 					e.preventDefault();
 					var tr = $(this).parents('tr.em-ticket').first();
 					var id = tr.attr('id').substr(10);
@@ -178,11 +178,17 @@ class EM_Booking_Form {
 		return $result;
 	}
 	
+	/**
+	 * @param boolean $result
+	 * @param EM_Booking $EM_Booking
+	 * @return boolean
+	 */
 	function em_booking_validate($result, $EM_Booking){
 		if( empty($EM_Booking->booking_id) && self::$validate ){
 			//only run if taking post data, because validation could fail elsewhere
 			$EM_Form = self::get_form($EM_Booking->event_id);		
 			if( !$EM_Form->get_post() ){
+			    $EM_Booking->add_error($EM_Form->get_errors());
 				return false;
 			}
 		}

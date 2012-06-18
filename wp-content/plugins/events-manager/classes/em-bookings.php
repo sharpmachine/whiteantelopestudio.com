@@ -74,6 +74,7 @@ class EM_Bookings extends EM_Object implements Iterator{
 					$this->feedback_message = get_option('dbem_booking_feedback');
 				}
 				if(!$email){
+					$EM_Booking->email_not_sent = true;
 					$this->feedback_message .= ' '.get_option('dbem_booking_feedback_nomail');
 					if( current_user_can('activate_plugins') ){
 						if( count($EM_Booking->get_errors()) > 0 ){
@@ -192,9 +193,7 @@ class EM_Bookings extends EM_Object implements Iterator{
 		//TODO extend booking options
 		$return = false;
 		$EM_Event = $this->get_event();
-		if( !empty($EM_Event->event_rsvp_date) && strtotime($EM_Event->event_rsvp_date) > current_time('timestamp') ){
-			$return = true;
-		}elseif( $EM_Event->start > current_time('timestamp') ){
+		if( $EM_Event->start > current_time('timestamp') && (!empty($EM_Event->event_rsvp_date) && $EM_Event->rsvp_end > current_time('timestamp')) ){
 			$return = true;
 		}
 		if( count($this->get_available_tickets()->tickets) == 0){
@@ -311,7 +310,10 @@ class EM_Bookings extends EM_Object implements Iterator{
 	 */
 	function get_available_spaces(){
 		$spaces = $this->get_spaces();
-		$available_spaces = $spaces - $this->get_booked_spaces() - $this->get_pending_spaces();
+		$available_spaces = $spaces - $this->get_booked_spaces();
+		if( get_option('dbem_bookings_approval_reserved') ){ //deduct reserved/pending spaces from available spaces 
+			$available_spaces -= $this->get_pending_spaces();
+		}
 		return apply_filters('em_booking_get_available_spaces', $available_spaces, $this);
 	}
 
@@ -321,12 +323,8 @@ class EM_Bookings extends EM_Object implements Iterator{
 	 */
 	function get_booked_spaces($force_refresh = false){
 		$booked_spaces = 0;
-		$EM_Bookings = $this->get_bookings(true);
-		$reserved_pending = get_option('dbem_bookings_approval_reserved');
-		$auto_approval = get_option('dbem_bookings_approval');
-		foreach ( $EM_Bookings->bookings as $EM_Booking ){
-			//never show cancelled status, nor pending if approvals required
-			if( $EM_Booking->booking_status == 1 || ((!$auto_approval || $reserved_pending) && $EM_Booking->booking_status == 0) ){
+		foreach ( $this->bookings as $EM_Booking ){
+			if( $EM_Booking->booking_status == 1 ){
 				$booked_spaces += $EM_Booking->get_spaces($force_refresh);
 			}
 		}
