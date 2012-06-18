@@ -654,6 +654,13 @@ class Warehouse extends AdminController {
 			}
 		}
 
+		do_action('add_meta_boxes', Product::$posttype, $Product);
+		do_action('add_meta_boxes_'.Product::$posttype, $Product);
+
+		do_action('do_meta_boxes', Product::$posttype, 'normal', $Product);
+		do_action('do_meta_boxes', Product::$posttype, 'advanced', $Product);
+		do_action('do_meta_boxes', Product::$posttype, 'side', $Product);
+
 		include(SHOPP_ADMIN_PATH."/products/editor.php");
 	}
 

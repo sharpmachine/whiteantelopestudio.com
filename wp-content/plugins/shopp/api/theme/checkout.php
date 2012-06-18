@@ -188,12 +188,15 @@ class ShoppCheckoutThemeAPI implements ShoppAPI {
 			$options['selected'] = $O->Billing->cardtype;
 
 		$cards = array();
-		foreach ($O->paycards as $paycard)
+		foreach ($O->paycards as $paycard) {
+			// Convert full card type names to card type symbols
+			if ($options['selected'] == $paycard->name) $options['selected'] = $paycard->symbol;
 			$cards[$paycard->symbol] = $paycard->name;
+		}
 
 		$label = (!empty($options['label']))?$options['label']:'';
 		$output = '<select name="billing[cardtype]" id="billing-cardtype" '.inputattrs($options,$select_attrs).'>';
-		$output .= '<option value="" selected="selected">'.$label.'</option>';
+		$output .= '<option value="">'.$label.'</option>';
 	 	$output .= menuoptions($cards,$options['selected'],true);
 		$output .= '</select>';
 
@@ -452,13 +455,12 @@ class ShoppCheckoutThemeAPI implements ShoppAPI {
 	}
 
 	static function completed ($result, $options, $O) {
-		global $Shopp;
-		if (empty($Shopp->Purchase->id) && $O->purchase !== false) {
-			$Shopp->Purchase = new Purchase($O->purchase);
-			$Shopp->Purchase->load_purchased();
-			return (!empty($Shopp->Purchase->id));
+		if ( $O->purchase === false ) return false;
+		if ( ! ShoppPurchase() || empty(ShoppPurchase()->id) ) {
+			ShoppPurchase(new Purchase($O->purchase));
+			ShoppPurchase()->load_purchased();
 		}
-		return false;
+		return (!empty(ShoppPurchase()->id));
 	}
 
 	static function confirm_button ($result, $options, $O) {
@@ -584,10 +586,10 @@ class ShoppCheckoutThemeAPI implements ShoppAPI {
 		$regions = Lookup::country_zones();
 		$base = shopp_setting('base_operations');
 
-		$js = "var regions = ".json_encode($regions).",".
-				  "c_upd = '".$updating."',".
-				  "d_pm = '".sanitize_title_with_dashes($O->paymethod)."',".
-				  "pm_cards = {};";
+		$js = "var regions=".json_encode($regions).",".
+				  "c_upd='".$updating."',".
+				  "d_pm='".sanitize_title_with_dashes($O->paymethod)."',".
+				  "pm_cards={};";
 
 		foreach ($O->payoptions as $handle => $option) {
 			if (empty($option->cards)) continue;
@@ -761,7 +763,8 @@ class ShoppCheckoutThemeAPI implements ShoppAPI {
 		$id = 'order-data-'.sanitize_title_with_dashes($name);
 
 		if (in_array($type,$value_override) && !empty($data))
-			$value = $data;
+			$op['value'] = $value = $data;
+
 		switch (strtolower($type)) {
 			case "textarea":
 				return '<textarea name="data['.$name.']" cols="'.$cols.'" rows="'.$rows.'" id="'.$id.'" '.inputattrs($op,$textarea_attrs).'>'.$value.'</textarea>';
@@ -811,13 +814,15 @@ class ShoppCheckoutThemeAPI implements ShoppAPI {
 		if (empty($options['value'])) $options['value'] = key($O->payoptions);
 
 		$_ = array();
-		if (value_is_true($labeling))
-			$_[] = '<label>';
-		if ($labelpos == "before") $_[] = $payoption->label;
-		$_[] = '<input type="'.$type.'" name="paymethod"'.inputattrs($options).' />';
-		if ($labelpos == "after") $_[] = $payoption->label;
-		if (value_is_true($labeling))
+		if (str_true($labeling)) {
+			$_[] = '<label class="'.esc_attr($options['value']).'">';
+			if ($labelpos == "before") $_[] = $payoption->label;
+		}
+		$_[] = '<input type="'.$type.'" name="paymethod" id="paymethod-'.esc_attr($options['value']).'"'.inputattrs($options).' />';
+		if (str_true($labeling)) {
+			if ($labelpos == "after") $_[] = $payoption->label;
 			$_[] = '</label>';
+		}
 
 		return join("",$_);
 	}

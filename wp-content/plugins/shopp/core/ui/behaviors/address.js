@@ -1,0 +1,6 @@
+/*
+ * address.js - Description
+ * Copyright ?? 2012 by Ingenesis Limited. All rights reserved.
+ * Licensed under the GPLv3 {@see license.txt}
+ */
+jQuery(document).ready(function(a){a("#billing-country,#shipping-country").change(function(f,i){var d=a(this).attr("id").split("-")[0],h=a(this).val(),c=a("#"+d+"-state"),g=a("#"+d+"-state-menu"),b='<option value=""></option>';if(g.length==0){return true}if(g.hasClass("hidden")){g.removeClass("hidden").hide()}if(regions[h]||(i&&g.find("option").length>1)){c.setDisabled(true).addClass("_important").hide();if(regions[h]){a.each(regions[h],function(j,e){b+='<option value="'+j+'">'+e+"</option>"});if(!i){g.empty().append(b).setDisabled(false).show().focus()}}g.setDisabled(false).show();a("label[for="+c.attr("id")+"]").attr("for",g.attr("id"))}else{g.empty().setDisabled(true).hide();c.setDisabled(false).show().removeClass("_important");a("label[for="+g.attr("id")+"]").attr("for",c.attr("id"));if(!i){c.val("").focus()}}}).trigger("change",[true])});

@@ -91,7 +91,7 @@ class Purchase extends DatabaseObject {
 				case 'authed': $this->authorized += $Event->amount; break;
 				case 'captured': $this->captured += $Event->amount; break;
 				case 'refunded': $this->refunded += $Event->amount; break;
-				case 'voided': $this->voided = true; $Event->amount = $this->balance; $Event->credit = true; break;
+				case 'voided': $Event->amount = $this->balance; $this->voided += $Event->amount; $Event->credit = true; break;
 				case 'shipped': $this->shipped = true; $this->shipevent = $Event; break;
 			}
 			if (isset($Event->transactional)) {
@@ -110,6 +110,45 @@ class Purchase extends DatabaseObject {
 			}
 		}
 
+	}
+
+	/**
+	 * Detects when the purchase has been voided
+	 *
+	 * @author Jonathan Davis
+	 * @since 1.2.2
+	 *
+	 * @return boolean
+	 **/
+	function isrefunded () {
+		if (empty($this->events)) $this->load_events();
+		return ($this->refunded == $this->captured);
+	}
+
+	/**
+	 * Detects when the purchase has been voided
+	 *
+	 * @author Jonathan Davis
+	 * @since 1.2.2
+	 *
+	 * @return boolean
+	 **/
+	function isvoid () {
+		if (empty($this->events)) $this->load_events();
+		return ($this->voided >= $this->invoiced);
+	}
+
+	/**
+	 * Detects when the purchase has been paid in full
+	 *
+	 * @author Jonathan Davis
+	 * @since 1.2.2
+	 *
+	 * @return boolean
+	 **/
+	function ispaid () {
+		if (empty($this->events)) $this->load_events();
+		return ($this->captured == $this->total);
 	}
 
 	static function unstock ( UnstockOrderEvent $Event ) {
@@ -139,17 +178,15 @@ class Purchase extends DatabaseObject {
 					));
 
 				}
-
-				if ( ! str_true($Purchased->inventory) ) continue;
-
-				$allocated[$Purchased->id] = new PurchaseStockAllocation(array(
-					'purchased' => $Purchased->id,
-					'sku' => $Purchased->sku,
-					'price' => $Purchased->price,
-					'quantity' => $Purchased->quantity
-				));
-
 			}
+			if ( ! str_true($Purchased->inventory) ) continue;
+
+			$allocated[$Purchased->id] = new PurchaseStockAllocation(array(
+				'purchased' => $Purchased->id,
+				'sku' => $Purchased->sku,
+				'price' => $Purchased->price,
+				'quantity' => $Purchased->quantity
+			));
 		}
 
 		if ( ! empty($allocated) ) {
@@ -194,9 +231,20 @@ class Purchase extends DatabaseObject {
 		// Set transaction status from event name
 		$txnstatus = $Event->name;
 
+		if ( 'refunded' == $txnstatus) { // Determine if this is fully refunded (previous refunds + this refund amount)
+			if (empty($Purchase->events)) $Purchase->load_events(); // Not refunded if less than captured, so don't update txnstatus
+			if ($Purchase->refunded+$Event->amount < $Purchase->captured) $txnstatus = false;
+		}
+		if ( 'voided' == $txnstatus) { // Determine if the transaction has been cancelled
+			if (empty($Purchase->events)) $Purchase->load_events();
+			if ($Purchase->captured) $txnstatus = false; // If previously captured, don't mark voided
+		}
+
+		if ( 'shipped' == $txnstatus) $txnstatus = false; // 'shipped' is not a valid txnstatus
+
 		// Set order workflow status from status label mapping
-		$labels = shopp_setting('order_status');
-		$events = shopp_setting('order_states');
+		$labels = (array)shopp_setting('order_status');
+		$events = (array)shopp_setting('order_states');
 		$key = array_search($Event->name,$events);
 		if (false !== $key && isset($labels[$key])) $status = (int)$key;
 
@@ -256,8 +304,7 @@ class Purchase extends DatabaseObject {
 		$defaults = array('note');
 
 		$this->message['event'] = $Event;
-		$this->message['note'] = &$Event->note;
-
+		if (!empty($Event->note)) $this->message['note'] = &$Event->note;
 
 		// Generic filter hook for specifying global email messages
 		$messages = apply_filters('shopp_order_event_emails',array(
@@ -494,6 +541,16 @@ class Purchase extends DatabaseObject {
 		parent::delete();
 	}
 
+	function delete_purchased () {
+		if (empty($this->purchased)) $this->load_purchased();
+		foreach ($this->purchased as $item) {
+			$Purchased = new Purchased();
+			$Purchased->populate($item);
+			$Purchased->delete();
+		}
+	}
+
+
 } // end Purchase class
 
 class PurchaseStockAllocation extends AutoObjectFramework {
@@ -590,8 +647,6 @@ class PurchasesExport {
 		if (!empty($start) && !empty($end)) $where[] = '(UNIX_TIMESTAMP(o.created) >= '.$start.' AND UNIX_TIMESTAMP(o.created) <= '.$end.')';
 		if (!empty($customer)) $where[] = "customer=".intval($customer);
 		$where = !empty($where) ? "WHERE ".join(' AND ',$where) : '';
-
-		echo $where;
 
 		$purchasetable = DatabaseObject::tablename(Purchase::$table);
 		$purchasedtable = DatabaseObject::tablename(Purchased::$table);
@@ -796,7 +851,7 @@ class PurchasesIIFExport extends PurchasesExport {
 }
 
 // Automatically update the orders from order events
-$updates = array('invoiced','authed','captured','refunded','voided');
+$updates = array('invoiced','authed','captured','shipped','refunded','voided');
 foreach ($updates as $event) // Scheduled before default actions so updates are reflected in later actions
 	add_action( 'shopp_'.$event.'_order_event', array('Purchase','status_event'), 5 );
 
