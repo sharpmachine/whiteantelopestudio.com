@@ -428,32 +428,41 @@ class SU_ContentAutolinks extends SU_Module {
 		$keep_anchors = array();
 		$others_anchors = array();
 		$new_anchors = suarr::explode_lines($value);
+		$new_anchors = array_map('trim', $new_anchors);
+		array_filter($new_anchors);
 		
-		foreach ($links as $link_data) {
-			if ($link_data['to_type'] == 'posttype_'.$post->post_type && $link_data['to_id'] == $post->ID) {
-				if (in_array($link_data['anchor'], $new_anchors)) {
-					$keep_anchors[] = $link_data['anchor'];
+		if (count($new_anchors)) {
+			
+			foreach ($links as $link_data) {
+				if ($link_data['to_type'] == 'posttype_'.$post->post_type && $link_data['to_id'] == $post->ID) {
+					if (in_array($link_data['anchor'], $new_anchors)) {
+						$keep_anchors[] = $link_data['anchor'];
+						$new_links[] = $link_data;
+					}
+				} else {
+					$others_anchors[] = $link_data['anchor'];
 					$new_links[] = $link_data;
 				}
-			} else {
-				$others_anchors[] = $link_data['anchor'];
-				$new_links[] = $link_data;
 			}
+			
+			$anchors_to_add = array_diff($new_anchors, $keep_anchors, $others_anchors);
+			
+			if (count($anchors_to_add)) {
+				foreach ($anchors_to_add as $anchor_to_add) {
+					if (trim($anchor_to_add))
+						$new_links[] = array(
+							  'anchor' => $anchor_to_add
+							, 'to_type' => 'posttype_'.$post->post_type
+							, 'to_id' => $post->ID
+							, 'title' => ''
+							, 'nofollow' => false
+							, 'target' => 'self'
+						);
+				}
+			}
+			
+			$this->update_setting('links', $new_links);
 		}
-		
-		$anchors_to_add = array_diff($new_anchors, $keep_anchors, $others_anchors);
-		
-		foreach ($anchors_to_add as $anchor_to_add)
-			$new_links[] = array(
-				  'anchor' => $anchor_to_add
-				, 'to_type' => 'posttype_'.$post->post_type
-				, 'to_id' => $post->ID
-				, 'title' => ''
-				, 'nofollow' => false
-				, 'target' => 'self'
-			);
-		
-		$this->update_setting('links', $new_links);
 		
 		return true;
 	}
@@ -461,16 +470,23 @@ class SU_ContentAutolinks extends SU_Module {
 	function postmeta_fields($fields) {
 		$id = suwp::get_post_id();
 		
-		$fields['35|autolinks'] = $this->get_postmeta_textarea('autolinks', __('Incoming Autolink Anchors:<br /><em>(one per line)</em>', 'seo-ultimate'));
+		if ($id)
+			$type = get_post_type($id);
+		elseif (!empty($_GET['post_type']))
+			$type = $_GET['post_type'];
+		else
+			$type = 'post';
 		
-		if ($id && $this->get_setting('autolink_posttype_' . get_post_type($id)))
-			$fields['38|disable_autolinks'] = $this->get_postmeta_checkbox('disable_autolinks', __('Don&#8217;t add autolinks to anchor texts found in this post.', 'seo-ultimate'), __('Autolink Exclusion:', 'seo-ultimate'));
+		$fields['links'][10]['autolinks'] = $this->get_postmeta_textarea('autolinks', __('Inbound Autolink Anchors:<br /><em>(one per line)</em>', 'seo-ultimate'));
+		
+		if ($this->get_setting("autolink_posttype_$type"))
+			$fields['links'][15]['disable_autolinks'] = $this->get_postmeta_checkbox('disable_autolinks', __('Don&#8217;t add autolinks to anchor texts found in this post.', 'seo-ultimate'), __('Autolink Exclusion:', 'seo-ultimate'));
 		
 		return $fields;
 	}
 	
 	function postmeta_help($help) {
-		$help[] = __('<strong>Incoming Autolink Anchors</strong> &mdash; When you enter anchors into this box, Deeplink Juggernaut will search for that anchor in all your other posts and link it to this post. For example, if the post you&#8217;re editing is about &#8220;blue widgets,&#8221; you could type &#8220;blue widgets&#8221; into the &#8220;Incoming Autolink Anchors&#8221; box and Deeplink Juggernaut will automatically build internal links to this post with that anchor text (assuming other posts contain that text).', 'seo-ultimate');
+		$help[] = __('<strong>Incoming Autolink Anchors</strong> &mdash; When you enter anchors into this box, Deeplink Juggernaut will search for that anchor in all your other posts and link it to this post. For example, if the post you&#8217;re editing is about &#8220;blue widgets,&#8221; you could type &#8220;blue widgets&#8221; into the &#8220;Incoming Autolink Anchors&#8221; box and Deeplink Juggernaut will automatically build internal links to this post with that anchor text (assuming other posts contain that text). If you&#8217;re working on a draft post or a scheduled post, don&#8217;t worry &mdash; SEO Ultimate won&#8217;t add autolinks to this post until it&#8217;s published.', 'seo-ultimate');
 		return $help;
 	}
 }

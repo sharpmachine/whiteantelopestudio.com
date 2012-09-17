@@ -9,11 +9,52 @@ if (class_exists('SU_Module')) {
 
 class SU_Settings extends SU_Module {
 	
-	function get_module_title() { return __('Plugin Settings', 'seo-ultimate'); }
-	function get_page_title() { return __('SEO Ultimate Plugin Settings', 'seo-ultimate'); }
+	function get_module_title() {
+		if (is_network_admin())
+			return __('Plugin Management', 'seo-ultimate');
+		
+		return __('Plugin Settings', 'seo-ultimate');
+	}
+	
+	function get_page_title() {
+		if (is_network_admin())
+			return __('SEO Ultimate Plugin Management', 'seo-ultimate');
+		
+		return __('SEO Ultimate Plugin Settings', 'seo-ultimate');
+	}
+	
 	function get_menu_title() { return __('SEO Ultimate', 'seo-ultimate'); }
-	function get_menu_parent(){ return 'options-general.php'; }	
+	
+	function get_menu_parent() {
+		if (is_network_admin())
+			return 'plugins.php';
+		
+		return 'options-general.php';
+	}	
+	
 	function admin_page_contents() { $this->children_admin_page_tabs(); }
+	
+	function belongs_in_admin($admin_scope = null) {
+		
+		if ($admin_scope === null)
+			$admin_scope = suwp::get_admin_scope();
+		
+		switch ($admin_scope) {
+			case 'blog':
+				return true;
+			case 'network':
+				
+				if ( ! function_exists( 'is_plugin_active_for_network' ) )
+					require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
+				
+				return is_plugin_active_for_network($this->plugin->plugin_basename);
+				
+				break;
+			default:
+				return false;
+				break;
+		}
+	}
 	
 	function add_help_tabs($screen) {
 		
@@ -30,9 +71,8 @@ class SU_Settings extends SU_Module {
 			, 'content' => __("
 <p>Here&#8217;s information on some of the settings:</p>
 <ul>
-	<li><strong>Enable nofollow&#8217;d attribution link</strong> &mdash; If enabled, the plugin will display an attribution link on your site.</li>
-	<li><strong>Notify me about unnecessary active plugins</strong> &mdash; If enabled, SEO Ultimate will add notices to your &#8220;Plugins&#8221; administration page if you have any other plugins installed whose functionality SEO Ultimate replaces.</li>
-	<li><strong>Insert comments around HTML code insertions</strong> &mdash; If enabled, SEO Ultimate will use HTML comments to identify all code it inserts into your <code>&lt;head&gt;</code> tag. This is useful if you&#8217;re trying to figure out whether or not SEO Ultimate is inserting a certain piece of header code.</li>
+	<li><strong>Identify the plugin&#8217;s HTML code insertions with HTML comment tags</strong> &mdash; If enabled, SEO Ultimate will use HTML comments to identify all code it inserts into your <code>&lt;head&gt;</code> tag. This is useful if you&#8217;re trying to figure out whether or not SEO Ultimate is inserting a certain piece of header code.</li>
+	<li><strong>Enable nofollow&#8217;d attribution link on my site</strong> &mdash; If enabled, the plugin will display an attribution link on your site.</li>
 </ul>
 ", 'seo-ultimate')));
 	

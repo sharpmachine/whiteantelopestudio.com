@@ -307,10 +307,10 @@ class EM_Gateways_Transactions{
 				return new stdClass();
 			}			
 		}
-		if( is_multisite() && !is_main_blog() ){ //if not main blog, we show only blog specific booking info
+		if( is_multisite() && (!is_main_blog() || is_admin()) ){ //if not main blog, we show only blog specific booking info
 			global $blog_id;
 			$join = "tx JOIN $table ON $table.booking_id=tx.booking_id";
-			$conditions[] = "booking_id IN (SELECT booking_id FROM $table, ".EM_EVENTS_TABLE." e WHERE e.blog_id=".$blog_id.")";
+			$conditions[] = "$table.booking_id IN (SELECT $table.booking_id FROM $table, ".EM_EVENTS_TABLE." e WHERE e.blog_id=".$blog_id.")";
 		}
 		//filter by gateway
 		if( !empty($this->gateway) ){
@@ -369,13 +369,15 @@ function emp_transactions_init(){
 		$booking_id = $wpdb->get_var('SELECT booking_id FROM '.EM_TRANSACTIONS_TABLE." WHERE transaction_id='".$_REQUEST['txn_id']."'");
 		if( !empty($booking_id) ){
 			$EM_Booking = new EM_Booking($booking_id);
-			if( !empty($EM_Booking->booking_id) && $EM_Booking->can_manage()){
+			if( (!empty($EM_Booking->booking_id) && $EM_Booking->can_manage()) || is_super_admin() ){
 				//all good, delete it
 				$wpdb->query('DELETE FROM '.EM_TRANSACTIONS_TABLE." WHERE transaction_id='".$_REQUEST['txn_id']."'");
 				_e('Transaction deleted','em-pro');
 				exit();
 			}
-		} 
+		}
+		_e('Transaction could not be deleted', 'em-pro');
+		exit();
 	}
 }
 add_action('init','emp_transactions_init');

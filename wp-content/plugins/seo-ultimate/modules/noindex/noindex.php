@@ -7,6 +7,13 @@
 
 if (class_exists('SU_Module')) {
 
+function su_noindex_export_filter($all_settings) {
+	unset($all_settings['meta']['taxonomy_meta_robots_noindex']);
+	unset($all_settings['meta']['taxonomy_meta_robots_nofollow']);
+	return $all_settings;
+}
+add_filter('su_settings_export_array', 'su_noindex_export_filter');
+
 class SU_Noindex extends SU_Module {
 	
 	function get_module_title() { return __('Noindex Manager', 'seo-ultimate'); }

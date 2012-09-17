@@ -12,6 +12,9 @@ class SU_LinkNofollow extends SU_Module {
 	function get_module_title() { return __('Nofollow Manager', 'seo-ultimate'); }
 	function get_default_status() { return SU_MODULE_DISABLED; }
 	
+	function get_parent_module() { return 'misc'; }
+	function get_settings_key() { return 'link-nofollow'; }
+	
 	function init() {
 		$filterdata = array(
 			  'nofollow_links' => array(
@@ -49,31 +52,30 @@ class SU_LinkNofollow extends SU_Module {
 	}
 	
 	function admin_page_contents() {
-		$this->admin_form_start();
-		$this->admin_form_subheader(__('Add the nofollow attribute to...', 'seo-ultimate'));
+		$this->child_admin_form_start();
 		$this->checkboxes(array(
-				  'nofollow_adjacent_post' => __("Adjacent post links", 'seo-ultimate')
-				, 'nofollow_category_loop' => __("Category links (after posts)", 'seo-ultimate')
-				, 'nofollow_category_list' => __("Category links (in lists)", 'seo-ultimate')
-				, 'nofollow_comment_popup' => __("Comment anchor links", 'seo-ultimate')
-				, 'nofollow_comment_feed' => __("Comment feed links", 'seo-ultimate')
-				, 'nofollow_date_archive' => __("Date-based archive links", 'seo-ultimate')
-				, 'nofollow_paged' => __("Pagination navigation links (all)", 'seo-ultimate')
-				, 'nofollow_paged_home' => __("Pagination navigation links (on blog home only)", 'seo-ultimate')
-				, 'nofollow_post_more' => __("&#8220;Read more&#8221; links", 'seo-ultimate')
-				, 'nofollow_register' => __("Registration link", 'seo-ultimate')
-				, 'nofollow_login' => __("Login link", 'seo-ultimate')
-				, 'nofollow_tag_loop' => __("Tag links (after posts)", 'seo-ultimate')
-				, 'nofollow_tag_list' => __("Tag links (in lists and clouds)", 'seo-ultimate')
-			));
+				  'nofollow_adjacent_post' => __('Adjacent post links (next post / previous post)', 'seo-ultimate')
+				, 'nofollow_category_loop' => __('Category links (after posts)', 'seo-ultimate')
+				, 'nofollow_category_list' => __('Category links (in lists)', 'seo-ultimate')
+				, 'nofollow_comment_popup' => __('Comment anchor links', 'seo-ultimate')
+				, 'nofollow_comment_feed' => __('Comment feed links', 'seo-ultimate')
+				, 'nofollow_date_archive' => __('Date-based archive links', 'seo-ultimate')
+				, 'nofollow_paged' => __('Pagination navigation links (all)', 'seo-ultimate')
+				, 'nofollow_paged_home' => __('Pagination navigation links (on blog home only)', 'seo-ultimate')
+				, 'nofollow_post_more' => __('&#8220;Read more&#8221; links', 'seo-ultimate')
+				, 'nofollow_register' => __('Registration link', 'seo-ultimate')
+				, 'nofollow_login' => __('Login link', 'seo-ultimate')
+				, 'nofollow_tag_loop' => __('Tag links (after posts)', 'seo-ultimate')
+				, 'nofollow_tag_list' => __('Tag links (in lists and clouds)', 'seo-ultimate')
+			), __('Add the nofollow attribute to...', 'seo-ultimate'));
 		
-		$this->admin_form_end();
+		$this->child_admin_form_end();
 	}
 	
 	function postmeta_fields($fields, $screen) {
-
+		
 		if (strcmp($screen, 'page') == 0)
-			$fields['40|nofollow'] = $this->get_postmeta_checkbox('nofollow', __('When displaying page lists, nofollow links to this page', 'seo-ultimate'), __('Nofollow:', 'seo-ultimate'));
+			$fields['links'][30]['nofollow'] = $this->get_postmeta_checkbox('nofollow', __('When displaying page lists, nofollow links to this page', 'seo-ultimate'), __('Nofollow:', 'seo-ultimate'));
 		
 		return $fields;
 	}
@@ -127,7 +129,7 @@ class SU_LinkNofollow extends SU_Module {
 		
 		$screen->add_help_tab(array(
 			  'id' => 'su-link-nofollow-overview'
-			, 'title' => __('Overview', 'seo-ultimate')
+			, 'title' => $this->has_enabled_parent() ? __('Nofollow Manager', 'seo-ultimate') : __('Overview', 'seo-ultimate')
 			, 'content' => __("
 <p>Nofollow Manager adds the <code>rel=&quot;nofollow&quot;</code> attribute to types of links that you specify. The <code>rel=&quot;nofollow&quot;</code> attribute prevents a link from passing PageRank.</p>
 <p>If you&#8217;re migrating to SEO Ultimate from another plugin, Nofollow Manager can help you maintain your existing settings (as part of an &#8220;if it ain&#8217;t broke don&#8217;t fix it&#8221; strategy). In other cases, however, we recommend not using the Nofollow Manager because in 2008 Google disabled the ability to use the <code>rel=&quot;nofollow&quot;</code> attribute for PageRank sculpting.</p>

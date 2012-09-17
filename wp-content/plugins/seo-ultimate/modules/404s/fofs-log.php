@@ -7,6 +7,12 @@
 
 if (class_exists('SU_Module')) {
 
+function su_fofs_log_export_filter($all_settings) {
+	unset($all_settings['404s']['log']);
+	return $all_settings;
+}
+add_filter('su_settings_export_array', 'su_fofs_log_export_filter');
+
 class SU_FofsLog extends SU_Module {
 	
 	function get_parent_module() { return 'fofs'; }
@@ -33,12 +39,6 @@ class SU_FofsLog extends SU_Module {
 	function init() {
 		add_action('admin_enqueue_scripts', array(&$this, 'queue_admin_scripts'));
 		add_action('su_save_hit', array(&$this, 'log_hit'));
-		add_filter('su_settings_export_array', array(&$this, 'filter_export_array'));
-	}
-	
-	function filter_export_array($settings) {
-		unset($settings[$this->get_module_key()]['log']);
-		return $settings;
 	}
 	
 	//Upgrade to new wp_options-only system if needed
@@ -161,6 +161,7 @@ class SU_FofsLog extends SU_Module {
 			
 			$this->clear_log_button();
 			
+			echo "<div id='su-404s-log-table'>\n";
 			$headers = $this->get_admin_table_columns();
 			$this->admin_wftable_start();
 			
@@ -196,7 +197,7 @@ class SU_FofsLog extends SU_Module {
 				
 				if (count($data['referers'])) {
 					
-					echo "<div id='su-404s-hit-$md5url-referers' style='display: none;'>\n";
+					echo "<div id='su-404s-hit-$md5url-referers' class='su-404s-hit-referers-list' style='display: none;'>\n";
 					echo "\t\t\t<div><strong>".__('Referring URLs', 'seo-ultimate')."</strong> &mdash; ";
 					echo "<a href='#' onclick=\"Effect.BlindUp('su-404s-hit-$md5url-referers'); return false;\">".__('Hide list', 'seo-ultimate')."</a>";
 					echo "</div>\n";
@@ -217,7 +218,7 @@ class SU_FofsLog extends SU_Module {
 				echo "\t<tr class='su-404s-hit-user-agents$new'>\n\t\t<td colspan='".count($headers)."'>";
 				
 				if (count($data['user_agents'])) {
-					echo "<div id='su-404s-hit-$md5url-user-agents' style='display: none;'>\n";
+					echo "<div id='su-404s-hit-$md5url-user-agents' class='su-404s-hit-user-agents-list'  style='display: none;'>\n";
 					echo "\t\t\t<div><strong>".__('User Agents', 'seo-ultimate')."</strong> &mdash; ";
 					echo "<a href='#' onclick=\"Effect.BlindUp('su-404s-hit-$md5url-user-agents'); return false;\">".__('Hide list', 'seo-ultimate')."</a>";
 					echo "</div>\n";
@@ -241,6 +242,7 @@ class SU_FofsLog extends SU_Module {
 			$this->update_setting('log', $the404s);
 			
 			$this->admin_wftable_end();
+			echo "</div>\n";
 			
 			$this->clear_log_button();
 		}

@@ -15,6 +15,8 @@ class SU_Canonical extends SU_Module {
 	function get_settings_key() { return 'canonical'; }
 	
 	function init() {
+		add_filter('su_get_setting-canonical-canonical_url_scheme', array(&$this, 'filter_canonical_url_scheme'));
+		
 		//If the canonical tags are enabled, then...
 		if ($this->get_setting('link_rel_canonical')) {
 			
@@ -36,11 +38,17 @@ class SU_Canonical extends SU_Module {
 	function admin_page_contents() {
 		$this->child_admin_form_start();
 		$this->checkboxes(array(
-				  'link_rel_canonical' => __('Generate <code>&lt;link rel=&quot;canonical&quot; /&gt;</code> meta tags.', 'seo-ultimate')
-				, 'http_link_rel_canonical' => __('Send <code>rel=&quot;canonical&quot;</code> HTTP headers.', 'seo-ultimate')
-				, 'remove_nonexistent_pagination' => __('Redirect requests for nonexistent pagination.', 'seo-ultimate')
-			));
-		
+				  'link_rel_canonical' => __('Generate <code>&lt;link rel=&quot;canonical&quot; /&gt;</code> meta tags', 'seo-ultimate')
+				, 'http_link_rel_canonical' => __('Send <code>rel=&quot;canonical&quot;</code> HTTP headers', 'seo-ultimate')
+			), __('Canonical URL Generation', 'seo-ultimate'));
+		$this->radiobuttons('canonical_url_scheme', array(
+			  '' => __('Use <code>http://</code> or <code>https://</code> depending on how the visitor accessed the page', 'seo-ultimate')
+			, 'http' => __('Make all canonical URLs begin with <code>http://</code>', 'seo-ultimate')
+			, 'https' => __('Make all canonical URLs begin with <code>https://</code>', 'seo-ultimate')
+		), __('Canonical URL Scheme', 'seo-ultimate'));
+		$this->checkboxes(array(
+				  'remove_nonexistent_pagination' => __('Redirect requests for nonexistent pagination', 'seo-ultimate')
+			), __('Automated 301 Redirects', 'seo-ultimate'));
 		$this->child_admin_form_end();
 	}
 	
@@ -154,6 +162,10 @@ class SU_Canonical extends SU_Module {
 			}
 		}
 		
+		//Handle protocol change
+		if ($scheme = $this->get_setting('canonical_url_scheme', 'http'))
+			$link = preg_replace('@^https?://@', "$scheme://", $link);
+		
 		//Return the canonical URL
 		return $link;
 	}
@@ -179,19 +191,18 @@ class SU_Canonical extends SU_Module {
 						wp_redirect(remove_query_arg('page', $url), 301);
 				}
 				
-			} elseif (is_paged()) {
-				$num = absint(get_query_var('paged'));
-				$max = absint($wp_query->max_num_pages);
+			} elseif (is_404() && $num = absint(get_query_var('paged'))) {
 				
-				if ($max > 0 && ($num == 1 || ($num > 1 && $num > $max))) {
-					
-					if ($wp_rewrite->using_permalinks())
-						wp_redirect(preg_replace('|/page/[0-9]{1,9}/?$|', '/', $url), 301);
-					else
-						wp_redirect(remove_query_arg('paged', $url), 301);
-				}
+				if ($wp_rewrite->using_permalinks())
+					wp_redirect(preg_replace('|/page/[0-9]{1,9}/?$|', '/', $url), 301);
+				else
+					wp_redirect(remove_query_arg('paged', $url), 301);
 			}
 		}
+	}
+	
+	function filter_canonical_url_scheme($scheme) {
+		return sustr::preg_filter('a-z', $scheme);
 	}
 	
 	function add_help_tabs($screen) {

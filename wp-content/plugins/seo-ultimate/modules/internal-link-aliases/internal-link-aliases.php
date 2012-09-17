@@ -80,7 +80,7 @@ class SU_InternalLinkAliases extends SU_Module {
 		$this->aliases_form($num_aliases, array(array()), false);
 	}
 	
-	function aliases_form($start_id = 0, $aliases, $delete_option = true) {
+	function aliases_form($start_id = 0, $aliases, $existing_item = true) {
 		
 		//Set headers
 		$headers = array(
@@ -88,7 +88,7 @@ class SU_InternalLinkAliases extends SU_Module {
 			, 'alias-to' => __('Alias URL', 'seo-ultimate')
 			, 'alias-posts' => __('Only on This Post&hellip; (optional)', 'seo-ultimate')
 		);
-		if ($delete_option) $headers['alias-delete'] = __('Delete', 'seo-ultimate');
+		if ($existing_item) $headers['alias-delete'] = __('Delete', 'seo-ultimate');
 		
 		//Begin table; output headers
 		$this->admin_wftable_start($headers);
@@ -111,6 +111,9 @@ class SU_InternalLinkAliases extends SU_Module {
 			$alias_dir = $this->get_setting('alias_dir', 'go', null, true);
 			$alias_url = get_bloginfo('url') . "/$alias_dir/$u_alias_to/";
 			
+			if ($existing_item)
+				$test_link = "<td class='su-alias-to-test'>[<a href='$alias_url' target='_blank'>" . __('Test', 'seo-ultimate') . "</a>]</td>";
+			
 			$cells = array(
 				  'alias-from' =>
 					  $this->get_input_element('hidden',  "alias_{$i}_id",   $id)
@@ -119,11 +122,11 @@ class SU_InternalLinkAliases extends SU_Module {
 <table><tr>
 	<td class='su-alias-to-dir'>/$alias_dir/</td>
 	<td class='su-alias-to-slug'>" . $this->get_input_element('textbox', "alias_{$i}_to", $alias['to']) . "</td>
-	<td class='su-alias-to-test'>[<a href='$alias_url' target='_blank'>" . __('Test', 'seo-ultimate') . "</a>]</td>
+	$test_link
 </tr></table>"
 				, 'alias-posts' => $this->get_jlsuggest_box("alias_{$i}_posts", $jlsuggest_value, 'types=posttype')
 			);
-			if ($delete_option)
+			if ($existing_item)
 				$cells['alias-delete'] = $this->get_input_element('checkbox', "alias_{$i}_delete");
 			
 			$this->table_row($cells, $i, 'alias');
@@ -158,7 +161,7 @@ class SU_InternalLinkAliases extends SU_Module {
 		
 		$alias_dir = $this->get_setting('alias_dir', 'go');
 		
-		if ($content && preg_match_all('@ href=["\']([^"\']+)["\']@', $content, $matches)) {
+		if ($content && preg_match_all('@ href=["\']([^#][^"\']+)["\']@', $content, $matches)) {
 			$urls = array_unique($matches[1]);
 			
 			$html = "<tr valign='top'>\n<th scope='row' class='su'>".__('Link Masks:', 'seo-ultimate')."</th>\n<td>\n";
@@ -176,6 +179,7 @@ class SU_InternalLinkAliases extends SU_Module {
 			}
 			
 			foreach ($urls as $url) {
+				
 				$a_url = su_esc_attr($url);
 				$un_h_url = htmlspecialchars_decode($url);
 				$ht_url = esc_html(sustr::truncate($url, 30));
@@ -205,7 +209,7 @@ class SU_InternalLinkAliases extends SU_Module {
 			
 			$html .= "</td>\n</tr>\n";
 			
-			$fields['70|aliases'] = $html;
+			$fields['links'][100]['aliases'] = $html;
 		}
 		
 		return $fields;

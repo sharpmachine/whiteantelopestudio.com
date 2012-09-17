@@ -266,6 +266,23 @@ class EM_Gateway_Authorize_AIM extends EM_Gateway {
         //Customer Info
         $sale->email = $EM_Booking->get_person()->user_email;
         $sale->customer_ip = $_SERVER['REMOTE_ADDR'];
+        $sale->cust_id = get_option('dbem_bookings_registration_disable') ? 'booking-'.$EM_Booking->booking_id:'user-'.$EM_Booking->get_person()->ID;
+        //Address Info
+        $names = explode(' ', $EM_Booking->get_person()->get_name());
+        if( !empty($names[0]) ) $sale->first_name = array_shift($names);
+        if( implode(' ',$names) != '' ) $sale->last_name = implode(' ',$names);
+        if( EM_Gateways::get_customer_field('address', $EM_Booking) != '' ) $sale->address = EM_Gateways::get_customer_field('address', $EM_Booking);
+        if( EM_Gateways::get_customer_field('address_2', $EM_Booking) != '' ) $sale->address_2 = EM_Gateways::get_customer_field('address_2', $EM_Booking);
+        if( EM_Gateways::get_customer_field('city', $EM_Booking) != '' ) $sale->city = EM_Gateways::get_customer_field('city', $EM_Booking);
+        if( EM_Gateways::get_customer_field('state', $EM_Booking) != '' ) $sale->state = EM_Gateways::get_customer_field('state', $EM_Booking);
+        if( EM_Gateways::get_customer_field('zip', $EM_Booking) != '' ) $sale->zip = EM_Gateways::get_customer_field('zip', $EM_Booking);
+        if( EM_Gateways::get_customer_field('country', $EM_Booking) != '' ){
+			$countries = em_get_countries();
+			$sale->country = $countries[EM_Gateways::get_customer_field('country', $EM_Booking)];
+		}
+        if( EM_Gateways::get_customer_field('phone', $EM_Booking) != '' ) $sale->phone = EM_Gateways::get_customer_field('phone', $EM_Booking);
+        if( EM_Gateways::get_customer_field('fax', $EM_Booking) != '' ) $sale->fax = EM_Gateways::get_customer_field('fax', $EM_Booking);
+        if( EM_Gateways::get_customer_field('company', $EM_Booking) != '' ) $sale->company = EM_Gateways::get_customer_field('company', $EM_Booking);
         
         //Itemized Billing
         $tax_enabled = (get_option('dbem_bookings_tax') > 0) ? 'Y':'N';
@@ -276,7 +293,7 @@ class EM_Gateway_Authorize_AIM extends EM_Gateway {
         		$sale->addLineItem($EM_Ticket_Booking->get_ticket()->ticket_id, $ticket_name, $EM_Ticket_Booking->get_ticket()->ticket_description, $EM_Ticket_Booking->get_spaces(), $price, $tax_enabled);
 			}
 		}
-
+		
         //Get Payment
         $response = $sale->authorizeAndCapture();
         

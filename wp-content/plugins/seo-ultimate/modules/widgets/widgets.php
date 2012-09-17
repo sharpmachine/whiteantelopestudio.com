@@ -11,7 +11,17 @@ class SU_Widgets extends SU_Module {
 	
 	function get_module_title() { return __('SEO Ultimate Widgets', 'seo-ultimate'); }
 	function get_menu_title()	{ return false; }
-	function get_admin_url()    { return 'widgets.php'; }
+	
+	function get_admin_url($key = false) {
+		
+		if ($key)
+			return parent::get_admin_url($key);
+		
+		if (is_network_admin())
+			return false;
+		
+		return 'widgets.php';
+	}
 	
 	function __construct() {
 		add_action('widgets_init', array(&$this, 'register_widgets'));

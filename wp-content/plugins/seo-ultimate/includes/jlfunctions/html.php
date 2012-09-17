@@ -15,9 +15,8 @@ class suhtml {
 			if (is_array($label)) {
 				$html .= "<optgroup label='$value'>\n".suhtml::option_tags($label, $current)."</optgroup>\n";
 			} else {
-				//if (is_numeric($value)) $value = '';
 				$html .= "\t<option value='$value'";
-				if ($value == $current) $html .= " selected='selected'";
+				if ((string)$value == (string)$current) $html .= " selected='selected'";
 				$html .= ">$label</option>\n";
 			}
 		}

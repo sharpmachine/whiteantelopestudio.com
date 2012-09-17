@@ -1,11 +1,6 @@
-jQuery(function() 
-{
-	su_init_tabs();		
- });
-
 function su_init_tabs()
 {
-	/* if this is not the SEO Ultimate admin page, quit */
+	/* if this is not an SEO Ultimate admin page, quit */
 	if (!jQuery("#su-tabset").length) return;		
 	
 	/* init markup for tabs */
@@ -42,6 +37,10 @@ function su_init_tabs()
 		su_hash_form(jQuery(this).attr('href'));
 	});
 }
+
+jQuery(document).ready(function() {
+	su_init_tabs();
+});
 
 function su_hash_form(hash) {
 	var form   = jQuery('#su-admin-form');

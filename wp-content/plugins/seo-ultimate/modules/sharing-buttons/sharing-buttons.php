@@ -36,12 +36,11 @@ class SU_SharingButtons extends SU_Module {
 	
 	function admin_page_contents() {
 		$this->child_admin_form_start();
-		$this->admin_form_subheader(__('Which provider would you like to use for your sharing buttons?', 'seo-ultimate'));
 		$this->radiobuttons('provider', array(
 			  'none' => __('None; disable sharing buttons', 'seo-ultimate')
 			, 'sharethis' => __('Use the ShareThis button', 'seo-ultimate') //: %s{sharethis_code}
 			, 'addthis' => __('Use the AddThis button', 'seo-ultimate') //: %s{addthis_code}
-		));
+		), __('Which provider would you like to use for your sharing buttons?', 'seo-ultimate'));
 		$this->child_admin_form_end();
 	}
 	

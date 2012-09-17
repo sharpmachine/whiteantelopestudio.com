@@ -715,24 +715,26 @@ class EM_Coupons extends EM_Object {
 							<em><?php _e('If set, this coupon will only be valid that many times.','em-pro'); ?></em>
 						</td>
 					</tr>
-					<tr valign="top">
-						<th scope="row"><?php _e('Start Date', 'em-pro') ?></th>
-						<td>
-							<input type="hidden"  id="em-date-start" name="coupon_start" value="<?php echo esc_attr($EM_Coupon->coupon_start); ?>" />
-							<input type="text" id="em-date-start-loc" />
-							<br />
-							<em><?php _e('Coupons will only be valid from this date onwards.','em-pro'); ?></em>
-						</td>
-					</tr>
-					<tr valign="top">
-						<th scope="row"><?php _e('End Date', 'em-pro') ?></th>
-						<td>
-							<input type="hidden" id="em-date-end" name="coupon_end" value="<?php echo esc_attr($EM_Coupon->coupon_end); ?>" />
-							<input type="text" id="em-date-end-loc" />
-							<br />
-							<em><?php _e('Coupons not be valid after this date.','em-pro'); ?></em>
-						</td>
-					</tr>
+					<tbody class="em-date-range">
+						<tr valign="top">
+							<th scope="row"><?php _e('Start Date', 'em-pro') ?></th>
+							<td>
+								<input type="text" class="em-date-input-loc em-date-start" />
+								<input type="hidden" class="em-date-input" name="coupon_start" value="<?php echo esc_attr(substr($EM_Coupon->coupon_start,0,10)); ?>" />
+								<br />
+								<em><?php _e('Coupons will only be valid from this date onwards.','em-pro'); ?></em>
+							</td>
+						</tr>
+						<tr valign="top">
+							<th scope="row"><?php _e('End Date', 'em-pro') ?></th>
+							<td>
+								<input type="text" class="em-date-input-loc em-date-end" />
+								<input type="hidden" class="em-date-input" name="coupon_end" value="<?php echo esc_attr(substr($EM_Coupon->coupon_end,0,10)); ?>" />
+								<br />
+								<em><?php _e('Coupons not be valid after this date.','em-pro'); ?></em>
+							</td>
+						</tr>
+					</tbody>
 					<tr valign="top">
 						<th scope="row"><?php _e('Discount Type', 'em-pro') ?></th>
 						<td>

@@ -34,7 +34,8 @@ div.su-module table.widefat td ul {
 	padding-left: 1em;
 }
 
-div.su-module .form-table .regular-text {
+div.su-module .form-table .regular-text,
+div.su-module .form-table .jls_text_dest {
 	width: 325px;
 }
 
@@ -121,63 +122,11 @@ div.su-importmodule #import-status {
 	padding: 1em 0;
 }
 
-/* TABS (Heavily based on CSS from the Breadcrumbs NavXT plugin) */
-
-div.su-module .su-tabs ul.ui-tabs-nav {
-	border-bottom: 1px solid #dfdfdf;
-	font-size: 12px;
-	height: 29px;
-	list-style: none;
-	margin: 13px 0 0;
-	overflow: visible;
-	padding: 0 0 0 8px;
+div.su-module textarea[disabled] {
+	background-color: #eee;
 }
 
-div.su-module .su-tabs ul.ui-tabs-nav li {
-	display: block;
-	float: left;
-	line-height: 200%;
-	list-style: none;
-	margin: 0;
-	padding: 0;
-	position: relative;
-	text-align: center;
-	white-space: nowrap;
-	width: auto;
-}
-
-
-div.su-module .su-tabs ul.ui-tabs-nav li a {
-	border-bottom: 1px solid #dfdfdf;
-	display: block;
-	float: left;
-	line-height: 28px;
-	padding: 1px 10px 0;
-	position: relative;
-	text-decoration: none;
-}
-
-div.su-module .su-tabs ul.ui-tabs-nav li.ui-tabs-selected a {
-	-moz-border-radius-topleft: 4px;
-	-moz-border-radius-topright: 4px;
-	-webkit-border-top-left-radius: 4px;
-	-webkit-border-top-right-radius: 4px;
-	border-top-left-radius: 4px;
-	border-top-right-radius: 4px;
-	border: 1px solid #dfdfdf;
-	border-bottom-color: #ffffff;
-	color: #333333;
-	font-weight: normal;
-	padding: 0 9px;
-}
-
-div.su-module .su-tabs fieldset {
-	clear: left;
-}
-
-div.su-module .su-tabs .su-tab-contents {
-	margin-top: 1em;
-}
+/* META EDIT TABLE */
 
 div.su-module .su-meta-edit-table table.widefat,
 div.su-module .su-meta-edit-table table.widefat .regular-text { width: 100%; }
@@ -185,6 +134,11 @@ div.su-module .su-meta-edit-table table.widefat td.su-actions { width: 6em; }
 div.su-module .su-meta-edit-table table.widefat td.su-id { width: 2em; }
 div.su-module .su-meta-edit-table table.widefat td.su-name { width: 20em; }
 div.su-module .su-meta-edit-table table.widefat td { vertical-align: middle; }
+
+div.su-module .su-meta-edit-table .su-meta-table-post-status {
+	font-style: italic;
+	color: #999;
+}
 
 /* IMPORT MODULES */
 

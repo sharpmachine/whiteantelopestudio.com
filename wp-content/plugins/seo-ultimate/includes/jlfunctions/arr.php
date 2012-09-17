@@ -103,23 +103,32 @@ class suarr {
 		uasort($arr, create_function('$a,$b', 'return strlen($b["'.$valuekey.'"]) - strlen($a["'.$valuekey.'"]);'));
 	}
 	
-	function flatten_values($arr, $value_keys) {
+	function flatten_values($arr, $value_keys, $use_default_if_empty=false, $default='') {
 		foreach ((array)$value_keys as $key)
-			$arr = suarr::_flatten_values($arr, $key);
+			$arr = suarr::_flatten_values($arr, $key, $use_default_if_empty, $default);
 		return $arr;
 	}
 	
-	function _flatten_values($arr, $value_key = 0) {
+	function _flatten_values($arr, $value_key = 0, $use_default_if_empty=false, $default='') {
 		if (!is_array($arr) || !count($arr)) return array();
 		$newarr = array();
 		foreach ($arr as $key => $array_value) {
+			$success = false;
+			
 			if (is_array($array_value)) {
-				if (isset($array_value[$value_key]))
+				if (isset($array_value[$value_key])) {
 					$newarr[$key] = $array_value[$value_key];
+					$success = true;
+				}
 			} elseif (is_object($array_value)) {
-				if (isset($array_value->$value_key))
+				if (isset($array_value->$value_key)) {
 					$newarr[$key] = $array_value->$value_key;
+					$success = true;
+				}
 			}
+			
+			if (!$success && $use_default_if_empty)
+				$newarr[$key] = $default;
 		}
 		return $newarr;
 	}
@@ -164,9 +173,9 @@ class suarr {
 		return $newarray;
 	}
 	
-	function simplify($arr, $keyloc, $valloc) {
-		$keys = suarr::flatten_values($arr, $keyloc);
-		$values = suarr::flatten_values($arr, $valloc);
+	function simplify($arr, $keyloc, $valloc, $use_default_if_empty=false, $default='') {
+		$keys = suarr::flatten_values($arr, $keyloc, $use_default_if_empty, $default);
+		$values = suarr::flatten_values($arr, $valloc, $use_default_if_empty, $default);
 		return array_combine($keys, $values);
 	}
 	
@@ -202,6 +211,17 @@ class suarr {
 				$n[$k] = $v;
 		}
 		return $n;
+	}
+	
+	function replace_empty_values_with_keys($array) {
+		$newarray = array();
+		foreach ($array as $key => $value) {
+			if (empty($value))
+				$newarray[$key] = $key;
+			else
+				$newarray[$key] = $value;
+		}
+		return $newarray;
 	}
 }
 

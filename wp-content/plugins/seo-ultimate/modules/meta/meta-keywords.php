@@ -7,6 +7,12 @@
 
 if (class_exists('SU_Module')) {
 
+function su_meta_keywords_export_filter($all_settings) {
+	unset($all_settings['meta']['taxonomy_keywords']);
+	return $all_settings;
+}
+add_filter('su_settings_export_array', 'su_meta_keywords_export_filter');
+
 class SU_MetaKeywords extends SU_Module {
 	
 	function get_module_title() { return __('Meta Keywords Editor', 'seo-ultimate'); }
@@ -16,7 +22,6 @@ class SU_MetaKeywords extends SU_Module {
 	
 	function init() {
 		add_action('su_head', array(&$this, 'head_tag_output'));
-		add_filter('su_postmeta_help', array(&$this, 'postmeta_help'), 20);
 	}
 	
 	function get_default_settings() {
@@ -30,7 +35,8 @@ class SU_MetaKeywords extends SU_Module {
 	function get_admin_page_tabs() {
 		return array_merge(
 			  array(
-				  array('title' => __('Default Values', 'seo-ultimate'), 'id' => 'su-default-values', 'callback' => 'defaults_tab')
+				  array('title' => __('Sitewide Values', 'seo-ultimate'), 'id' => 'su-sitewide-values', 'callback' => 'global_tab')
+				, array('title' => __('Default Values', 'seo-ultimate'), 'id' => 'su-default-values', 'callback' => 'defaults_tab')
 				, array('title' => __('Blog Homepage', 'seo-ultimate'), 'id' => 'su-blog-homepage', 'callback' => 'home_tab')
 				)
 			, $this->get_meta_edit_tabs(array(
@@ -40,6 +46,12 @@ class SU_MetaKeywords extends SU_Module {
 				, 'label' => __('Meta Keywords', 'seo-ultimate')
 			))
 		);
+	}
+	
+	function global_tab() {
+		$this->admin_form_table_start();
+		$this->textarea('global_keywords', __('Sitewide Keywords', 'seo-ultimate') . '<br /><small><em>' . __('(Separate with commas)', 'seo-ultimate') . '</em></small>');
+		$this->admin_form_table_end();
 	}
 	
 	function defaults_tab() {
@@ -65,8 +77,6 @@ class SU_MetaKeywords extends SU_Module {
 			if ($checkboxes)
 				$this->checkboxes($checkboxes, $posttypelabel);
 		}
-		
-		$this->textarea('global_keywords', __('Sitewide Keywords', 'seo-ultimate') . '<br /><small><em>' . __('(Separate with commas)', 'seo-ultimate') . '</em></small>');
 		
 		$this->admin_form_table_end();
 	}
@@ -106,12 +116,14 @@ class SU_MetaKeywords extends SU_Module {
 				}
 				
 				if ($this->get_setting("auto_keywords_posttype_{$posttypename}_words", false)) {
-					$words = preg_split("/[\W+]/", strip_tags($post->post_content), null, PREG_SPLIT_NO_EMPTY);
+					$words = preg_split("/[\s+]/", strip_tags($post->post_content), null, PREG_SPLIT_NO_EMPTY);
 					$words = array_count_values($words);
 					arsort($words);
 					$words = array_filter($words, array(&$this, 'filter_word_counts'));
 					$words = array_keys($words);
 					$stopwords = suarr::explode_lines($this->get_setting('words_to_remove', array(), 'slugs'));
+					$stopwords = array_map(array('sustr', 'tolower'), $stopwords);
+					$words     = array_map(array('sustr', 'tolower'), $words);
 					$words = array_diff($words, $stopwords);
 					$words = array_slice($words, 0, $this->get_setting("auto_keywords_posttype_{$posttypename}_words_value"));
 					$words = implode(',', $words);
@@ -152,11 +164,6 @@ class SU_MetaKeywords extends SU_Module {
 	function postmeta_fields($fields) {	
 		$fields['25|keywords'] = $this->get_postmeta_textbox('keywords', __('Meta Keywords:<br /><em>(separate with commas)</em>', 'seo-ultimate'));
 		return $fields;
-	}
-	
-	function postmeta_help($help) {
-		$help[] = __('<strong>Keywords</strong> &mdash; The value of the meta keywords tag. The keywords list gives search engines a hint as to what this post/page is about. Be sure to separate keywords with commas, like so: <samp>one,two,three</samp>.', 'seo-ultimate');
-		return $help;
 	}
 	
 	function add_help_tabs($screen) {

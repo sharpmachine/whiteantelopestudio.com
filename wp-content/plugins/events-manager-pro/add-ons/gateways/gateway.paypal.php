@@ -123,16 +123,21 @@ class EM_Gateway_Paypal extends EM_Gateway {
 	 * @return string
 	 */
 	function em_my_bookings_booking_actions( $message, $EM_Booking){
+	    global $wpdb;
 		if($this->uses_gateway($EM_Booking) && $EM_Booking->booking_status == $this->status){
-			//user owes money!
-			$paypal_vars = $this->get_paypal_vars($EM_Booking);
-			$form = '<form action="'.$this->get_paypal_url().'" method="post">';
-			foreach($paypal_vars as $key=>$value){
-				$form .= '<input type="hidden" name="'.$key.'" value="'.$value.'" />';
-			}
-			$form .= '<input type="submit" value="'.__('Resume Payment','em-pro').'">';
-			$form .= '</form>';
-			$message = $form;
+		    //first make sure there's no pending payments
+		    $pending_payments = $wpdb->get_var('SELECT COUNT(*) FROM '.EM_TRANSACTIONS_TABLE. " WHERE booking_id='{$EM_Booking->booking_id}' AND transaction_gateway='{$this->gateway}' AND transaction_status='Pending'");
+		    if( count($pending_payments) == 0 ){
+				//user owes money!
+				$paypal_vars = $this->get_paypal_vars($EM_Booking);
+				$form = '<form action="'.$this->get_paypal_url().'" method="post">';
+				foreach($paypal_vars as $key=>$value){
+					$form .= '<input type="hidden" name="'.$key.'" value="'.$value.'" />';
+				}
+				$form .= '<input type="submit" value="'.__('Resume Payment','em-pro').'">';
+				$form .= '</form>';
+				$message = $form;
+		    }
 		}
 		return $message;		
 	}
@@ -185,6 +190,9 @@ class EM_Gateway_Paypal extends EM_Gateway {
 			'custom' => $EM_Booking->booking_id.':'.$EM_Booking->event_id,
 			'charset' => 'UTF-8'
 		);
+		if( get_option('em_'. $this->gateway . "_lc" ) ){
+		    $paypal_vars['lc'] = get_option('em_'. $this->gateway . "_lc" );
+		}
 		if( !get_option('dbem_bookings_tax_auto_add') && is_numeric(get_option('dbem_bookings_tax')) && get_option('dbem_bookings_tax') > 0 ){
 			//tax only added if auto_add is disabled, since it would be added to individual ticket prices
 			$paypal_vars['tax_cart'] = round($EM_Booking->get_price(false,false,false) * (get_option('dbem_bookings_tax')/100), 2);
@@ -316,8 +324,6 @@ class EM_Gateway_Paypal extends EM_Gateway {
 				switch ($_POST['payment_status']) {
 					case 'Partially-Refunded':
 						break;	
-					case 'In-Progress':
-						break;
 	
 					case 'Completed':
 					case 'Processed':
@@ -373,7 +379,8 @@ class EM_Gateway_Paypal extends EM_Gateway {
 						$EM_Booking->cancel();
 						do_action('em_payment_denied', $EM_Booking, $this);
 						break;
-	
+
+					case 'In-Progress':
 					case 'Pending':
 						// case: payment is pending
 						$pending_str = array(
@@ -515,6 +522,60 @@ Events Manager
 			  <th scope="row"><?php _e('Paypal Currency', 'em-pro') ?></th>
 			  <td><?php echo esc_html(get_option('dbem_bookings_currency','USD')); ?><br /><i><?php echo sprintf(__('Set your currency in the <a href="%s">settings</a> page.','dbem'),EM_ADMIN_URL.'&amp;page=events-manager-options'); ?></i></td>
 		  </tr>
+		  
+		  <tr valign="top">
+			  <th scope="row"><?php _e('PayPal Language', 'em-pro') ?></th>
+			  <td>
+			  	<select name="paypal_lc">
+			  		<option value=""><?php _e('Default','em-pro'); ?></option>
+				  <?php
+					$ccodes = array(
+						'AU' => 'Australia',
+						'AT' => 'Austria',
+						'BE' => 'Belgium',
+						'BR' => 'Brazil',
+						'CA' => 'Canada',
+						'CH' => 'Switzerland',
+						'CN' => 'China',
+						'DE' => 'Germany',
+						'ES' => 'Spain',
+						'GB' => 'United Kingdom',
+						'FR' => 'France',
+						'IT' => 'Italy',
+						'NL' => 'Netherlands',
+						'PL' => 'Poland',
+						'PT' => 'Portugal',
+						'RU' => 'Russia',
+						'US' => 'United States',
+						'da_DK' => 'Danish (for Denmark only)',
+						'he_IL' => 'Hebrew (all)',
+						'id_ID' => 'Indonesian (for Indonesia only)',
+						'jp_JP' => 'Japanese (for Japan only)',
+						'no_NO' => 'Norwegian (for Norway only)',
+						'pt_BR' => 'Brazilian Portuguese (for Portugal and Brazil only)',
+						'ru_RU' => 'Russian (for Lithuania, Latvia, and Ukraine only)',
+						'sv_SE' => 'Swedish (for Sweden only)',
+						'th_TH' => 'Thai (for Thailand only)',
+						'tr_TR' => 'Turkish (for Turkey only)',
+						'zh_CN' => 'Simplified Chinese (for China only)',
+						'zh_HK' => 'Traditional Chinese (for Hong Kong only)',
+						'zh_TW' => 'Traditional Chinese (for Taiwan only)'
+					);
+					$paypal_lc = get_option('em_'.$this->gateway.'_lc');
+					foreach($ccodes as $key => $value){
+						if( $paypal_lc == $key ){
+							echo '<option value="'.$key.'" selected="selected">'.$value.'</option>';
+						}else{
+							echo '<option value="'.$key.'">'.$value.'</option>';
+						}
+					}
+				  ?>
+				  
+				  </select>
+				  <br />
+				  <i><?php _e('PayPal allows you to select a default language users will see. This is also determined by PayPal which detects the locale of the users browser. The default would be US.','em-pro') ?></i>
+			  </td>
+		  </tr>
 		  <tr valign="top">
 			  <th scope="row"><?php _e('PayPal Mode', 'em-pro') ?></th>
 			  <td>
@@ -578,27 +639,26 @@ Events Manager
 	 */
 	function update() {
 		parent::update();
-		if( !empty($_REQUEST[$this->gateway.'_email']) ) {
-			$gateway_options = array(
-				$this->gateway . "_email" => $_REQUEST[ $this->gateway.'_email' ],
-				$this->gateway . "_site" => $_REQUEST[ $this->gateway.'_site' ],
-				$this->gateway . "_currency" => $_REQUEST[ 'currency' ],
-				$this->gateway . "_status" => $_REQUEST[ $this->gateway.'_status' ],
-				$this->gateway . "_tax" => $_REQUEST[ $this->gateway.'_button' ],
-				$this->gateway . "_format_logo" => $_REQUEST[ $this->gateway.'_format_logo' ],
-				$this->gateway . "_format_border" => $_REQUEST[ $this->gateway.'_format_border' ],
-				$this->gateway . "_manual_approval" => $_REQUEST[ $this->gateway.'_manual_approval' ],
-				$this->gateway . "_booking_feedback" => wp_kses_data($_REQUEST[ $this->gateway.'_booking_feedback' ]),
-				$this->gateway . "_booking_feedback_free" => wp_kses_data($_REQUEST[ $this->gateway.'_booking_feedback_free' ]),
-				$this->gateway . "_booking_feedback_thanks" => wp_kses_data($_REQUEST[ $this->gateway.'_booking_feedback_thanks' ]),
-				$this->gateway . "_booking_timeout" => $_REQUEST[ $this->gateway.'_booking_timeout' ],
-				$this->gateway . "_return" => $_REQUEST[ $this->gateway.'_return' ],
-				$this->gateway . "_cancel_return" => $_REQUEST[ $this->gateway.'_cancel_return' ],
-				$this->gateway . "_form" => $_REQUEST[ $this->gateway.'_form' ]
-			);
-			foreach($gateway_options as $key=>$option){
-				update_option('em_'.$key, stripslashes($option));
-			}
+		$gateway_options = array(
+			$this->gateway . "_email" => $_REQUEST[ $this->gateway.'_email' ],
+			$this->gateway . "_site" => $_REQUEST[ $this->gateway.'_site' ],
+			$this->gateway . "_currency" => $_REQUEST[ 'currency' ],
+			$this->gateway . "_lc" => $_REQUEST[ $this->gateway.'_lc' ],
+			$this->gateway . "_status" => $_REQUEST[ $this->gateway.'_status' ],
+			$this->gateway . "_tax" => $_REQUEST[ $this->gateway.'_button' ],
+			$this->gateway . "_format_logo" => $_REQUEST[ $this->gateway.'_format_logo' ],
+			$this->gateway . "_format_border" => $_REQUEST[ $this->gateway.'_format_border' ],
+			$this->gateway . "_manual_approval" => $_REQUEST[ $this->gateway.'_manual_approval' ],
+			$this->gateway . "_booking_feedback" => wp_kses_data($_REQUEST[ $this->gateway.'_booking_feedback' ]),
+			$this->gateway . "_booking_feedback_free" => wp_kses_data($_REQUEST[ $this->gateway.'_booking_feedback_free' ]),
+			$this->gateway . "_booking_feedback_thanks" => wp_kses_data($_REQUEST[ $this->gateway.'_booking_feedback_thanks' ]),
+			$this->gateway . "_booking_timeout" => $_REQUEST[ $this->gateway.'_booking_timeout' ],
+			$this->gateway . "_return" => $_REQUEST[ $this->gateway.'_return' ],
+			$this->gateway . "_cancel_return" => $_REQUEST[ $this->gateway.'_cancel_return' ],
+			$this->gateway . "_form" => $_REQUEST[ $this->gateway.'_form' ]
+		);
+		foreach($gateway_options as $key=>$option){
+			update_option('em_'.$key, stripslashes($option));
 		}
 		//default action is to return true
 		return true;
@@ -615,14 +675,16 @@ function em_gateway_paypal_booking_timeout(){
 	//Get a time from when to delete
 	$minutes_to_subtract = absint(get_option('em_paypal_booking_timeout'));
 	if( $minutes_to_subtract > 0 ){
-		//Run the SQL query
-		//first delete ticket_bookings with expired bookings
-		$sql = "DELETE FROM ".EM_TICKETS_BOOKINGS_TABLE." WHERE booking_id IN (SELECT booking_id FROM ".EM_BOOKINGS_TABLE." WHERE booking_date < TIMESTAMPADD(MINUTE, -{$minutes_to_subtract}, NOW()) AND booking_status=4);";
-		$wpdb->query($sql);
-		//then delete the bookings themselves
-		$sql = "DELETE FROM ".EM_BOOKINGS_TABLE." WHERE booking_date < TIMESTAMPADD(MINUTE, -{$minutes_to_subtract}, NOW()) AND booking_status=4;";
-		$wpdb->query($sql);
-		update_option('emp_result_try',$sql);
+		//get booking IDs without pending transactions
+		$booking_ids = $wpdb->get_col('SELECT b.booking_id FROM '.EM_BOOKINGS_TABLE.' b LEFT JOIN '.EM_TRANSACTIONS_TABLE." t ON t.booking_id=b.booking_id  WHERE booking_date < TIMESTAMPADD(MINUTE, -{$minutes_to_subtract}, NOW()) AND booking_status=4 AND transaction_id IS NULL" );
+		if( count($booking_ids) > 0 ){
+			//first delete ticket_bookings with expired bookings
+			$sql = "DELETE FROM ".EM_TICKETS_BOOKINGS_TABLE." WHERE booking_id IN (".implode(',',$booking_ids).");";
+			$wpdb->query($sql);
+			//then delete the bookings themselves
+			$sql = "DELETE FROM ".EM_BOOKINGS_TABLE." WHERE booking_id IN (".implode(',',$booking_ids).");";
+			$wpdb->query($sql);
+		}
 	}
 }
 add_action('emp_cron_hook', 'em_gateway_paypal_booking_timeout');

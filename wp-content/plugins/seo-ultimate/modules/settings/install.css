@@ -22,3 +22,8 @@
 .su-xgrade label.current-setting {
 	background-color: #FFFFE0;
 }
+
+#su-reinstall form, #su-reinstall form p.submit {
+	padding: 0;
+	margin: 0;
+}

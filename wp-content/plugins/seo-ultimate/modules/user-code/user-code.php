@@ -7,6 +7,15 @@
 
 if (class_exists('SU_Module')) {
 
+function su_user_code_import_filter($all_settings) {
+	
+	if (!SU_UserCode::user_authorized())
+		unset($all_settings['user-code']);
+	
+	return $all_settings;
+}
+add_filter('su_settings_import_array', 'su_user_code_import_filter');
+
 class SU_UserCode extends SU_Module {
 	
 	function get_module_title() { return __('Code Inserter', 'seo-ultimate'); }
@@ -17,15 +26,33 @@ class SU_UserCode extends SU_Module {
 		);
 	}
 	
+	function get_default_status() {
+		if (is_multisite())
+			return SU_MODULE_DISABLED;
+		
+		return SU_MODULE_ENABLED;
+	}
+	
+	function user_authorized() {
+		return current_user_can('unfiltered_html');
+	}
+	
 	function init() {
 		$hooks = array('su_head', 'the_content', 'wp_footer');
-		foreach ($hooks as $hook) add_filter($hook, array(&$this, "{$hook}_code"));
+		foreach ($hooks as $hook) add_filter($hook, array(&$this, "{$hook}_code"), 'su_head' == $hook ? 11 : 10);
 	}
 	
 	function get_admin_page_tabs() {
 		return array(
 			  array('title' => __('Everywhere', 'seo-ultimate'), 'id' => 'su-everywhere', 'callback' => array('usercode_admin_tab', 'global'))
 		);
+	}
+	
+	function admin_page_contents() {
+		if (!$this->user_authorized())
+			$this->print_message('error', __('These fields are disabled because your user account does not have permission to insert arbitrary HTML into this site&#8217;s code.', 'seo-ultimate'));
+		
+		$this->children_admin_page_tabs_form();
 	}
 	
 	function usercode_admin_tab($section) {
@@ -39,7 +66,7 @@ class SU_UserCode extends SU_Module {
 		$textareas = suarr::aprintf("{$section}_%s", false, $textareas);
 		
 		$this->admin_form_table_start();
-		$this->textareas($textareas);
+		$this->textareas($textareas, 5, 30, array('disabled' => !$this->user_authorized()));
 		$this->admin_form_table_end();
 	}
 	
@@ -84,6 +111,7 @@ class SU_UserCode extends SU_Module {
 			, 'title' => __('Troubleshooting', 'seo-ultimate')
 			, 'content' => __("
 <ul>
+	<li><p><strong>Why do I get a message saying my account doesn&#8217;t have permission to insert arbitrary HTML code?</strong><br />WordPress has a security feature that only allows administrators to insert arbitrary, unfiltered HTML into the site. On single-site setups, site administrators have this capability. On multisite setups, only network admins have this capability. This is done for security reasons, since site users with the ability to insert arbitrary HTML could theoretically insert malicious code that could be used to hijack control of the site.</p><p>If you are the administrator of a site running on a network, then you will not be able to use Code Inserter under default security settings. However, the network administrator <em>will</em> be able to edit the fields on this page. If you have code that you really want inserted into a certain part of your site, ask your network administrator to do it for you.</p><p>If you are the network administrator of a multisite WordPress setup, and you completely trust all of the administrators and editors of the various sites on your network, you can install the <a href='http://wordpress.org/extend/plugins/unfiltered-mu/' target='_blank'>Unfiltered MU</a> plugin to enable the Code Inserter for all of those users.</p></li>
 	<li><strong>Why doesn't my code appear on my site?</strong><br />It&#8217;s possible that your theme doesn't have the proper &#8220;hooks,&#8221; which are pieces of code that let WordPress plugins insert custom HTML into your theme. <a href='http://johnlamansky.com/wordpress/theme-plugin-hooks/' target='_blank'>Click here</a> for information on how to check your theme and add the hooks if needed.</li>
 </ul>
 ", 'seo-ultimate')));

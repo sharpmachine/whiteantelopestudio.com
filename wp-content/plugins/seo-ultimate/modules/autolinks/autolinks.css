@@ -30,7 +30,7 @@
 }
 
 #su-autolinks table.widefat td.su-link-options {
-	width: 8em;
+	width: 9em;
 }
 
 #su-autolinks table.widefat td.su-link-delete,
@@ -39,6 +39,6 @@
 	text-align: center;
 }
 
-#su-footer-autolinks table.widefat td {
+#su-autolinks table.widefat td {
 	padding-right: 0.5em;
 }

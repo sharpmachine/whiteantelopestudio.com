@@ -11,6 +11,7 @@ class EM_Ticket extends EM_Object{
 	var $ticket_min;
 	var $ticket_max;
 	var $ticket_spaces = 10;
+	var $ticket_members = false;
 	var $fields = array(
 		'ticket_id' => array('name'=>'id','type'=>'%d'),
 		'event_id' => array('name'=>'event_id','type'=>'%d'),
@@ -21,7 +22,8 @@ class EM_Ticket extends EM_Object{
 		'ticket_end' => array('name'=>'end','type'=>'%s','null'=>1),
 		'ticket_min' => array('name'=>'min','type'=>'%s','null'=>1),
 		'ticket_max' => array('name'=>'max','type'=>'%s','null'=>1),
-		'ticket_spaces' => array('name'=>'spaces','type'=>'%s','null'=>1)
+		'ticket_spaces' => array('name'=>'spaces','type'=>'%s','null'=>1),
+		'ticket_members' => array('name'=>'members','type'=>'%d','null'=>1)
 	);
 	//Other Vars
 	/**
@@ -143,6 +145,7 @@ class EM_Ticket extends EM_Object{
 		$this->ticket_min = ( !empty($_POST['ticket_min']) ) ? $_POST['ticket_min']:'';
 		$this->ticket_max = ( !empty($_POST['ticket_max']) ) ? $_POST['ticket_max']:'';
 		$this->ticket_spaces = ( !empty($_POST['ticket_spaces']) ) ? $_POST['ticket_spaces']:'';
+		$this->ticket_members = ( !empty($_POST['ticket_members']) ) ? 1:0;
 		$this->compat_keys();
 		do_action('em_ticket_get_post', $this);
 	}	
@@ -178,7 +181,8 @@ class EM_Ticket extends EM_Object{
 		$condition_1 = (empty($this->ticket_start) || $this->start_timestamp <= $timestamp);
 		$condition_2 = $this->end_timestamp + 86400 >= $timestamp || empty($this->ticket_end);
 		$condition_3 = $EM_Event->start > $timestamp || strtotime($EM_Event->event_rsvp_date) > $timestamp;
-		if( $condition_1 && $condition_2 && $condition_3 ){
+		$condition_4 = !$this->ticket_members || ($this->ticket_members && is_user_logged_in());
+		if( $condition_1 && $condition_2 && $condition_3 && $condition_4 ){
 			//Time Constraints met, now quantities
 			if( $available_spaces > 0 && ($available_spaces >= $this->ticket_min || empty($this->ticket_min)) ){
 				return apply_filters('em_ticket_is_available',true,$this);
@@ -196,13 +200,14 @@ class EM_Ticket extends EM_Object{
 		if( is_numeric(get_option('dbem_bookings_tax')) && get_option('dbem_bookings_tax') > 0 ){
 			//tax could be added here
 			if( $add_tax === true || ($add_tax !== false && get_option('dbem_bookings_tax_auto_add')) ){
-				$price = round($price * (1 + get_option('dbem_bookings_tax')/100),2);				
+				$price = round($price * (1 + get_option('dbem_bookings_tax')/100),2);
 			}
 		}
+		$price = apply_filters('em_ticket_get_price',$price,$this);
 		if($format){
-			return apply_filters('em_ticket_get_price', em_get_currency_formatted($price),$this);
+			return em_get_currency_formatted($price);
 		}
-		return apply_filters('em_ticket_get_price',$price,$this);
+		return $price;
 	}
 	
 	/**
@@ -220,19 +225,34 @@ class EM_Ticket extends EM_Object{
 	function get_available_spaces(){
 		$event_available_spaces = $this->get_event()->get_bookings()->get_available_spaces();
 		$ticket_available_spaces = $this->get_spaces() - $this->get_booked_spaces();
+		if( get_option('dbem_bookings_approval_reserved')){
+		    $ticket_available_spaces = $ticket_available_spaces - $this->get_pending_spaces();
+		}
 		$return = ($ticket_available_spaces <= $event_available_spaces) ? $ticket_available_spaces:$event_available_spaces;
 		return apply_filters('em_ticket_get_available_spaces', $return, $this);
 	}
+	
+	function get_pending_spaces(){
+		foreach( $this->get_bookings()->get_pending_bookings()->bookings as $EM_Booking ){ //get_bookings() is used twice so we get the confirmed (or all if confirmation disabled) bookings of this ticket's total bookings.
+			//foreach booking, get this ticket booking info if found
+			foreach($EM_Booking->get_tickets_bookings()->tickets_bookings as $EM_Ticket_Booking){
+				if( $EM_Ticket_Booking->ticket_id == $this->ticket_id ){
+					$spaces += $EM_Ticket_Booking->get_spaces();
+				}
+			}
+		}
+		return apply_filters('em_ticket_get_pending_spaces', $spaces, $this);
+	}
 
 	/**
-	 * Returns the number of available spaces left in this ticket, bearing in mind event-wide restrictions, previous bookings, approvals and other tickets.
+	 * Returns the number of booked spaces in this ticket.
 	 * @return int
 	 */
 	function get_booked_spaces($force_reload=false){
 		//get all bookings for this event
 		$spaces = 0;
 		if( is_object($this->bookings) && $force_reload ){
-			return $this->bookings;
+			//return $this->bookings;
 		}
 		foreach( $this->get_bookings()->get_bookings()->bookings as $EM_Booking ){ //get_bookings() is used twice so we get the confirmed (or all if confirmation disabled) bookings of this ticket's total bookings.
 			//foreach booking, get this ticket booking info if found

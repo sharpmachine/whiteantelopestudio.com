@@ -20,12 +20,21 @@ class SU_Modules extends SU_Module {
 			
 			$psdata = (array)get_option('seo_ultimate', array());
 			
-			foreach ($_POST as $key => $value) {
+			foreach ($_POST as $key => $newvalue) {
 				if (substr($key, 0, 3) == 'su-') {
 					$key = str_replace(array('su-', '-module-status'), '', $key);
-					$value = intval($value);
 					
-					$psdata['modules'][$key] = $value;
+					$newvalue = intval($newvalue);
+					$oldvalue = $psdata['modules'][$key];
+					
+					if ($oldvalue != $newvalue) {
+						if ($oldvalue == SU_MODULE_DISABLED)
+							$this->plugin->call_module_func($key, 'activate');
+						if ($newvalue == SU_MODULE_DISABLED)
+							$this->plugin->call_module_func($key, 'deactivate');
+					}
+					
+					$psdata['modules'][$key] = $newvalue;
 				}
 			}
 			
@@ -38,7 +47,7 @@ class SU_Modules extends SU_Module {
 	
 	function admin_page_contents() {
 		echo "<p>";
-		_e('SEO Ultimate&#8217;s features are located in groups called &#8220;modules.&#8221; By default, most of these modules are listed in the &#8220;SEO&#8221; menu on the left. Whenever you&#8217;re working with a module, you can view documentation by clicking the tabs in the upper-right-hand corner of your administration screen.', 'seo-ultimate');
+		_e('SEO Ultimate&#8217;s features are located in groups called &#8220;modules.&#8221; By default, most of these modules are listed in the &#8220;SEO&#8221; menu on the left. Whenever you&#8217;re working with a module, you can view documentation by clicking the &#8220;Help&#8221; tab in the upper-right-hand corner of your administration screen.', 'seo-ultimate');
 		echo "</p><p>";
 		_e('The Module Manager lets you  disable or hide modules you don&#8217;t use. You can also silence modules from displaying bubble alerts on the menu.', 'seo-ultimate');
 		echo "</p>";
@@ -75,7 +84,7 @@ STR;
 			$module =& $this->plugin->modules[$key];
 			
 			//On some setups, get_parent_class() returns the class name in lowercase
-			if (strcasecmp(get_parent_class($module), 'SU_Module') == 0 && !in_array($key, array('modules')) && $module->is_independent_module())
+			if (strcasecmp(get_parent_class($module), 'SU_Module') == 0 && !in_array($key, $this->plugin->get_invincible_modules()) && $module->is_independent_module())
 				$modules[$key] = $module->get_module_title();
 		}
 		
@@ -105,6 +114,11 @@ STR;
 			echo "\t\t<tr>\n\t\t\t<td class='module-status' id='module-status-$key'>\n";
 			echo "\t\t\t\t<input type='hidden' name='su-$key-module-status' id='su-$key-module-status' value='$currentstatus' />\n";
 			
+			$hidden_is_hidden = ($this->plugin->call_module_func($key, 'get_menu_title', $module_menu_title) && $module_menu_title === false)
+								|| ($this->plugin->call_module_func($key, 'is_independent_module', $is_independent_module) && $is_independent_module &&
+									$this->plugin->call_module_func($key, 'get_parent_module', $parent_module) && $parent_module &&
+									$this->plugin->module_exists($parent_module));
+			
 			foreach ($statuses as $statuscode => $statuslabel) {
 				
 				$hmc = ($this->plugin->call_module_func($key, 'has_menu_count', $_hmc) && $_hmc);
@@ -113,14 +127,16 @@ STR;
 				$style = '';
 				switch ($statuscode) {
 					case SU_MODULE_ENABLED:
-						if ($currentstatus == SU_MODULE_SILENCED && !$hmc) $is_current = true;
+						if (($currentstatus == SU_MODULE_SILENCED && !$hmc) ||
+							($currentstatus == SU_MODULE_HIDDEN && $hidden_is_hidden))
+							$is_current = true;
 						break;
 					case SU_MODULE_SILENCED:
 						if (!$any_hmc) continue 2; //break out of switch and foreach
 						if (!$hmc) $style = " style='visibility: hidden;'";
 						break;
 					case SU_MODULE_HIDDEN:
-						if ($this->plugin->call_module_func($key, 'get_menu_title', $module_menu_title) && $module_menu_title === false)
+						if ($hidden_is_hidden)
 							$style = " style='visibility: hidden;'";
 						break;
 				}

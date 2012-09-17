@@ -181,7 +181,7 @@ class EM_Coupon extends EM_Object {
 		}else{
 			$this->person = new EM_Person(0);
 		}
-		return apply_filters('em_booking_get_person', $this->person, $this);
+		return apply_filters('em_coupon_get_person', $this->person, $this);
 	}
 	
 	/**
@@ -189,19 +189,18 @@ class EM_Coupon extends EM_Object {
 	 * @return boolean
 	 */
 	function is_valid(){
+	    $valid = true;
 		if( !empty($this->coupon_end) && current_time('timestamp') > strtotime($this->coupon_end) ){
-			return false;
+			$valid = false;
 		}elseif( !empty($this->coupon_start) && current_time('timestamp') < strtotime($this->coupon_start) ){
-			return false;
-		}
-		if( !empty($this->coupon_max) && $this->get_count() >= $this->coupon_max ){
-			return false;			
-		}
-		if( $this->coupon_private && !is_user_logged_in() ){
-			return false;
+			$valid = false;
+		}elseif( !empty($this->coupon_max) && $this->get_count() >= $this->coupon_max ){
+			$valid = false;
+		}elseif( $this->coupon_private && !is_user_logged_in() ){
+			$valid = false;
 		}
 		//check min/max values
-		return true;
+		return apply_filters('em_coupon_is_valid', $valid, $this);
 	}
 	
 	function get_count(){
@@ -226,7 +225,7 @@ class EM_Coupon extends EM_Object {
 				$text = sprintf(__('%s Off','em-pro'), em_get_currency_formatted($this->coupon_discount));
 				break;
 		}
-		return $text;
+		return apply_filters('em_coupon_get_discount_text', $text, $this);
 	}
 	
 	function has_events(){

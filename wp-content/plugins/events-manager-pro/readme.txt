@@ -2,8 +2,8 @@
 Contributors: netweblogic
 Tags: events, event, event registration, event calendar, events calendar, event management, paypal, registration, ticket, tickets, ticketing, tickets, theme, widget, locations, maps, booking, attendance, attendee, buddypress, calendar, gigs, payment, payments, sports,
 Requires at least: 3.1
-Tested up to: 3.4
-Stable tag: 2.1.5
+Tested up to: 3.4.1
+Stable tag: 2.2.1
 
 == Description ==
 
@@ -22,6 +22,39 @@ http://wp-events-plugin.com/support/
 Please visit http://wp-events-plugin.com/documentation/installation/
 
 == Changelog ==
+= 2.2.1 =
+* fixed MS network blog tables not being deleted by WP along with rest of blog
+* fixed no-user mode bug showing assigned user information on the booking information page
+* fixed reminder emails including long spanning events that already started 
+
+= 2.2 =
+* db table installation will take current blog prefix rather than determine if it's in global tables mode
+* fixed transactions not deleting if event is already deleted
+* fixed coupon dates not working
+* added em_coupon_get_discount_text filter
+* added paypal default language option
+* added extra values to the epm_forms_output_field_input filter
+* fixed multisite error when fetching transaction info
+* fixed some form action calls (from add_action to do_action)
+* added country to form field
+* fixed extra blank field in form editor
+* added user address field association, allowing for tighter integration with gateways
+* added email reminders
+* added option to show logged in users their registration fields in booking forms
+* fixed PayPal gateway not taking pending payments into account and treating as in-progress (deleted automatically)
+* fixed custom booking form not showing on forms outside of main event page
+* fixed manual bookings not showing new user fields
+* fixed default form install bug if pro installed first
+* fixed some action typos on EMP_Forms editor html
+* added em_coupon_is_valid filter
+* fixed em_coupon_get_person filter typo
+* added user password custom field
+* added date and time picker custom fields
+* added 'required' asterisks next to labels
+* fixed required text fields not accepting a 0
+* fixed paypal settings not saving if paypal email not supplied
+* added custom tooltips to field labels
+
 = 2.1.5 =
 * fixed manual bookings not allowing admins booked to that event with double bookings disabled
 * added missing error message on manual booking form admin-side validation

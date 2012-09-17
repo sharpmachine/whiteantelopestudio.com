@@ -36,11 +36,17 @@ class EM_Booking_Form {
 		//custom form chooser in event bookings meta box:
 		add_action('em_events_admin_bookings_footer',array('EM_Booking_Form', 'event_bookings_meta_box'),20,1);
 		add_filter('em_event_save_meta',array('EM_Booking_Form', 'em_event_save_meta'),10,2);
-		self::$form_template = array ( //creating a blank form template
-		  'name' => array ( 'label' => __('Name','dbem'), 'type' => 'name', 'fieldid'=>'user_name' ),
-		  'user_email' => array ( 'label' => __('Email','dbem'), 'type' => 'user_email', 'fieldid'=>'user_email' ),
-		  'dbem_phone' => array ( 'label' => __('Phone','dbem'), 'type' => 'dbem_phone', 'fieldid'=>'dbem_phone' ),
-		  'textarea' => array ( 'label' => __('Comment','dbem'), 'type' => 'textarea', 'fieldid'=>'booking_comment' ),
+		self::$form_template = array (
+			'name' => array ( 'label' => __('Name','dbem'), 'type' => 'name', 'fieldid'=>'user_name', 'required'=>1 ),
+			'user_email' => array ( 'label' => __('Email','dbem'), 'type' => 'user_email', 'fieldid'=>'user_email', 'required'=>1 ),
+	    	'dbem_address' => array ( 'label' => __('Address','dbem'), 'type' => 'dbem_address', 'fieldid'=>'dbem_address', 'required'=>1 ),
+	    	'dbem_city' => array ( 'label' => __('City','dbem'), 'type' => 'dbem_city', 'fieldid'=>'dbem_city', 'required'=>1 ),
+	    	'dbem_state' => array ( 'label' => __('State/County','dbem'), 'type' => 'dbem_state', 'fieldid'=>'dbem_state', 'required'=>1 ),
+	    	'dbem_zip' => array ( 'label' => __('Zip/Post Code','dbem'), 'type' => 'dbem_zip', 'fieldid'=>'dbem_zip', 'required'=>1 ),
+	    	'dbem_country' => array ( 'label' => __('Country','dbem'), 'type' => 'dbem_country', 'fieldid'=>'dbem_country', 'required'=>1 ),
+	    	'dbem_phone' => array ( 'label' => __('Phone','dbem'), 'type' => 'dbem_phone', 'fieldid'=>'dbem_phone' ),
+	    	'dbem_fax' => array ( 'label' => __('Fax','dbem'), 'type' => 'dbem_fax', 'fieldid'=>'dbem_fax' ),
+		  	'textarea' => array ( 'label' => __('Comment','dbem'), 'type' => 'textarea', 'fieldid'=>'booking_comment' ),
 		);
 	}
 	
@@ -116,12 +122,16 @@ class EM_Booking_Form {
 	
 	/**
 	 * Shows the actual booking form. 
-	 * @param EM_Event $EM_Event
+	 * @param EM_Event $event
 	 */
-	function booking_form(){
+	function booking_form($event = false){
 		global $EM_Event;
 		//emp_booking_form_booking_form depreciated, use em_booking_form filter instead at later priority to override this
-		echo self::get_form($EM_Event);
+		if( !empty($event) ){
+			echo self::get_form($event);
+		}else{
+		    echo self::get_form($EM_Event);
+		}
 	}
 	
 	/**
@@ -147,6 +157,9 @@ class EM_Booking_Form {
 		if( !empty($EM_Booking->booking_meta['registration']['user_login']) ){
 			$user_array['user_login'] = $EM_Booking->booking_meta['registration']['user_login'];
 		}
+		if( !empty($EM_Booking->temporary_password) ){
+			$user_array['user_pass'] = $EM_Booking->temporary_password;
+		}
 		return $user_array;
 	}
 	
@@ -160,13 +173,17 @@ class EM_Booking_Form {
 		$EM_Form = self::get_form($EM_Booking->event_id);				
 		if( (empty($EM_Booking->booking_id) || (!empty($EM_Booking->booking_id) && $EM_Booking->can_manage())) && $EM_Form->get_post() ){
 			foreach($EM_Form->get_values() as $fieldid => $value){
-				//get results and put them into booking meta
-				if( array_key_exists($fieldid, $EM_Form->user_fields) || in_array($fieldid, array('user_email','user_name')) ){
-					//registration fields
-					$EM_Booking->booking_meta['registration'][$fieldid] = $value;
-				}elseif( $fieldid != 'captcha' ){ //ignore captchas, only for verification
-					//booking fields
-					$EM_Booking->booking_meta['booking'][$fieldid] = $value;
+				if($fieldid == 'user_password'){
+				    $EM_Booking->temporary_password = $value; //assign a random property so it's never saved
+				}else{
+					//get results and put them into booking meta
+					if( array_key_exists($fieldid, $EM_Form->user_fields) || in_array($fieldid, array('user_email','user_name')) ){
+						//registration fields
+						$EM_Booking->booking_meta['registration'][$fieldid] = $value;
+					}elseif( $fieldid != 'captcha' ){ //ignore captchas, only for verification
+						//booking fields
+						$EM_Booking->booking_meta['booking'][$fieldid] = $value;
+					}
 				}
 			}
 			$result = $result && true;
@@ -198,7 +215,7 @@ class EM_Booking_Form {
 	function em_bookings_add($result){
 		global $EM_Booking;
 		$EM_Form = self::get_form($EM_Booking->event_id);
-		if( !empty($EM_Booking->booking_meta['registration']) && is_array($EM_Booking->booking_meta['registration']) && !get_option('dbem_bookings_registration_disable') ){
+		if( !empty($EM_Booking->booking_meta['registration']) && is_array($EM_Booking->booking_meta['registration']) &&  !get_option('dbem_bookings_registration_disable') ){
 			$user_data = array();
 			foreach($EM_Booking->booking_meta['registration'] as $fieldid => $field){
 				if( trim($field) !== '' && array_key_exists($fieldid, $EM_Form->form_fields) ){
@@ -358,17 +375,18 @@ class EM_Booking_Form {
 		$EM_Form = self::get_form($EM_Booking->event_id);
 		foreach($EM_Form->form_fields as $fieldid => $field){
 			if( !array_key_exists($fieldid, $EM_Form->user_fields) && !in_array($fieldid, array('user_email','user_name')) ){
-				$field_value = (isset($EM_Booking->booking_meta['booking'][$fieldid])) ? $EM_Booking->booking_meta['booking'][$fieldid]:'n/a';
+				$input_value = $field_value = (isset($EM_Booking->booking_meta['booking'][$fieldid])) ? $EM_Booking->booking_meta['booking'][$fieldid]:'n/a';
 				if(is_array($field_value)){ $field_value = implode(', ', $field_value); }
 				if($field['type'] == 'checkbox'){ $field_value = ($field_value) ? __('Yes','dbem'):__('No','dbem'); }
+				if($field['type'] == 'date'){ $field_value = str_replace(',',' '.$field['options_date_range_seperator'].' ', $field_value); }
 				//backward compatibility for old booking forms
 				if( $field['fieldid'] == 'booking_comment' && $field_value == 'n/a' && !empty($EM_Booking->booking_comment) ){ $field_value = $EM_Booking->booking_comment; }
 				?>
 				<tr>
-					<td><strong><?php echo $field['label'] ?></strong></td>
+					<th><?php echo $field['label'] ?></th>
 					<td>
 						<span class="em-booking-single-info"><?php echo $field_value; ?></span>
-						<div class="em-booking-single-edit"><?php echo $EM_Form->output_field_input($field, $field_value)?></div>
+						<div class="em-booking-single-edit"><?php echo $EM_Form->output_field_input($field, $input_value)?></div>
 					</td>
 				</tr>
 				<?php

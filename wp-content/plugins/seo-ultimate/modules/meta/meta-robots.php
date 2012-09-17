@@ -19,18 +19,17 @@ class SU_MetaRobots extends SU_Module {
 	
 	function get_admin_page_tabs() {
 		return array(
-			array('title' => __('Global', 'seo-ultimate'), 'id' => 'su-global', 'callback' => 'global_tab')
+			array('title' => __('Sitewide Values', 'seo-ultimate'), 'id' => 'su-sitewide-values', 'callback' => 'global_tab')
 		);
 	}
 	
 	function global_tab() {
 		$this->admin_form_table_start();
-		$this->admin_form_subheader(__('Spider Instructions', 'seo-ultimate'));
 		$this->checkboxes(array(
 				  'noodp' => __('Don&#8217t use this site&#8217s Open Directory description in search results.', 'seo-ultimate')
 				, 'noydir' => __('Don&#8217t use this site&#8217s Yahoo! Directory description in search results.', 'seo-ultimate')
 				, 'noarchive' => __('Don&#8217t cache or archive this site.', 'seo-ultimate')
-			));
+			), __('Spider Instructions', 'seo-ultimate'));
 		$this->admin_form_table_end();
 	}
 	

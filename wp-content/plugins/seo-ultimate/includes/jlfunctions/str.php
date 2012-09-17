@@ -187,7 +187,7 @@ class sustr {
 	}
 	
 	function htmlsafe_str_replace($search, $replace, $subject, $limit, &$count, $exclude_tags = false) {
-		$search = sustr::preg_escape($search);
+		$search = sustr::preg_escape($search, '');
 		return sustr::htmlsafe_preg_replace($search, $replace, $subject, $limit, $count, $exclude_tags);
 	}
 	
@@ -249,6 +249,13 @@ class sustr {
 		$regex = "@^$wcstr$@i";
 		$regex = str_replace(array('@^.*', '.*$@i'), array('@', '@i'), $regex);
 		return $regex;
+	}
+	
+	function tolower($str) {
+		if (function_exists('mb_strtolower'))
+			return mb_strtolower($str);
+		
+		return strtolower($str);
 	}
 }
 

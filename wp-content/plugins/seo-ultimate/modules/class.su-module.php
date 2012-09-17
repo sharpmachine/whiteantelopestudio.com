@@ -222,6 +222,26 @@ class SU_Module {
 	function get_menu_parent_hook() { return $this->get_menu_parent(); }
 	
 	/**
+	 * @since 7.2.5
+	 */
+	function belongs_in_admin($admin_scope = null) {
+		
+		if ($admin_scope === null)
+			$admin_scope = suwp::get_admin_scope();
+		
+		switch ($admin_scope) {
+			case 'blog':
+				return true;
+				break;
+			case 'network':
+			case 'user':
+			default:
+				return false;
+				break;
+		}
+	}
+	
+	/**
 	 * The status (enabled/silenced/hidden) of the module when the module is newly added to the plugin.
 	 * 
 	 * @since 1.5
@@ -268,10 +288,19 @@ class SU_Module {
 	 * @return string
 	 */
 	function get_settings_key() {
-		if (strlen($parent = $this->get_parent_module()) && !$this->is_independent_module())
-			return $this->plugin->modules[$parent]->get_settings_key();
-		else
-			return $this->get_module_key();
+		if (isset($this)) {
+			if (strlen($parent = $this->get_parent_module()) && !$this->is_independent_module())
+				return $this->plugin->modules[$parent]->get_settings_key();
+			else
+				return $this->get_module_key();
+		} else {
+			if (strlen($parent = self::get_parent_module()) && !self::is_independent_module()) {
+				global $seo_ultimate;
+				return $seo_ultimate->modules[$parent]->get_settings_key();
+			} else {
+				return false;
+			}
+		}
 	}
 	
 	/**
@@ -297,12 +326,29 @@ class SU_Module {
 	function init() {}
 	
 	/**
-	 * Called upon module activation,
-	 * i.e. when a module is uploaded or when the plugin is activated for the first time.
+	 * Called under 3 circumstances:
+	 * 1. When the SEO Ultimate plugin is activated
+	 * 2. When a module is newly registered in the database, which can happen for two reasons:
+	 * 		a. The plugin is activated for the first time
+	 * 		b. The module has been newly added via a plugin upgrade
+	 * 3. When the module is re-enabled in the Module Manager after being disabled.
+	 * 
+	 * Note that this function will be called twice when the plugin is activated for the first time, since this will make #1 and #2 both true.
+	 * 
+	 * WARNING: Do not use "$this" in the activate() function. It will not work under condition #3. Check for isset($this) and if false, use self:: instead.
 	 * 
 	 * @since 0.1
 	 */
 	function activate() { }
+	
+	/**
+	 * Called under 2 circumstances:
+	 * 1. When the SEO Ultimate plugin is deactivated or uninstalled.
+	 * 2. When the module is disabled in the Module Manager.
+	 * 
+	 * @since 7.2.8
+	 */
+	function deactivate() { }
 	
 	/**
 	 * Called when SEO Ultimate has just been upgraded to a new version.
@@ -326,6 +372,13 @@ class SU_Module {
 	 * @since 6.0
 	 */
 	function admin_page_init() { }
+	
+	/**
+	 * Is called at WordPress' admin_init hook when the post editor is loaded.
+	 * 
+	 * @since 7.3
+	 */
+	function editor_init() { }
 	
 	/**
 	 * The contents of the administration page.
@@ -443,7 +496,11 @@ class SU_Module {
 		if ($key === false) {
 			if (($key = $this->get_parent_module()) && $this->plugin->module_exists($key)) {
 				
-				if (count($tabs = $this->get_admin_page_tabs())) {
+				$tabs = $this->get_admin_page_tabs();
+				if (!is_array($tabs))
+					return false;
+				
+				if (count($tabs)) {
 					$first_tab = reset($tabs);
 					$anchor = '#' . $first_tab['id'];
 				} else {
@@ -453,6 +510,9 @@ class SU_Module {
 				$key = $this->get_module_key();
 		}
 		
+		if (!$this->plugin->call_module_func($key, 'belongs_in_admin', $belongs_in_admin) || !$belongs_in_admin)
+			return false;
+		
 		if (!$this->plugin->call_module_func($key, 'get_menu_title', $menu_title) || !$menu_title)
 			return false;
 		
@@ -460,7 +520,12 @@ class SU_Module {
 		if ($this->plugin->call_module_func($key, 'get_menu_parent', $custom_basepage) && sustr::endswith($custom_basepage, '.php'))
 			$basepage = $custom_basepage;
 		
-		return admin_url($basepage.'?page='.$this->plugin->key_to_hook($key).$anchor);
+		if (is_network_admin() && $this->belongs_in_admin('network'))
+			$admin_url = 'network_admin_url';
+		else
+			$admin_url = 'admin_url';
+		
+		return $admin_url($basepage.'?page='.$this->plugin->key_to_hook($key).$anchor);
 	}
 	
 	/**
@@ -550,21 +615,30 @@ class SU_Module {
 	 */
 	function get_children_admin_page_tabs() {
 		$tabs = $this->get_admin_page_tabs();
+		if (!is_array($tabs)) $tabs = array();
 		
 		foreach ($this->modules as $key => $x_module) {
 			$module =& $this->modules[$key];
-			$child_tabs = $module->get_admin_page_tabs();
 			
-			if (empty($child_tabs))
-				$child_tabs[] = array(
-					  'title' => $module->get_module_subtitle()
-					, 'id' => $this->plugin->key_to_hook($key)
-					, 'callback' => array(&$module, 'admin_page_contents')
-				);
-			
-			foreach ($child_tabs as $child_tab) {
-				if (is_array($child_tab) && !is_array($child_tab['callback'])) $child_tab['callback'] = array(&$module, $child_tab['callback']);
-				$tabs[] = $child_tab;
+			if ($module->belongs_in_admin()) {
+				$child_tabs = $module->get_admin_page_tabs();
+				
+				if (is_array($child_tabs)) {
+				
+					if (empty($child_tabs))
+						$child_tabs[] = array(
+							  'title' => $module->get_module_subtitle()
+							, 'id' => $this->plugin->key_to_hook($key)
+							, 'callback' => array(&$module, 'admin_page_contents')
+						);
+					
+					foreach ($child_tabs as $child_tab) {
+						if (is_array($child_tab) && !is_array($child_tab['callback']))
+							$child_tab['callback'] = array(&$module, $child_tab['callback']);
+						
+						$tabs[] = $child_tab;
+					}
+				}
 			}
 		}
 		
@@ -879,63 +953,12 @@ class SU_Module {
 	 * Outputs a tab control and loads the current tab.
 	 * 
 	 * @since 0.7
-	 * @uses get_admin_url()
-	 * @uses SEO_Ultimate::plugin_dir_url
 	 * 
 	 * @param array $tabs Array (id => __, title => __, callback => __)
 	 * @param bool $table Whether or not the tab contents should be wrapped in a form table.
 	 */
-	function admin_page_tabs($tabs = array(), $table=false) {
-		
-		if ($c = count($tabs)) {
-			
-			if ($c > 1)
-				echo "\n\n<div id='su-tabset' class='su-tabs'>\n";
-			
-			foreach ($tabs as $tab) {
-				
-				if (isset($tab['title']))	$title	  = $tab['title'];	  else return;
-				if (isset($tab['id']))		$id		  = $tab['id'];		  else return;
-				if (isset($tab['callback']))$function = $tab['callback']; else return;
-				
-				if ($c > 1) {
-					//$id = 'su-' . sustr::preg_filter('a-z0-9', strtolower($title));
-					echo "<fieldset id='$id'>\n<h3>$title</h3>\n<div class='su-tab-contents'>\n";
-				}
-				
-				if ($table) echo "<table class='form-table'>\n";
-				
-				$call = $args = array();
-				
-				if (is_array($function)) {
-					
-					if (is_array($function[0])) {
-						$call = array_shift($function);
-						$args = $function;
-					} elseif (is_string($function[0])) {
-						$call = array_shift($function);
-						$call = array(&$this, $call);
-						$args = $function;
-					} else {
-						$call = $function;
-					}
-				} else {
-					$call = array(&$this, $function);
-				}
-				if (is_callable($call)) call_user_func_array($call, $args);
-				
-				if ($table) echo "</table>";
-				
-				if ($c > 1)
-					echo "</div>\n</fieldset>\n";
-			}
-			
-			if ($c > 1) {
-				echo "</div>\n";
-				
-				echo '<script type="text/javascript" src="'.$this->plugin->plugin_dir_url.'includes/tabs.js?v='.SU_VERSION.'"></script>';
-			}
-		}
+	function admin_page_tabs($tabs=array(), $table=false) {
+		$this->plugin->tabs($tabs, $table, $this);
 	}
 	
 	/**
@@ -1008,7 +1031,7 @@ class SU_Module {
 		//Turn the types array into a tabs array
 		$tabs = array();
 		foreach ($types as $type)
-			$tabs[] = array(
+			$tabs[$type->name] = array(
 				  'title' => $type->labels->name
 				, 'id' => 'su-' . $type->name
 				, 'callback' => array('meta_edit_tab', 'post', 'su-' . $type->name, $type->name, $type->labels->singular_name, $fields)
@@ -1102,6 +1125,7 @@ class SU_Module {
 				wp(array(
 					  'post_type' => $type
 					, 'posts_per_page' => $per_page
+					, 'post_status' => 'any'
 					, 'paged' => $pagenum
 					, 'order' => 'ASC'
 					, 'orderby' => 'title'
@@ -1176,6 +1200,18 @@ class SU_Module {
 					$name = $object->post_title;
 					$view_url = get_permalink($id);
 					$edit_url = get_edit_post_link($id);
+					
+					$status_obj = get_post_status_object($object->post_status);
+					switch ($object->post_status) {
+						case 'publish': $status = ''; break;
+						case 'inherit': $status = ''; break;
+						case 'auto-draft': continue; break;
+						default: $status = $status_obj->label; break;
+					}
+					
+					if ($status)
+						$name .= "<span class='su-meta-table-post-status'> &mdash; $status</span>";
+					
 					break;
 				case 'term':
 					$id = intval($object->term_id);
@@ -1282,6 +1318,12 @@ class SU_Module {
 				break;
 			case 'hidden':
 				return "<input name='$name'$inputid value='$value' type='hidden' />";
+				break;
+			case 'jlsuggest':
+				$params = isset($extra['params']) ? $extra['params'] : '';
+				$placeholder = isset($extra['placeholder']) ? $extra['placeholder'] : '';
+				
+				return $this->get_jlsuggest_box($name, $value, $params, $placeholder);
 				break;
 		}
 		
@@ -1410,21 +1452,23 @@ class SU_Module {
 	/**
 	 * @since 5.8
 	 */
-	function child_admin_form_start() {
-		if ($this->get_parent_module() && $this->plugin->module_exists($this->get_parent_module()))
-			$this->admin_form_table_start();
-		else
-			$this->admin_form_start();
+	function child_admin_form_start($table=true) {
+		if ($this->get_parent_module() && $this->plugin->module_exists($this->get_parent_module())) {
+			if ($table) $this->admin_form_table_start();
+		} else {
+			$this->admin_form_start(false, $table);
+		}
 	}
 	
 	/**
 	 * @since 5.8
 	 */
-	function child_admin_form_end() {
-		if ($this->get_parent_module() && $this->plugin->module_exists($this->get_parent_module()))
-			$this->admin_form_table_end();
-		else
-			$this->admin_form_end();
+	function child_admin_form_end($table=true) {
+		if ($this->get_parent_module() && $this->plugin->module_exists($this->get_parent_module())) {
+			if ($table) $this->admin_form_table_end();
+		} else {
+			$this->admin_form_end(null, $table);
+		}
 	}
 	
 	/**
@@ -1584,7 +1628,7 @@ class SU_Module {
 	 */
 	function admin_form_group_end($newtable=true) {
 		if ($newtable) echo "</table>\n";
-		echo "</td>\n</tr>\n";
+		echo "</fieldset>\n</td>\n</tr>\n";
 	}
 	
 	function admin_form_indent_start() {
@@ -1805,7 +1849,9 @@ class SU_Module {
 	 * @param string|false $grouptext The text to display in a table cell to the left of the one containing the dropdown. Optional.
 	 * @param string $text A printf-style format string in which "%s" is replaced with the dropdown. Use this to put text before or after the dropdown.
 	 */
-	function dropdown($name, $values, $grouptext=false, $text='%s') {
+	function dropdown($name, $values, $grouptext=false, $text='%s', $args=array()) {
+		
+		$in_table = isset($args['in_table']) ? $args['in_table'] : true;
 		
 		//Save dropdown setting after form submission
 		if ($this->is_action('update') && isset($_POST[$name]))
@@ -1813,7 +1859,7 @@ class SU_Module {
 		
 		if ($grouptext)
 			$this->admin_form_group_start($grouptext, false);
-		else
+		elseif ($in_table)
 			echo "<tr valign='top' class='su-admin-form-dropdown'>\n<td colspan='2'>\n";
 		
 		if (is_array($values)) {
@@ -1827,8 +1873,10 @@ class SU_Module {
 			printf($text, $dropdown);
 		}
 		
-		if ($grouptext) echo "</fieldset>";
-		echo "</td>\n</tr>\n";
+		if ($grouptext)
+			$this->admin_form_group_end();
+		elseif ($in_table)
+			echo "</td>\n</tr>\n";
 	}
 	
 	/**
@@ -1883,14 +1931,15 @@ class SU_Module {
 	 * @param array $defaults An array of default textbox values that trigger "Reset" links. (The field/setting ID is the key, and the default value is the value.) Optional.
 	 * @param mixed $grouptext The text to display in a table cell to the left of the one containing the textboxes. Optional.
 	 */
-	function textboxes($textboxes, $defaults=array(), $grouptext=false, $args=array()) {
+	function textboxes($textboxes, $defaults=array(), $grouptext=false, $args=array(), $textbox_args=array()) {
 		
 		$is_tree_parent = isset($args['is_tree_parent']) ? $args['is_tree_parent'] : false;
 		$is_ec_tree = isset($args['is_ec_tree']) ? $args['is_ec_tree'] : false;
 		$tree_level = isset($args['tree_level']) ? $args['tree_level'] : false;
 		$disabled = isset($args['disabled']) ? $args['disabled'] : false;
+		$in_table = isset($args['in_table']) ? $args['in_table'] : true;
 		
-		if ($this->is_action('update')) {
+		if (!$disabled && $this->is_action('update')) {
 			foreach ($textboxes as $id => $title) {
 				if (isset($_POST[$id]))
 					$this->update_setting($id, stripslashes($_POST[$id]));
@@ -1914,6 +1963,11 @@ class SU_Module {
 		if ($grouptext) $this->admin_form_group_start($grouptext, false);
 		
 		foreach ($textboxes as $id => $title) {
+			
+			$before = isset($textbox_args[$id]['before']) ? $textbox_args[$id]['before'] : '';
+			$after  = isset($textbox_args[$id]['after'])  ? $textbox_args[$id]['after']  : '';
+			$placeholder = isset($textbox_args[$id]['placeholder']) ? $textbox_args[$id]['placeholder']  : '';
+			
 			register_setting($this->get_module_key(), $id);
 			$value = su_esc_editable_html($this->get_setting($id));
 			$id = su_esc_attr($id);
@@ -1921,12 +1975,19 @@ class SU_Module {
 			
 			if ($grouptext)
 				echo "<div class='field'><label for='$id'>$title</label><br />\n";
-			elseif (strpos($title, '</a>') === false)
+			elseif ($in_table && strpos($title, '</a>') === false)
 				echo "<tr valign='top'$indentattrs$hidden>\n<th scope='row' class='su-field-label'>$indenttoggle<label for='$id'><span class='su-field-label-text'>$title</span></label></th>\n<td>";
-			else
+			elseif ($in_table)
 				echo "<tr valign='top'$indentattrs$hidden>\n<td class='su-field-label'>$indenttoggle<span class='su-field-label-text'>$title</span></td>\n<td>";
 			
+			echo $before;
+			
 			echo "<input name='$id' id='$id' type='text' value='$value' class='regular-text' ";
+			
+			if ($placeholder) {
+				$a_placeholder = su_esc_attr($placeholder);
+				echo "placeholder='$placeholder' ";
+			}
 			
 			if ($disabled)
 				echo "disabled='disabled' />";
@@ -1951,9 +2012,11 @@ class SU_Module {
 				echo '</a>';
 			}
 			
+			echo $after;
+			
 			if ($grouptext)
 				echo "</div>\n";
-			else
+			elseif ($in_table)
 				echo "</td>\n</tr>\n";
 		}
 		
@@ -1971,9 +2034,9 @@ class SU_Module {
 	 * @param string|false $default The default textbox value. Setting this will trigger a "Reset" link. Optional.
 	 * @return string The HTML that would render the textbox.
 	 */
-	function textbox($id, $title, $default=false, $grouptext=false, $args=array()) {
+	function textbox($id, $title, $default=false, $grouptext=false, $args=array(), $textbox_args=array()) {
 		if ($default === false) $default = array(); else $default = array($id => $default);
-		$this->textboxes(array($id => $title), $default, $grouptext, $args);
+		$this->textboxes(array($id => $title), $default, $grouptext, $args, array($id => $textbox_args));
 	}
 	
 	/**
@@ -1989,9 +2052,11 @@ class SU_Module {
 	 * @param int $rows The value of the textareas' rows attribute.
 	 * @param int $cols The value of the textareas' cols attribute.
 	 */
-	function textareas($textareas, $rows = 5, $cols = 30) {
+	function textareas($textareas, $rows = 5, $cols = 30, $args=array()) {
 		
-		if ($this->is_action('update')) {
+		$disabled = isset($args['disabled']) ? $args['disabled'] : false;
+		
+		if (!$disabled && $this->is_action('update')) {
 			foreach ($textareas as $id => $title) {
 				if (isset($_POST[$id]))
 					$this->update_setting($id, stripslashes($_POST[$id]));
@@ -2005,7 +2070,10 @@ class SU_Module {
 			
 			echo "<tr valign='top'>\n";
 			if ($title) echo "<th scope='row'><label for='$id'>$title</label></th>\n";
-			echo "<td><textarea name='$id' id='$id' type='text' class='regular-text' cols='$cols' rows='$rows'>$value</textarea>";
+			echo '<td>';
+			echo "<textarea name='$id' id='$id' type='text' class='regular-text' cols='$cols' rows='$rows'";
+			if ($disabled) echo " disabled='disabled'";
+			echo ">$value</textarea>";
 			echo "</td>\n</tr>\n";
 		}
 	}
@@ -2024,6 +2092,53 @@ class SU_Module {
 	 */
 	function textarea($id, $title = '', $rows = 5, $cols = 30) {
 		$this->textareas(array($id => $title), $rows, $cols);
+	}
+	
+	/**
+	 * @since 7.3
+	 */
+	function jlsuggest_boxes($jls_boxes) {
+		
+		if ($this->is_action('update')) {
+			foreach ($jls_boxes as $jls_box) {
+				
+				if (!isset($jls_box['id']))
+					continue;
+				
+				$id = $jls_box['id'];
+				
+				if (isset($_POST[$id]))
+					$this->update_setting($id, stripslashes($_POST[$id]));
+			}
+		}
+		
+		foreach ($jls_boxes as $jls_box) {
+			
+			if (!isset($jls_box['id']))
+				continue;
+			
+			$jls_box = wp_parse_args($jls_box, array(
+				  'title' => ''
+				, 'params' => ''
+			));
+			
+			extract($jls_box, EXTR_SKIP);
+			
+			register_setting($this->get_module_key(), $id);
+			
+			echo "<tr valign='top'>\n";
+			if ($title) echo "<th scope='row'><label for='$id'>$title</label></th>\n";
+			echo "<td>";
+			echo $this->get_jlsuggest_box($id, $this->get_setting($id), $params);
+			echo "</td>\n</tr>\n";
+		}
+	}
+	
+	/**
+	 * @since 7.3
+	 */
+	function jlsuggest_box($id, $title, $params='') {
+		$this->jlsuggest_boxes(array(compact('id', 'title', 'params')));
 	}
 	
 	/********** ADMIN SECURITY FUNCTIONS **********/
@@ -2233,19 +2348,35 @@ class SU_Module {
 	 * @param array $textboxes An array of textboxes. (Field/setting IDs are the keys, and descriptions are the values.)
 	 * @return string The HTML that would render the textboxes.
 	 */
-	function get_postmeta_textboxes($textboxes) {
-
+	function get_postmeta_textboxes($textboxes, $textbox_args=array(), $grouptext=false) {
+		
 		$html = '';
 		
+		if ($grouptext) {
+			$h_grouptext = esc_html($grouptext);
+			$html .= "<tr class='su textbox' valign='top'>\n<th scope='row' class='su'><label>$h_grouptext</label></th>\n<td class='su group'><table>";
+		}
+		
 		foreach ($textboxes as $id => $title) {
+			
+			$type = isset($textbox_args[$id]['type']) ? $textbox_args[$id]['type'] : 'text';
 			
 			register_setting('seo-ultimate', $id);
 			$value = su_esc_editable_html($this->get_postmeta($id));
 			$id = "_su_".su_esc_attr($id);
-			//$title = str_replace(' ', '&nbsp;', $title);
 			
-			$html .= "<tr class='su textbox' valign='middle'>\n<th scope='row' class='su'><label for='$id'>$title</label></th>\n"
-					."<td class='su'><input name='$id' id='$id' type='text' value='$value' class='regular-text' tabindex='2' /></td>\n</tr>\n";
+			$e_title = su_esc_attr($title);
+			
+			if ($grouptext)
+				$html .= "<tr><th scope='row'>$title</th><td><input name='$id' id='$id' type='$type' value='$value' class='regular-text' tabindex='2' /></td></tr>";
+			else
+				$html .= "<tr class='su textbox' valign='middle'>\n<th scope='row' class='su'><label for='$id'>$title</label></th>\n"
+						."<td class='su'><input name='$id' id='$id' type='$type' value='$value' class='regular-text' tabindex='2' /></td>\n</tr>\n";
+		}
+		
+		if ($grouptext) {
+			$h_grouptext = esc_html($grouptext);
+			$html .= "</table></td>\n</tr>\n";
 		}
 		
 		return $html;
@@ -2261,8 +2392,8 @@ class SU_Module {
 	 * @param string $title The label of the HTML element.
 	 * @return string The HTML that would render the textbox.
 	 */
-	function get_postmeta_textbox($id, $title) {
-		return $this->get_postmeta_textboxes(array($id => $title));
+	function get_postmeta_textbox($id, $title, $args=array()) {
+		return $this->get_postmeta_textboxes(array($id => $title), array($id => $args));
 	}
 	
 	/**
@@ -2317,7 +2448,7 @@ class SU_Module {
 	 */
 	function get_postmeta_checkboxes($checkboxes, $grouptext) {
 		
-		$valign = (is_array($checkboxes) && count($checkboxes)) ? 'top' : 'middle';
+		$valign = (is_array($checkboxes) && count($checkboxes) > 1) ? 'top' : 'middle';
 		$html = "<tr class='su checkboxes' valign='$valign'>\n<th scope='row' class='su'>$grouptext</th>\n<td class='su'><fieldset><legend class='hidden'>$grouptext</legend>\n";
 		
 		if (is_array($checkboxes)) {
@@ -2379,6 +2510,56 @@ class SU_Module {
 		$html .= "</fieldset></td>\n</tr>\n";
 		
 		return $html;
+	}
+	
+	/**
+	 * Generates the HTML for multiple post meta JLSuggest boxes.
+	 * 
+	 * @since 7.3
+	 * 
+	 * @param array $jls_boxes An array of JLSuggest boxes. (Field/setting IDs are the keys, and descriptions are the values.)
+	 * @return string The HTML for the JLSuggest boxes.
+	 */
+	function get_postmeta_jlsuggest_boxes($jls_boxes) {
+		
+		$html = '';
+		
+		foreach ($jls_boxes as $jls_box) {
+			
+			if (!isset($jls_box['id']) || !isset($jls_box['title']))
+				continue;
+			
+			$id = $jls_box['id'];
+			$title = $jls_box['title'];
+			$params = isset($jls_box['params']) ? $jls_box['params'] : false;
+			
+			register_setting('seo-ultimate', $id);
+			$value = su_esc_editable_html($this->get_postmeta($id));
+			$id = "_su_".su_esc_attr($id);
+			
+			$html .= "<tr class='su jlsuggestbox' valign='middle'>\n<th scope='row' class='su'><label for='$id'>$title</label></th>\n"
+					."<td class='su'>";
+			$html .= $this->get_jlsuggest_box($id, $value, $params);
+			$html .= "</td>\n</tr>\n";
+		}
+		
+		return $html;
+	}
+	
+	/**
+	 * Generates the HTML for a single post meta JLSuggest box.
+	 * 
+	 * @since 7.3
+	 * @uses get_postmeta_jlsuggest_boxes()
+	 * 
+	 * @param string $id The ID of the HTML element.
+	 * @param string $title The label of the HTML element.
+	 * @param string $params The value of the su:params attribute of the JLSuggest box (optional).
+	 * @return string The HTML that would render the JLSuggest box.
+	 */
+	function get_postmeta_jlsuggest_box($id, $title, $params=false) {
+		$jls_box = compact('id', 'title', 'params');
+		return $this->get_postmeta_jlsuggest_boxes(array($jls_box));
 	}
 	
 	/**
@@ -2537,7 +2718,7 @@ class SU_Module {
 	 * @param string $name The value of the textbox's name/ID attributes
 	 * @param string $value The current database string associated with this textbox
 	 */
-	function get_jlsuggest_box($name, $value, $params='') {
+	function get_jlsuggest_box($name, $value, $params='', $placeholder='') {
 		
 		list($to_genus, $to_type, $to_id) = $this->jlsuggest_value_explode($value);
 		
@@ -2630,6 +2811,11 @@ class SU_Module {
 			$html .= " su:params='$e_params'";
 		}
 		
+		if ($placeholder) {
+			$e_placeholder = su_esc_attr($placeholder);
+			$html .= " placeholder='$e_placeholder'";
+		}
+		
 		$html .= " type='text' class='textbox regular-text jlsuggest'";
 		$html .= ' title="' . __('Type a URL or start typing the name of an item on your site', 'seo-ultimate') . '"';
 		$html .= $is_url ? '' : ' style="display:none;" ';
@@ -2656,9 +2842,10 @@ class SU_Module {
 	 * @since 6.0
 	 * 
 	 * @param string $value The JLSuggest database string to convert.
+	 * @param bool $get_src_if_media Whether to get the URL to the actual media item rather than the URL to its WP-powered singular page, if the item is an attachment.
 	 * @return string The URL of the referenced destination
 	 */
-	function jlsuggest_value_to_url($value) {
+	function jlsuggest_value_to_url($value, $get_src_if_media=false) {
 		
 		list($to_genus, $to_type, $to_id) = $this->jlsuggest_value_explode($value);
 		
@@ -2669,6 +2856,9 @@ class SU_Module {
 				$to_id = (int)$to_id;
 				switch (get_post_status($to_id)) {
 					case 'publish':
+						if ($get_src_if_media && 'attachment' == get_post_type($to_id))
+							return wp_get_attachment_url($to_id);
+						
 						return get_permalink($to_id);
 					case false: //Post doesn't exist
 					default: //Post exists but isn't published

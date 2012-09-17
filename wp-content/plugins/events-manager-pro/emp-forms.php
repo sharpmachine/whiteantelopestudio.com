@@ -3,6 +3,7 @@ class EM_Forms {
 	function init(){
 		if( is_admin() ){
 			add_action('em_create_events_submenu',array('EM_Forms', 'admin_menu'),1,1);
+			add_action('em_options_page_footer_bookings',array('EM_Forms', 'admin_options'),10);
 		}
 	}
 	
@@ -12,17 +13,35 @@ class EM_Forms {
 	}
 	
 	function admin_page(){
-		global $EM_Notices;
 		?>
 		<div class='wrap'>
 			<div class="icon32" id="icon-plugins"><br></div>
 			<h2><?php _e('Forms Editor','em-pro'); ?></h2>
-			<?php echo $EM_Notices; ?>
 			<p><?php _e('On this page you can create/edit various forms used within Events Manager Pro.', 'em-pro' ); ?></p>
 			<?php do_action('emp_forms_admin_page'); ?>
 		</div> <!-- wrap -->
 		<?php
 	}
+	
+	function admin_options(){
+		if( current_user_can('activate_plugins') ){
+		?>
+			<a name="pro-forms"></a>
+			<div  class="postbox " >
+			<div class="handlediv" title="<?php __('Click to toggle', 'dbem'); ?>"><br /></div><h3 class='hndle'><span><?php _e ( 'PRO Booking Form Options', 'em-pro' ); ?> </span></h3>
+			<div class="inside">
+				<table class='form-table'>
+					<?php 
+						em_options_radio_binary ( __( 'Show profile fields to logged in users?', 'em-pro' ), 'dbem_emp_booking_form_reg_show', __( 'When logged in, users usually don\'t see their profile fields, with this enabled, users will be able to update their profile fields alongside their booking. This is particularly useful if the user is missing key information. Note that this does not include usernames, name, passwords and emails, these must be modified from their user profile page.','em-pro' ) );
+						em_options_radio_binary ( __( 'Make profile fields editable?', 'em-pro' ), 'dbem_emp_booking_form_reg_input', __( 'If profile fields are set to show to logged in users, you can also choose whether or not to make these fields editable or just for viewing reference.','em-pro' ) );
+					?>
+				</table>
+			</div> <!-- . inside -->
+			</div> <!-- .postbox -->
+		<?php
+		}
+	}
+	
 }
 EM_Forms::init();
 
@@ -34,8 +53,10 @@ class EM_Form extends EM_Object {
 	private $field_values = array();
 	public $user_fields = array();
 	protected $core_user_fields = array(
+		'name' => 'Name',
 		'user_login' => 'Username Login',
 		'user_email' => 'E-mail (required)',
+		'user_password' => 'Password',
 		'first_name' => 'First Name',
 		'last_name' => 'Last Name',
 		'user_url' => 'Website',
@@ -68,10 +89,21 @@ class EM_Form extends EM_Object {
 	function get_post( $validate = true ){
 		foreach($this->form_fields as $fieldid => $field){
 			$value = '';
-			if(!empty($_REQUEST[$fieldid]) && !is_array($_REQUEST[$fieldid])){
-				$this->field_values[$fieldid] = wp_kses_data(stripslashes($_REQUEST[$fieldid]));
-			}elseif(!empty($_REQUEST[$fieldid]) && is_array($_REQUEST[$fieldid])){
-				$this->field_values[$fieldid] = $_REQUEST[$fieldid];
+			if( isset($_REQUEST[$fieldid]) && $_REQUEST[$fieldid] != '' ){
+				if( !is_array($_REQUEST[$fieldid])){
+					$this->field_values[$fieldid] = wp_kses_data(stripslashes($_REQUEST[$fieldid]));
+				}elseif( is_array($_REQUEST[$fieldid])){
+					$this->field_values[$fieldid] = $_REQUEST[$fieldid];
+				}
+			}
+			//dates and time are special
+			if( in_array($field['type'], array('date','time')) ){
+				if( !empty($_REQUEST[$fieldid.'_start']) ){
+					$this->field_values[$fieldid] = $_REQUEST[$fieldid.'_start'];
+				}
+				if( $field['options_'.$field['type'].'_range'] && !empty($_REQUEST[$fieldid.'_end']) ){
+					$this->field_values[$fieldid] .= ','. $_REQUEST[$fieldid.'_end'];
+				}
 			}
 		}
 		if( $validate ){
@@ -104,69 +136,32 @@ class EM_Form extends EM_Object {
 		}elseif( !empty($post) ){
 			$default = $post;
 		}
+		$required = ( !empty($field['required']) ) ? ' '.apply_filters('emp_forms_output_field_required','<span class="em-form-required">*</span>'):'';
 		switch($field['type']){
-			case 'name':
-			case 'email': //depreciated
-				if( self::show_reg_fields() ){
-					?>
-					<p class="input-<?php echo $field['type']; ?> input-field-<?php echo $field['fieldid'] ?> input-user-field">
-						<label for='<?php echo $field['fieldid'] ?>'><?php echo $field['label'] ?></label> 
-						<?php echo $this->output_field_input($field, $post); ?>
-					</p>
-					<?php
-				}
-				break;				
+			case 'html':
+			     echo $this->output_field_input($field, $post);
+			     break;
 			case 'text':
-				?>
-				<p class="input-<?php echo $field['type']; ?> input-field-<?php echo $field['fieldid'] ?>">
-					<label for='<?php echo $field['fieldid'] ?>'><?php echo $field['label'] ?></label> 
-					<?php echo $this->output_field_input($field, $post); ?>
-				</p>
-				<?php
-				break;	
 			case 'textarea':
-				?>
-				<p class="input-<?php echo $field['type']; ?> input-field-<?php echo $field['fieldid'] ?>">
-					<label for='<?php echo $field['fieldid'] ?>'><?php echo $field['label'] ?></label> 
-					<?php echo $this->output_field_input($field, $post); ?>
-				</p>
-				<?php
-				break;
 			case 'checkbox':
-				?>
-				<p class="input-group input-<?php echo $field['type']; ?> input-field-<?php echo $field['fieldid'] ?>">
-					<label for='<?php echo $field['fieldid'] ?>'><?php echo $field['label'] ?></label>
-					<?php echo $this->output_field_input($field, $post); ?>
-				</p>
-				<?php
-				break;
+			case 'date':
 			case 'checkboxes':
-				if(!is_array($default)) $default = array();
-				$values = explode("\r\n",$field['options_selection_values']);
-				?>
-				<p class="input-group input-<?php echo $field['type']; ?> input-field-<?php echo $field['fieldid'] ?>">
-					<label for='<?php echo $field['fieldid'] ?>'><?php echo $field['label'] ?></label>
-					<?php echo $this->output_field_input($field, $post); ?>
-				</p>
-				<?php
-				break;
 			case 'radio':
-				$values = explode("\r\n",$field['options_selection_values']);
-				?>
-				<p class="input-group input-<?php echo $field['type']; ?> input-field-<?php echo $field['fieldid'] ?>">
-					<label for='<?php echo $field['fieldid'] ?>'><?php echo $field['label'] ?></label>
-					<?php echo $this->output_field_input($field, $post); ?>
-				</p>
-				<?php
-				break;
 			case 'select':
+			case 'country':
 			case 'multiselect':
-				$values = explode("\r\n",$field['options_select_values']);
-				$multi = $field['type'] == 'multiselect';
-				if($multi && !is_array($default)) $default = array();
+			case 'time':
 				?>
 				<p class="input-group input-<?php echo $field['type']; ?> input-field-<?php echo $field['fieldid'] ?>">
-					<label for='<?php echo $field['fieldid'] ?>'><?php echo $field['label'] ?></label>
+					<label for='<?php echo $field['fieldid'] ?>'>
+						<?php if( !empty($field['options_'.$field['type'].'_tip']) ): ?>
+							<span class="form-tip" title="<?php echo $field['options_'.$field['type'].'_tip']; ?>">
+								<?php echo $field['label'] ?> <?php echo $required  ?>
+							</span>
+						<?php else: ?>
+							<?php echo $field['label'] ?> <?php echo $required  ?>
+						<?php endif; ?>
+					</label>
 					<?php echo $this->output_field_input($field, $post); ?>
 				</p>
 				<?php
@@ -176,25 +171,45 @@ class EM_Form extends EM_Object {
 				if( function_exists('recaptcha_get_html') && !is_user_logged_in() ){
 					?>
 					<p class="input-group input-<?php echo $field['type']; ?> input-field-<?php echo $field['fieldid'] ?>">
-					<label for='<?php echo $field['fieldid'] ?>'><?php echo $field['label'] ?></label>
+					<label for='<?php echo $field['fieldid'] ?>'><?php echo $field['label']. $required  ?></label>
 					<?php
 					echo $this->output_field_input($field, $post);
 				}
 				break;
 			default:
-				if( array_key_exists($field['type'], $this->user_fields) && self::show_reg_fields() ){
+			    $is_hidden_reg = is_user_logged_in() && in_array($field['fieldid'], array('first_name','last_name', 'user_email','user_login', 'name', 'user_password'));
+				if( array_key_exists($field['type'], $this->user_fields) && self::show_reg_fields() && !(!defined('EM_FORCE_REGISTRATION') && $is_hidden_reg) ){
+					if( empty($_REQUEST[$field['fieldid']]) && is_user_logged_in() && !defined('EM_FORCE_REGISTRATION') ){
+						if( $field['type'] == 'name' ){
+							$EM_Person = new EM_Person(get_current_user_id());
+							$post = $EM_Person->get_name();
+						}else{
+							$post = get_user_meta(get_current_user_id(), $field['fieldid'], true);
+						}
+					}
 					if( array_key_exists($field['type'], $this->core_user_fields) ){
-						//registration fields
-						?>
-						<p class="input-<?php echo $field['type']; ?> input-user-field">
-							<label for='<?php echo $field['fieldid'] ?>'><?php echo $field['label'] ?></label> 
-							<?php echo $this->output_field_input($field, $post); ?>
-						</p>
-						<?php
+						if( $field['type'] == 'user_password' ){
+							?>
+							<p class="input-<?php echo $field['type']; ?> input-user-field">
+								<label for='<?php echo $field['fieldid'] ?>'>
+									<?php echo $field['label']. $required  ?>
+								</label> 
+								<input type="password" name="<?php echo $field['fieldid'] ?>" />
+							</p>
+							<?php
+						}else{
+							//registration fields
+							?>
+							<p class="input-<?php echo $field['type']; ?> input-user-field">
+								<label for='<?php echo $field['fieldid'] ?>'><?php echo $field['label']. $required  ?></label> 
+								<?php echo $this->output_field_input($field, $post); ?>
+							</p>
+							<?php	
+						}
 					}elseif( array_key_exists($field['type'], $this->custom_user_fields) ) {
 						?>
 						<p class="input-<?php echo $field['type']; ?> input-user-field">
-							<label for='<?php echo $field['fieldid'] ?>'><?php echo $field['label'] ?></label> 
+							<label for='<?php echo $field['fieldid'] ?>'><?php echo $field['label'] . $required ?></label> 
 							<?php do_action('em_form_output_field_custom_'.$field['type'], $field, $post); ?>
 						</p>
 						<?php
@@ -214,14 +229,9 @@ class EM_Form extends EM_Object {
 			$default = $post;
 		}
 		switch($field['type']){
-			case 'name':
-			case 'email': //depreciated
-				if( self::show_reg_fields() ){
-					?>
-					<input type="text" name="<?php echo $field['fieldid'] ?>" id="<?php echo $field['fieldid'] ?>" class="input" value="<?php echo $default; ?>"  />
-					<?php
-				}
-				break;				
+			case 'html':
+			    echo $field['options_html_content'];
+			    break;			
 			case 'text':
 				?>
 				<input type="text" name="<?php echo $field['fieldid'] ?>" id="<?php echo $field['fieldid'] ?>" class="input" value="<?php echo $default; ?>"  />
@@ -234,7 +244,7 @@ class EM_Form extends EM_Object {
 				break;
 			case 'checkbox':
 				?>
-				<input type="checkbox" name="<?php echo $field['fieldid'] ?>" id="<?php echo $field['fieldid'] ?>" value="1" <?php if($default) echo 'checked="checked"'; ?> />
+				<input type="checkbox" name="<?php echo $field['fieldid'] ?>" id="<?php echo $field['fieldid'] ?>" value="1" <?php if($default || $field['options_checkbox_checked']) echo 'checked="checked"'; ?> />
 				<?php
 				break;
 			case 'checkboxes':
@@ -280,6 +290,57 @@ class EM_Form extends EM_Object {
 				</select>
 				<?php
 				break;
+			case 'country':
+				?>
+				<select name="<?php echo $field['fieldid'] ?>" class="<?php echo $field['fieldid'] ?>">
+				<?php foreach(em_get_countries(__('none selected','dbem')) as $country_key => $country_name): ?>
+					<option value="<?php echo $country_key; ?>"  <?php echo ($country_key == $default) ?'selected="selected"':''; ?>><?php echo $country_name; ?></option>
+					<?php endforeach; ?>
+				</select>
+				<?php	
+				break;
+			case 'date':
+			    $date_type = !empty($field['options_date_range']) ? 'em-date-range':'em-date-single';
+				if( !empty($_REQUEST[$field['fieldid'].'_start']) ) {
+					$default = array( $_REQUEST[$field['fieldid'].'_start'] );
+					if( !empty($_REQUEST[$field['fieldid'].'_end']) ){
+						$default = array( $_REQUEST[$field['fieldid'].'_end'] );
+					}
+				}else{
+					$default = explode(',',$default);
+				}
+				?>
+    			<span class="<?php echo $date_type; ?>">			
+					<input class="em-date-start em-date-input-loc" type="text" name="event_start_date_loc" />
+					<input class="em-date-input" type="hidden" name="<?php echo $field['fieldid'] ?>_start" value="<?php echo !empty($default[0]) ? $default[0]:'' ?>" />
+					<?php if( !empty($field['options_date_range']) ) : ?>
+					<?php echo $field['options_date_range_seperator']; ?>
+					<input class="em-date-end em-date-input-loc" type="text" name="event_end_date_loc" />
+					<input class="em-date-input" type="hidden" name="<?php echo $field['fieldid'] ?>_end" value="<?php echo !empty($default[1]) ? $default[1]:'' ?>" />
+					<?php endif; ?>
+				</span>
+    			<?php
+    			break;	
+			case 'time':
+			    $date_type = !empty($field['options_time_range']) ? 'em-time-range':'em-time-single';
+				if( !empty($_REQUEST[$field['fieldid'].'_start']) ) {
+					$default = array( $_REQUEST[$field['fieldid'].'_start'] );
+					if( !empty($_REQUEST[$field['fieldid'].'_end']) ){
+						$default = array( $_REQUEST[$field['fieldid'].'_end'] );
+					}
+				}else{
+					$default = explode(',',$default);
+				}
+				?>
+    			<span class="<?php echo $date_type; ?>">			
+					<input class="em-time-input em-time-start" type="text" size="8" maxlength="8" name="<?php echo $field['fieldid'] ?>_start" value="<?php echo !empty($default[0]) ? $default[0]:'' ?>" />
+					<?php if( !empty($field['options_time_range']) ) : ?>
+					<?php echo $field['options_time_range_seperator']; ?>
+					<input class="em-time-input em-time-end" type="text" size="8" maxlength="8" name="<?php echo $field['fieldid'] ?>_end" value="<?php echo !empty($default[1]) ? $default[1]:'' ?>" />
+					<?php endif; ?>					
+				</span>
+    			<?php
+    			break;	
 			case 'captcha':
 				if( !function_exists('recaptcha_get_html') ) { include_once(trailingslashit(plugin_dir_path(__FILE__)).'includes/lib/recaptchalib.php'); }
 				if( function_exists('recaptcha_get_html') && !is_user_logged_in() ){
@@ -292,16 +353,18 @@ class EM_Form extends EM_Object {
 				break;
 			default:
 				if( array_key_exists($field['type'], $this->user_fields) && self::show_reg_fields() ){
-					if( array_key_exists($field['type'], $this->core_user_fields) ){
-						//registration fields
+					//registration fields
+				    if( get_option('dbem_emp_booking_form_reg_input') || !is_user_logged_in() || defined('EM_FORCE_REGISTRATION') ){
 						?>
-						<input type="text" name="<?php echo $field['fieldid'] ?>" id="<?php echo $field['fieldid'] ?>" class="input"  value="<?php echo $default; ?>" />
+						<input type="text" name="<?php echo $field['fieldid'] ?>" id="<?php echo $field['fieldid'] ?>" class="input" value="<?php echo $default; ?>"  />
 						<?php
+					}else{
+						echo $default;
 					}
 				}
 				break;
 		}	
-		return apply_filters('emp_forms_output_field_input', ob_get_clean(), $this);	
+		return apply_filters('emp_forms_output_field_input', ob_get_clean(), $this, $field, $post);	
 	}
 	
 	/**
@@ -333,7 +396,7 @@ class EM_Form extends EM_Object {
 			switch($field['type']){
 				case 'email': //depreciated
 				case 'user_email':
-					if( self::show_reg_fields() ){
+					if( self::show_reg_fields() && is_user_logged_in() && defined('EM_FORCE_REGISTRATION') ){
 						// Check the e-mail address
 						if ( $value == '' ) {
 							$this->add_error($err);
@@ -351,7 +414,7 @@ class EM_Form extends EM_Object {
 					}
 					break;
 				case 'name':
-					if( self::show_reg_fields() ){
+					if( self::show_reg_fields() && is_user_logged_in() && defined('EM_FORCE_REGISTRATION') ){
 						//regex
 						if( !empty($field['options_text_regex']) && !@preg_match('/'.$field['options_text_regex'].'/',$value) ){
 							if( !($value == '' && $field['required']) ){
@@ -361,7 +424,7 @@ class EM_Form extends EM_Object {
 							}
 						}
 						//non-empty match
-						if( empty($value) && $field['required'] ){
+						if( trim($value) == '' && $field['required'] ){
 							$this->add_error($err);
 							$result = false;
 						}
@@ -378,7 +441,7 @@ class EM_Form extends EM_Object {
 						}
 					}
 					//non-empty match
-					if( $result && empty($value) && $field['required'] ){
+					if( $result && trim($value) == '' && $field['required'] ){
 						$this->add_error($err);
 						$result = false;
 					}
@@ -433,6 +496,90 @@ class EM_Form extends EM_Object {
 						$result = false;
 					}				
 					break;
+				case 'country':
+					$values = em_get_countries(__('none selected','dbem'));
+					//in-values
+					if( (!array_key_exists($value, $values) || empty($value)) && $field['required'] ){
+						$this_err = (!empty($field['options_select_error'])) ? $field['options_select_error']:$err;
+						$this->add_error($this_err);
+						$result = false;
+					}				
+					break;			
+				case 'date':
+				    $dates = explode(',',$value);
+				    $start_date = $dates[0];
+				    $end_date = !empty($dates[1]) ? $dates[1]:'';
+				    if( !empty($start_date) ){
+						if( preg_match('/\d{4}-\d{2}-\d{2}/', $start_date) ){
+							if( $field['options_date_range'] ){
+								if( empty($end_date) ){
+									$this_err = (!empty($field['options_date_error_end'])) ? $field['options_date_error_end']:$this->add_error(__('You must also add an end date.','em-pro'));
+									$this->add_error($this_err);
+									$result = false;
+								}elseif( !preg_match('/\d{4}-\d{2}-\d{2}/', $end_date) ){
+									$this_err = (!empty($field['options_date_error_format'])) ? $field['options_date_error_format']:__('Dates must have correct formatting. Please use the date picker provided.','dbem');
+									$this->add_error($this_err);
+									$result = false;
+								}else{
+									//valid end date, check for date order
+									if( strtotime($start_date) > strtotime($end_date) ){
+										$this_err = (!empty($field['options_date_range_order'])) ? $field['options_date_range_order']:__('Please provide a later end date.','dbem');
+										$this->add_error($this_err);
+										$result = false;
+									}
+								}
+							}
+						}else{
+							$this_err = (!empty($field['options_date_error_format'])) ? $field['options_date_error_format']:__('Dates must have correct formatting. Please use the date picker provided.','dbem');
+							$this->add_error($this_err);
+							$result = false;
+						}
+					}elseif( $field['required'] ){
+						if( $field['options_date_range'] && !empty($end_date) ){
+							$this_err = (!empty($field['options_date_error_start'])) ? $field['options_date_error_start']:$this->add_error(__('You must provide a start date.','em-pro'));
+							$this->add_error($this_err);
+							$result = false;
+						}else{
+							$this_err = (!empty($field['options_date_error'])) ? $field['options_date_error']:$err;
+							$this->add_error($this_err);
+							$result = false;
+						}
+					}
+					break;			
+				case 'time':
+				    $times = explode(',',$value);
+				    $start_time = $times[0];
+				    $end_time = !empty($times[1]) ? $times[1]:'';
+				    if( !empty($start_time) ){
+						if( preg_match('/^([01]\d|2[0-3]):([0-5]\d) ?(AM|PM)?$/', $start_time) ){
+							if( $field['options_time_range'] ){
+								if( empty($end_time) ){
+									$this_err = (!empty($field['options_time_error_end'])) ? $field['options_time_error_end']:$this->add_error(__('You must provide an end time.','em-pro'));
+									$this->add_error($this_err);
+									$result = false;
+								}elseif( !preg_match('/^([01]\d|2[0-3]):([0-5]\d) ?(AM|PM)?$/', $end_time) ){
+									$this_err = (!empty($field['options_time_error_format'])) ? $field['options_time_error_format']:$this->add_error(__('Please use the time picker provided to select the appropriate time format.','em-pro'));
+									$this->add_error($this_err);
+									$result = false;
+								}
+							}
+						}else{
+							$this_err = (!empty($field['options_time_error_format'])) ? $field['options_time_error_format']:__('Please use the time picker provided to select the appropriate time format.','em-pro');
+							$this->add_error($this_err);
+							$result = false;
+						}
+					}elseif( $field['required'] ){
+						if( $field['options_time_range'] && !empty($end_time) ){
+							$this_err = (!empty($field['options_time_error_start'])) ? $field['options_time_error_start']:$this->add_error(__('You must provide a start time.','em-pro'));
+							$this->add_error($this_err);
+							$result = false;
+						}else{
+							$this_err = (!empty($field['options_time_error'])) ? $field['options_time_error']:$err;
+							$this->add_error($this_err);
+							$result = false;
+						}
+					}
+					break;		
 				case 'captcha':
 					if( !function_exists('recaptcha_get_html') ) { include_once(trailingslashit(plugin_dir_path(__FILE__)).'includes/lib/recaptchalib.php'); }
 					if( function_exists('recaptcha_check_answer') && !is_user_logged_in() && !defined('EMP_CHECKED_CAPTCHA') ){
@@ -449,6 +596,7 @@ class EM_Form extends EM_Object {
 					//Registration and custom fields
 					if( (!is_user_logged_in() || defined('EM_FORCE_REGISTRATION')) && array_key_exists($field['type'], $this->user_fields) ){
 						//preliminary checks
+						if( in_array($field['type'], array('user_login','first_name','last_name')) && is_user_logged_in() && !defined('EM_FORCE_REGISTRATION') ) break;
 						//regex
 						if( !empty($field['options_reg_regex']) && !@preg_match('/'.$field['options_reg_regex'].'/',$value) ){
 							if( !($value == '' && !$field['required']) ){
@@ -482,12 +630,16 @@ class EM_Form extends EM_Object {
 	function get_fields_map(){
 		$map = array (
 			'fieldid','label','type','required',
-			'options_select_values','options_select_default','options_select_default_text','options_select_error',
-			'options_selection_values','options_selection_default','options_selection_error',
-			'options_checkbox_error','options_checkbox_checked',
-			'options_text_regex','options_text_error',
-			'options_reg_regex', 'options_reg_error',
-			'options_captcha_theme','options_captcha_key_priv','options_captcha_key_pub', 'options_captcha_error');
+			'options_select_values','options_select_default','options_select_default_text','options_select_error','options_select_tip',
+			'options_selection_values','options_selection_default','options_selection_error','options_selection_tip',
+			'options_checkbox_error','options_checkbox_checked','options_checkbox_tip',
+			'options_text_regex','options_text_error','options_text_tip',
+			'options_reg_regex', 'options_reg_error','options_reg_tip',
+			'options_captcha_theme','options_captcha_key_priv','options_captcha_key_pub', 'options_captcha_error', 'options_captcha_tip',
+			'options_date_error','options_date_range','options_date_range_seperator','options_date_error_format','options_date_error_end','options_date_error_tip',
+			'options_time_error','options_time_range','options_time_range_seperator','options_time_error_format','options_time_error_end','options_time_error_start','options_time_error_tip',
+			'options_html_content'
+		);
 		return apply_filters('em_form_get_fields_map', $map);
 	}
 	
@@ -524,14 +676,14 @@ class EM_Form extends EM_Object {
 
 	
 	private function show_reg_fields(){
-		return (!is_user_logged_in() || defined('EM_FORCE_REGISTRATION')) && get_option('dbem_bookings_anonymous'); 
+		return ((!is_user_logged_in() || defined('EM_FORCE_REGISTRATION')) && get_option('dbem_bookings_anonymous')) || (is_user_logged_in() && get_option('dbem_emp_booking_form_reg_show')); 
 	}
 	
 	function editor($user_fields = true, $custom_fields = true, $captcha_fields = true){
 		$fields = $this->form_fields;
 		if( empty($fields) ){ $fields = array(self::get_fields_map());  }
 		$fields['blank_em_template'] = self::get_fields_map();
-		$form_name = "em-form-". sanitize_title_with_dashes($this->form_name); 
+		$form_name = "em-form-". sanitize_title_with_dashes($this->form_name);		 
 		?>
 		<form method="post" action="" class="em-form-custom" id="<?php echo $form_name; ?>">
 			<div>
@@ -553,13 +705,17 @@ class EM_Form extends EM_Object {
 								<option value=""><?php echo _e('Select Type','em-pro'); ?></option>
 								<?php if($custom_fields): ?>
 								<optgroup label="<?php _e('Customizable Fields','em-pro'); ?>">
-									<option <?php self::input_default('type',$field_values,'select','checkbox'); ?>>checkbox</option>
 									<option <?php self::input_default('type',$field_values,'select','text'); ?>>text</option>
+									<option <?php self::input_default('type',$field_values,'select','html'); ?>>html</option>
+									<option <?php self::input_default('type',$field_values,'select','checkbox'); ?>>checkbox</option>
 									<option <?php self::input_default('type',$field_values,'select','textarea'); ?>>textarea</option>
 									<option <?php self::input_default('type',$field_values,'select','checkboxes'); ?>>checkboxes</option>
 									<option <?php self::input_default('type',$field_values,'select','radio'); ?>>radio</option>
 									<option <?php self::input_default('type',$field_values,'select','select'); ?>>select</option>
 									<option <?php self::input_default('type',$field_values,'select','multiselect'); ?>>multiselect</option>
+									<option <?php self::input_default('type',$field_values,'select','country'); ?>>country</option>
+									<option <?php self::input_default('type',$field_values,'select','date'); ?>>date</option>
+									<option <?php self::input_default('type',$field_values,'select','time'); ?>>time</option>
 									<?php if($captcha_fields): ?>
 									<option <?php self::input_default('type',$field_values,'select','captcha'); ?>>captcha</option>
 									<?php endif; ?>
@@ -567,7 +723,6 @@ class EM_Form extends EM_Object {
 								<?php endif; ?>
 								<?php if($user_fields): ?>
 								<optgroup label="<?php _e('Registration Fields','em-pro'); ?>">
-									<option value="name" <?php self::input_default('type',$field_values,'select','name'); ?>>Name</option>
 									<?php foreach( $this->core_user_fields as $field_id => $field_name ): ?>
 									<option value="<?php echo $field_id; ?>" <?php self::input_default('type',$field_values,'select',$field_id); ?>><?php echo $field_name; ?></option>
 									<?php endforeach; ?>
@@ -618,13 +773,148 @@ class EM_Form extends EM_Object {
 									</div>
 								</div>
 								<div class="bct-field">
+									<div class="bct-label"><?php _e('Tip Text','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="text" name="options_select_tip[]" <?php self::input_default('options_select_tip',$field_values); ?> />
+										<em><?php _e('Will appear next to your field label as a question mark with a popup tip bubble.','em-pro'); ?></em>
+									</div>
+								</div>
+								<div class="bct-field">
 									<div class="bct-label"><?php _e('Error Message','em-pro'); ?></div>
 									<div class="bct-input">
 										<input type="text" name="options_select_error[]" <?php self::input_default('options_select_error',$field_values); ?> />
-										<em><?php _e('This error will show if a value isn\'t chosen.','em-pro'); ?></em>
+										<em>
+											<?php _e('This error will show if a value isn\'t chosen.','em-pro'); ?>
+											<br /><?php _e('Default:','em-pro'); echo ' <code>'.sprintf(get_option('em_booking_form_error_required'), '[FIELD]').'</code>'; ?>
+										</em>
 									</div>
 								</div>
+								<?php do_action('emp_forms_editor_select_multiselect_options', $this, $field_values); ?>
 							</div>
+							<div class="bct-html bct-options" style="display:none;">
+								<!-- html -->
+								<div class="bct-field">
+									<div class="bct-label"><?php _e('Content','em-pro'); ?></div>
+									<div class="bct-input">
+										<em><?php _e('This html will be displayed on your form, the label for this field is used only for reference purposes.','em-pro'); ?></em>
+										<textarea name="options_html_content[]"><?php if( !empty($field_values['options_html_content']) ) echo $field_values['options_html_content']; ?></textarea>
+									</div>
+								</div>
+								<?php do_action('emp_forms_editor_html_options', $this, $field_values); ?>
+							</div>	
+							<div class="bct-country bct-options" style="display:none;">
+								<!-- country -->
+								<div class="bct-field">
+									<div class="bct-label"><?php _e('Error Message','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="text" name="options_select_error[]" <?php self::input_default('options_select_error',$field_values); ?> />
+										<em>
+											<?php _e('This error will show if a value isn\'t chosen.','em-pro'); ?>
+											<br /><?php _e('Default:','em-pro'); echo ' <code>'.sprintf(get_option('em_booking_form_error_required'), '[FIELD]').'</code>'; ?>
+										</em>
+									</div>
+								</div>
+								<?php do_action('emp_forms_editor_country_options', $this, $field_values); ?>
+							</div>	
+							<div class="bct-date bct-options" style="display:none;">
+								<!-- country -->
+								<div class="bct-field">
+									<div class="bct-label"><?php _e('Date Range?','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="checkbox" <?php self::input_default('options_date_range',$field_values,'checkbox'); ?> value="1" />
+										<input type="hidden" name="options_date_range[]" <?php self::input_default('options_date_range',$field_values); ?> /> 
+										<em><?php _e('If selected, this field will also have an end-date.','em-pro'); ?></em>
+									</div>
+									<div class="bct-label"><?php _e('Seperator','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="text" name="options_date_range_seperator[]" <?php self::input_default('options_date_range_seperator',$field_values); ?> />
+										<em><?php _e('This text will appear between the two date fields if this is a date range.','em-pro'); ?></em>
+									</div>
+									<p><strong><?php _e('Error Messages','em-pro'); ?></strong></p>
+									<div class="bct-label"><?php _e('Field Required','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="text" name="options_date_error[]" <?php self::input_default('options_date_error',$field_values); ?> />
+										<em>
+											<?php _e('This error will show this field is required and no value is entered.','em-pro'); ?>
+											<br /><?php _e('Default:','em-pro'); echo ' <code>'.sprintf(get_option('em_booking_form_error_required'), '[FIELD]').'</code>'; ?>
+										</em>
+									</div>
+									<div class="bct-label"><?php _e('Incorrect Formatting','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="text" name="options_date_error_format[]" <?php self::input_default('options_date_error_format',$field_values); ?> />
+										<em>
+											<?php _e('This error will show if an incorrect date format is used.','em-pro'); ?>
+											<br /><?php _e('Default:','em-pro'); echo ' <code>'.__('Please use the date picker provided to select the appropriate date format.','em-pro').'</code>'; ?>
+										</em>
+									</div>
+									<div class="bct-label"><?php _e('End date required','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="text" name="options_date_error_end[]" <?php self::input_default('options_date_error_end',$field_values); ?> />
+										<em>
+											<?php _e('This error will show if the field is a date-range and no end date is selected.','em-pro'); ?>
+											<br /><?php _e('Default:','em-pro'); echo ' <code>'.__('You must provide an end date.','em-pro').'</code>'; ?>
+										</em>
+									</div>
+									<div class="bct-label"><?php _e('Start date required','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="text" name="options_date_error_start[]" <?php self::input_default('options_date_error_start',$field_values); ?> />
+										<em>
+											<?php _e('This error will show if the field is a date-range and no start date is selected.','em-pro'); ?>
+											<br /><?php _e('Default:','em-pro'); echo ' <code>'.__('You must provide a start date.','em-pro').'</code>'; ?>
+										</em>
+									</div>
+								</div>
+								<?php do_action('emp_forms_editor_date_options', $this, $field_values); ?>
+							</div>	
+							<div class="bct-time bct-options" style="display:none;">
+								<div class="bct-field">
+									<div class="bct-label"><?php _e('Time Range?','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="checkbox" <?php self::input_default('options_time_range',$field_values,'checkbox'); ?> value="1" />
+										<input type="hidden" name="options_time_range[]" <?php self::input_default('options_time_range',$field_values); ?> /> 
+										<em><?php _e('If selected, this field will also have an end-time.','em-pro'); ?></em>
+									</div>
+									<div class="bct-label"><?php _e('Seperator','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="text" name="options_time_range_seperator[]" <?php self::input_default('options_time_range_seperator',$field_values); ?> />
+										<em><?php _e('This text will appear between the two date fields if this is a date range.','em-pro'); ?></em>
+									</div>
+									<p><strong><?php _e('Error Messages','em-pro'); ?></strong></p>
+									<div class="bct-label"><?php _e('Field Required','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="text" name="options_time_error[]" <?php self::input_default('options_time_error',$field_values); ?> />
+										<em>
+											<?php _e('This error will show this field is required and no value is entered.','em-pro'); ?>
+											<br /><?php _e('Default:','em-pro'); echo ' <code>'.sprintf(get_option('em_booking_form_error_required'), '[FIELD]').'</code>'; ?>
+										</em>
+									</div>
+									<div class="bct-label"><?php _e('Incorrect Formatting','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="text" name="options_time_error_format[]" <?php self::input_default('options_time_error_format',$field_values); ?> />
+										<em>
+											<?php _e('This error will show if an incorrect time format is used.','em-pro'); ?>
+											<br /><?php _e('Default:','em-pro'); echo ' <code>'.__('Please use the time picker provided to select the appropriate time format.','em-pro').'</code>'; ?>
+										</em>
+									</div>
+									<div class="bct-label"><?php _e('End time required','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="text" name="options_time_error_end[]" <?php self::input_default('options_time_error_end',$field_values); ?> />
+										<em>
+											<?php _e('This error will show if the field is a time-range and no end time is selected.','em-pro'); ?>
+											<br /><?php _e('Default:','em-pro'); echo ' <code>'.__('You must provide an end time.','em-pro').'</code>'; ?>
+										</em>
+									</div>
+									<div class="bct-label"><?php _e('Start time required','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="text" name="options_time_error_start[]" <?php self::input_default('options_time_error_start',$field_values); ?> />
+										<em>
+											<?php _e('This error will show if the field is a time-range and no start time is selected.','em-pro'); ?>
+											<br /><?php _e('Default:','em-pro'); echo ' <code>'.__('You must provide a start time.','em-pro').'</code>'; ?>
+										</em>
+									</div>
+								</div>
+								<?php do_action('emp_forms_editor_time_options', $this, $field_values); ?>
+							</div>				
 							<div class="bct-selection bct-options" style="display:none;">
 								<!-- checkboxes,radio -->
 								<div class="bct-field">
@@ -638,9 +928,13 @@ class EM_Form extends EM_Object {
 									<div class="bct-label"><?php _e('Error Message','em-pro'); ?></div>
 									<div class="bct-input">
 										<input type="text" name="options_selection_error[]" <?php self::input_default('options_selection_error',$field_values); ?> />
-										<em><?php _e('This error will show if a value isn\'t chosen.','em-pro'); ?></em>
+										<em>
+											<?php _e('This error will show if a value isn\'t chosen.','em-pro'); ?>
+											<br /><?php _e('Default:','em-pro'); echo ' <code>'.sprintf(get_option('em_booking_form_error_required'), '[FIELD]').'</code>'; ?>
+										</em>
 									</div>
 								</div>
+								<?php do_action('emp_forms_editor_selection_radio_options', $this, $field_values); ?>
 							</div>
 							<div class="bct-checkbox bct-options" style="display:none;">
 								<!-- checkbox -->
@@ -655,12 +949,23 @@ class EM_Form extends EM_Object {
 									<div class="bct-label"><?php _e('Error Message','em-pro'); ?></div>
 									<div class="bct-input">
 										<input type="text" name="options_checkbox_error[]" <?php self::input_default('options_checkbox_error',$field_values); ?> />
-										<em><?php _e('This error will show if this box is not checked.','em-pro'); ?></em>
+										<em>
+											<?php _e('This error will show if this box is not checked.','em-pro'); ?>
+											<br /><?php _e('Default:','em-pro'); echo ' <code>'.sprintf(get_option('em_booking_form_error_required'), '[FIELD]').'</code>'; ?>
+										</em>
 									</div>
 								</div>
+								<?php do_action('emp_forms_editor_checkbox_options', $this, $field_values); ?>
 							</div>
 							<div class="bct-text bct-options" style="display:none;">
 								<!-- text,textarea,email,name -->
+								<div class="bct-field">
+									<div class="bct-label"><?php _e('Tip Text','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="text" name="options_text_tip[]" <?php self::input_default('options_text_tip',$field_values); ?> />
+										<em><?php _e('Will appear next to your field label as a question mark with a popup tip bubble.','em-pro'); ?></em>
+									</div>
+								</div>
 								<div class="bct-field">
 									<div class="bct-label"><?php _e('Regex','em-pro'); ?></div>
 									<div class="bct-input">
@@ -672,14 +977,25 @@ class EM_Form extends EM_Object {
 									<div class="bct-label"><?php _e('Error Message','em-pro'); ?></div>
 									<div class="bct-input">
 										<input type="text" name="options_text_error[]" <?php self::input_default('options_text_error',$field_values); ?> />
-										<em><?php _e('If the regex above does not match this error will be displayed.','em-pro'); ?></em>
+										<em>
+											<?php _e('If the regex above does not match this error will be displayed.','em-pro'); ?>
+											<br /><?php _e('Default:','em-pro'); echo ' <code>'.sprintf(get_option('em_booking_form_error_required'), '[FIELD]').'</code>'; ?>
+										</em>
 									</div>
 								</div>
-							</div>
+								<?php do_action('emp_forms_editor_text_options', $this, $field_values); ?>
+							</div>							
 							<?php endif; ?>
 							<?php if($user_fields): ?>
 							<div class="bct-registration bct-options" style="display:none;">
 								<!-- registration -->
+								<div class="bct-field">
+									<div class="bct-label"><?php _e('Tip Text','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="text" name="options_reg_tip[]" <?php self::input_default('options_reg_tip',$field_values); ?> />
+										<em><?php _e('Will appear next to your field label as a question mark with a popup tip bubble.','em-pro'); ?></em>
+									</div>
+								</div>
 								<div class="bct-field">
 									<div class="bct-label"><?php _e('Regex','em-pro'); ?></div>
 									<div class="bct-input">
@@ -691,7 +1007,10 @@ class EM_Form extends EM_Object {
 									<div class="bct-label"><?php _e('Error Message','em-pro'); ?></div>
 									<div class="bct-input">
 										<input type="text" name="options_reg_error[]" <?php self::input_default('options_reg_error',$field_values); ?> />
-										<em><?php _e('If the regex above does not match this error will be displayed.','em-pro'); ?></em>
+										<em>
+											<?php _e('If the regex above does not match this error will be displayed.','em-pro'); ?>
+											<br /><?php _e('Default:','em-pro'); echo ' <code>'.sprintf(get_option('em_booking_form_error_required'), '[FIELD]').'</code>'; ?>
+										</em>
 									</div>
 								</div>
 							</div>
@@ -721,7 +1040,10 @@ class EM_Form extends EM_Object {
 									<div class="bct-label"><?php _e('Error Message','em-pro'); ?></div>
 									<div class="bct-input">
 										<input type="text" name="options_captcha_error[]" <?php self::input_default('options_captcha_error',$field_values); ?> />
-										<em><?php _e('This error will show if the captcha is not correct.','em-pro'); ?></em>
+										<em>
+											<?php _e('This error will show if the captcha is not correct.','em-pro'); ?>
+											<br /><?php _e('Default:','em-pro'); echo ' <code>'.sprintf(get_option('em_booking_form_error_required'), '[FIELD]').'</code>'; ?>
+										</em>
 									</div>
 								</div>
 							</div>
@@ -785,6 +1107,10 @@ class EM_Form extends EM_Object {
 					$('.bct-options').slideUp();
 					var type_keys = {
 						select : ['select','multiselect'],
+						country : ['country'],
+						date : ['date'],
+						time : ['time'],
+						html : ['html'],
 						selection : ['checkboxes','radio'],
 						checkbox : ['checkbox'],
 						text : ['text','textarea','email','name'],
@@ -855,8 +1181,10 @@ class EM_Form extends EM_Object {
 				global $allowedposttags;
 				if( is_array($value) && in_array($key,$fields_map) ){
 					foreach($value as $item_index => $item_value){
-						$item_value = stripslashes(wp_kses($item_value, $allowedposttags));
-						$this->form_fields[$_REQUEST['fieldid'][$item_index]][$key] = $item_value;
+						if( !empty($_REQUEST['fieldid'][$item_index]) ){
+							$item_value = stripslashes(wp_kses($item_value, $allowedposttags));
+							$this->form_fields[$_REQUEST['fieldid'][$item_index]][$key] = $item_value;
+						}
 					}
 				}
 			}

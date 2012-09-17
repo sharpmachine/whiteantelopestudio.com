@@ -21,6 +21,27 @@
 		return $(this).length>0;
 	};
 	
+	
+	/*
+	*  Vars
+	*
+	*  @description: 
+	*  @created: 3/09/12
+	*/
+	
+	acf.data = {
+		action 			:	'get_input_metabox_ids',
+		post_id			:	0,
+		page_template	:	false,
+		page_parent		:	false,
+		page_type		:	false,
+		page			:	0,
+		post			:	0,
+		post_category	:	false,
+		post_format		:	false,
+		taxonomy		:	false
+	};
+	
 		
 	/*
 	*  Document Ready
@@ -30,21 +51,26 @@
 	*/
 	
 	$(document).ready(function(){
-	
-		// show metaboxes for this post
-		acf.data = {
-			action 			:	'get_input_metabox_ids',
-			post_id			:	acf.post_id,
-			page_template	:	false,
-			page_parent		:	false,
-			page_type		:	false,
-			page			:	acf.post_id,
-			post			:	acf.post_id,
-			post_category	:	false,
-			post_format		:	false,
-			taxonomy		:	false
-		};
-	
+		
+		
+		// update post_id
+		acf.data.post_id = acf.post_id;
+		acf.data.page = acf.post_id;
+		acf.data.post = acf.post_id;
+		
+		
+		// MPML
+		if( $('#icl-als-first').exists() )
+		{
+			var href = $('#icl-als-first').children('a').attr('href'),
+				regex = new RegExp( "lang=([^&#]*)" ),
+				results = regex.exec( href );
+			
+			// lang
+			acf.data.lang = results[1];
+			
+		}
+		
 	});
 	
 	
@@ -57,8 +83,7 @@
 	
 	function update_fields()
 	{
-		
-		//console.log('update_fields');
+
 		$.ajax({
 			url: ajaxurl,
 			data: acf.data,
@@ -149,15 +174,19 @@
 	
 	$('#parent_id').live('change', function(){
 		
-		var page_parent = $(this).val();
+		var val = $(this).val();
 		
-		if($(this).val() != "")
+		
+		// set page_type / page_parent
+		if( val != "" )
 		{
 			acf.data.page_type = 'child';
+			acf.data.page_parent = val;
 		}
 		else
 		{
 			acf.data.page_type = 'parent';
+			acf.data.page_parent = false;
 		}
 		
 		update_fields();
@@ -178,26 +207,18 @@
 		
 		
 		// vars
-		var category = ( $(this).closest('#categorychecklist').exists() ) ? true : false;
 		var values = ['0'];
 		
 		
-		// populate values
-		$(this).closest('ul').find('input[type="checkbox"]:checked').each(function(){
-			values.push($(this).val())
+		$('.categorychecklist input[type="checkbox"]:checked').each(function(){
+			values.push($(this).val());
 		});
 
 		
-		if( category )
-		{
-			acf.data.post_category = values;
-		}
-		else
-		{
-			acf.data.taxonomy = values;
-		}
+		acf.data.post_category = values;
+		acf.data.taxonomy = values;
 
-		
+
 		update_fields();
 		
 	});	

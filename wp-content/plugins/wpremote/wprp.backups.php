@@ -8,7 +8,7 @@
  */
 function _wprp_backups_api_call( $action ) {
 
-	if ( ! class_exists( 'hm_backup' ) )
+	if ( ! class_exists( 'WPR_HM_Backup' ) )
 		return new WP_Error( 'Backups module not present' );
 
 	switch( $action ) :
@@ -21,22 +21,22 @@ function _wprp_backups_api_call( $action ) {
 		
 			@ignore_user_abort( true );
 			
-			$backup = new HM_Backup();
+			$backup = new WPR_HM_Backup();
 			$upload_dir = wp_upload_dir();
 			
 			// Store the backup file in the uploads dir
-			$backup->path = $upload_dir['basedir'] . '/_wpremote_backups';
+			$backup->set_path( $upload_dir['basedir'] . '/_wpremote_backups' );
 			
-			$running_file = $backup->path() . '/.backup_running';
-			$index_php = $backup->path() . '/index.php';
+			$running_file = $backup->get_path() . '/.backup_running';
+			$index_php = $backup->get_path() . '/index.php';
 			
 			// Set a random backup filename
-			$backup->archive_filename = md5( time() ) . '.zip';
+			$backup->set_archive_filename( md5( time() ) . '.zip' );
 			
 			// delete the backups folder to cleanup old backups
-			_wprp_backups_rmdirtree( $backup->path() );
+			_wprp_backups_rmdirtree( $backup->get_path() );
 			
-			if ( ! @mkdir( $backup->path() ) )
+			if ( ! @mkdir( $backup->get_path() ) )
 				return new WP_Error( 'unable-to-create-backups-directory', 'Unable to write the .backup_running file - check your permissions on wp-content/uploads' );
 				
 
@@ -55,7 +55,7 @@ function _wprp_backups_api_call( $action ) {
 			if ( ! $handle = @fopen( $running_file, 'w' ) )
 				return new WP_Error( 'unable-to-write-backup-running-file' );
 	
-			fwrite( $handle, $backup->archive_filename() );
+			fwrite( $handle, $backup->get_archive_filename() );
 	
 			fclose( $handle );
 			
@@ -66,28 +66,31 @@ function _wprp_backups_api_call( $action ) {
 			if ( ! empty( $_REQUEST['backup_excludes'] ) ) {
 			
 				$excludes = array_map( 'urldecode', (array) $_REQUEST['backup_excludes'] );
-				$backup->excludes = $excludes;
+				$backup->set_excludes( $excludes, true );
 			}
+
+			if ( function_exists( 'hmbkp_path' ) )
+				$backup->set_excludes( array( hmbkp_path() ), true );
 			
 			$backup->backup();
 			
-			unlink( $backup->path() . '/.backup_completed' );
-			unlink( $backup->path() . '/.backup_running' );
+			unlink( $backup->get_path() . '/.backup_completed' );
+			unlink( $backup->get_path() . '/.backup_running' );
 			
 			// Write the backup runing file for tracking...
-			$completed_file = $backup->path() . '/.backup_completed';
+			$completed_file = $backup->get_path() . '/.backup_completed';
 
 			if ( ! $handle = @fopen( $completed_file, 'w' ) )
 				return new WP_Error( 'unable-to-write-backup-completed-file' );
 			
-			if ( $backup->errors() || ( $backup->warnings() && ! file_exists( $backup->archive_filepath() ) ) ) {
+			if ( $backup->get_errors() || ( $backup->get_warnings() && ! file_exists( $backup->get_archive_filepath() ) ) ) {
 				
-				$errors = array_merge( $backup->errors(), $backup->warnings() );
+				$errors = array_merge( $backup->get_errors(), $backup->get_warnings() );
 				fwrite( $handle, json_encode( $errors ) );
 				
 			} else {
 			
-				fwrite( $handle, 'file:' . $backup->archive_filename() );
+				fwrite( $handle, 'file:' . $backup->get_archive_filename() );
 			}
 			
 			fclose( $handle );
@@ -153,4 +156,17 @@ function _wprp_backups_rmdirtree( $dir ) {
 
 	return @rmdir( $dir );
 
+}
+
+function _wprp_get_backups_info() {
+	if ( ! class_exists( 'WPR_HM_Backup' ) )
+		return;
+
+	$hm_backup = new WPR_HM_Backup();
+	$info = array(
+		'mysqldump_path' => $hm_backup->get_mysqldump_command_path(),
+		'zip_path' => $hm_backup->get_zip_command_path()
+	);
+
+	return $info;
 }

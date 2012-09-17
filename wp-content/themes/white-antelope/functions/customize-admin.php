@@ -34,6 +34,7 @@ function custom_login_logo() {
     h1 a 
     { 
     	background-image:url('.get_bloginfo('template_directory').'/images/logo.png) !important;
+		background-size: 410px 200px !important;
     	width: 410px !important;
     	height: 200px !important;
     	margin-left: -50px !important;

@@ -39,16 +39,19 @@ class SU_SettingsData extends SU_Module {
 			$psdata = (array)get_option('seo_ultimate', array());
 			
 			//Module statuses
-			$export['modules'] = apply_filters("su_modules_export_array", $psdata['modules']);
+			$export['modules'] = apply_filters('su_modules_export_array', $psdata['modules']);
 			
 			//Module settings
 			$modules = array_keys($psdata['modules']);
 			$module_settings = array();
 			foreach($modules as $module) {
-				$msdata = (array)get_option("su_$module", array());
-				if ($msdata) $module_settings[$module] = $msdata;
+				if (!$this->plugin->call_module_func($module, 'get_settings_key', $key) || !$key)
+					$key = $module;
+				
+				$msdata = (array)get_option("seo_ultimate_module_$key", array());
+				if ($msdata) $module_settings[$key] = $msdata;
 			}
-			$export['settings'] = apply_filters("su_settings_export_array", $module_settings);
+			$export['settings'] = apply_filters('su_settings_export_array', $module_settings);
 			
 			//Encode
 			$export = base64_encode(serialize($export));
@@ -73,10 +76,11 @@ class SU_SettingsData extends SU_Module {
 						update_option('seo_ultimate', $psdata);
 						
 						//Module settings
-						foreach ($import['settings'] as $module => $module_settings) {
-							$msdata = (array)get_option("seo_ultimate_module_$module", array());
+						$module_settings = apply_filters('su_settings_import_array', $import['settings']);
+						foreach ($module_settings as $key => $module_settings) {
+							$msdata = (array)get_option("seo_ultimate_module_$key", array());
 							$msdata = array_merge($msdata, $module_settings);
-							update_option("seo_ultimate_module_$module", $msdata);
+							update_option("seo_ultimate_module_$key", $msdata);							
 						}
 						
 						$this->queue_message('success', __('Settings successfully imported.', 'seo-ultimate'));
@@ -92,7 +96,13 @@ class SU_SettingsData extends SU_Module {
 			
 			$psdata = (array)get_option('seo_ultimate', array());
 			$modules = array_keys($psdata['modules']);
-			foreach ($modules as $module) delete_option("su_$module");
+			foreach ($modules as $module) {
+				
+				if (!$this->plugin->call_module_func($module, 'get_settings_key', $key) || !$key)
+					$key = $module;
+				
+				delete_option("seo_ultimate_module_$key");
+			}
 			unset($psdata['modules']);
 			update_option('seo_ultimate', $psdata);
 			

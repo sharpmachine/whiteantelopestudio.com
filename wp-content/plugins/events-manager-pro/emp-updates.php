@@ -59,9 +59,10 @@ class EM_Updates {
 		 */
 		if( is_super_admin() && !empty($_POST['em-submitted']) && wp_verify_nonce($_REQUEST['_wpnonce'], 'events-manager-options') ){
 			//Build the array of options here
-			if( $_REQUEST['dbem_pro_api_key'] != get_site_option('dbem_pro_api_key') || !self::check_api_key()){
+			$request_api_key = !empty($_REQUEST['dbem_pro_api_key']) ? $_REQUEST['dbem_pro_api_key']:'';
+			if( $request_api_key != get_site_option('dbem_pro_api_key') || !self::check_api_key()){
 				//update the option here
-				update_site_option('dbem_pro_api_key', $_REQUEST['dbem_pro_api_key']);
+				update_site_option('dbem_pro_api_key', $request_api_key);
 				//save api key either way
 				if( self::check_api_key(true) ){
 					//force recheck of plugin updates, to refresh dl links

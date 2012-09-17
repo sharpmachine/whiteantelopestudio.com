@@ -1,7 +1,10 @@
 <?php
 
 // Check the API Key
-if ( ! isset( $_GET['wpr_api_key'] ) || urldecode( $_GET['wpr_api_key'] ) !== get_option( 'wpr_api_key' ) || ! isset( $_GET['actions'] ) ) {
+if ( ! get_option( 'wpr_api_key' ) ) {
+	echo json_encode( 'blank-api-key' );
+	exit;
+} elseif ( ! isset( $_GET['wpr_api_key'] ) || urldecode( $_GET['wpr_api_key'] ) !== get_option( 'wpr_api_key' ) || ! isset( $_GET['actions'] ) ) {
 	echo json_encode( 'bad-api-key' );
 	exit;
 }
@@ -42,6 +45,12 @@ foreach( $actions as $action => $value ) {
 
 		break;
 
+		case 'upgrade_core' :
+
+			$actions[$action] = _wprp_upgrade_core();
+
+		break;
+
 		case 'get_plugins' :
 
 			$actions[$action] = _wprp_supports_plugin_upgrade() ? _wprp_get_plugins() : 'not-implemented';
@@ -79,6 +88,18 @@ foreach( $actions as $action => $value ) {
 	
 			$actions[$action] = _wprp_backups_api_call( $action );
 
+		break;
+		
+		// get site info
+		case 'get_site_info' :
+		
+			$actions[$action] = array( 
+				'site_url' => get_site_url(), 
+				'home_url' => get_home_url(), 
+				'admin_url' => get_admin_url(),
+				'backups' => _wprp_get_backups_info() 
+			);
+		
 		break;
 
 		default :

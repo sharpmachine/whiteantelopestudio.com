@@ -5,12 +5,12 @@ Plugin URI: http://wp-events-plugin.com
 Description: Supercharge the Events Manager free plugin with extra feature to make your events even more successful!
 Author: NetWebLogic
 Author URI: http://wp-events-plugin.com/
-Version: 2.1.5
+Version: 2.2.1
 
 Copyright (C) 2011 NetWebLogic LLC
 */
-define('EMP_VERSION', 2.144);
-define('EM_MIN_VERSION', 5.177);
+define('EMP_VERSION', 2.21);
+define('EM_MIN_VERSION', 5.189);
 define('EMP_SLUG', plugin_basename( __FILE__ ));
 class EM_Pro {
 
@@ -41,6 +41,7 @@ class EM_Pro {
 			$prefix = $wpdb->prefix;
 		}
 		define('EM_TRANSACTIONS_TABLE', $prefix.'em_transactions'); //TABLE NAME
+		define('EM_EMAIL_QUEUE_TABLE', $prefix.'em_email_queue'); //TABLE NAME
 		define('EM_COUPONS_TABLE', $prefix.'em_coupons'); //TABLE NAME
 		//check that EM is installed
 		if(!defined('EM_VERSION')){
@@ -52,14 +53,9 @@ class EM_Pro {
 			add_action('admin_notices',array(&$this,'em_version_warning'));
 			add_action('network_admin_notices',array(&$this,'em_version_warning'));
 		}
-		//Upgrade/Install Routine
-		if( is_admin() && current_user_can('activate_plugins') ){
-			$old_version = get_option('em_pro_version');
-			if( EMP_VERSION > $old_version || $old_version == '' ){
-				require_once(WP_PLUGIN_DIR.'/events-manager-pro/emp-install.php');
-				emp_install();
-			}
-		}
+	    if( is_admin() && current_user_can('activate_plugins') ){
+			add_action('init', array($this, 'install'),2);
+	    }
 		//Add extra Styling/JS
 		if( !get_option('dbem_disable_css') ){
 			add_action('wp_head', array(&$this,'wp_head'));
@@ -72,11 +68,21 @@ class EM_Pro {
 		include('add-ons/gateways.php');
 		include('add-ons/bookings-form.php');
 		include('add-ons/coupons.php');
+		include('add-ons/emails.php');
 		include('add-ons/user-fields.php');
 		//MS Specific stuff
 		if( is_multisite() ){
 			add_filter('em_ms_globals',array(&$this,'em_ms_globals'));
 		}
+	}
+	
+	function install(){
+	    //Upgrade/Install Routine
+    	$old_version = get_option('em_pro_version');
+    	if( EMP_VERSION > $old_version || $old_version == '' ){
+    		require_once(WP_PLUGIN_DIR.'/events-manager-pro/emp-install.php');
+    		emp_install();
+    	}
 	}
 
 	function em_ms_globals($globals){
@@ -94,6 +100,9 @@ class EM_Pro {
 	function wp_head(){
 		?>
 		<style type="text/css">
+		.em-booking-form span.form-tip { text-decoration:none; border-bottom:1px dotted #aaa; padding-bottom:2px; }
+		.input-group .em-date-range input { width:100px; }
+		.input-group .em-time-range input { width:80px; }
 		 div.em-gateway-buttons { height:50px; width: 100%; }
 		 div.em-gateway-buttons .first { padding-left:0px; margin-left:0px; border-left:none; }
 		 div.em-gateway-button { float:left; padding-left:20px; margin-left:20px; border-left:1px solid #777; }
@@ -152,6 +161,9 @@ if(is_admin()){
 	//include_once('em-pro-admin.php');
 	include_once('emp-updates.php'); //update manager
 }
+// Start plugin
+global $EM_Pro;
+$EM_Pro = new EM_Pro();
 
 /* Creating the wp_events table to store event data*/
 function emp_activate() {
@@ -160,9 +172,18 @@ function emp_activate() {
 }
 register_activation_hook( __FILE__,'emp_activate');
 
-// Start plugin
-global $EM_Pro;
-$EM_Pro = new EM_Pro();
+/**
+ * Handle MS blog deletions
+ * @param int $blog_id
+ */
+function emp_delete_blog( $blog_id ){
+	global $wpdb;
+	$prefix = $wpdb->get_blog_prefix($blog_id);
+	$wpdb->query('DROP TABLE '.$prefix.'em_transactions');
+	$wpdb->query('DROP TABLE '.$prefix.'em_coupons');
+	$wpdb->query('DROP TABLE '.$prefix.'em_email_queue');
+}
+add_action('delete_blog','emp_delete_blog');
 
 //cron functions - ran here since functions aren't loaded, scheduling done by gateways and other modules
 /**

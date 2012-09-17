@@ -269,7 +269,7 @@ class EM_Gateway_Offline extends EM_Gateway {
 			//validate post
 			if( !empty($_REQUEST['payment_amount']) && !is_numeric($_REQUEST['payment_amount'])){
 				$EM_Booking->add_error( 'Invalid payment amount, please provide a number only.', 'em-pro' );
-			}				
+			}
 			//add em_event_save filter to log transactions etc.
 			add_filter('em_booking_save', array(&$this, 'em_booking_save'), 10, 2);
 			//set flag that we're manually booking here, and set gateway to offline

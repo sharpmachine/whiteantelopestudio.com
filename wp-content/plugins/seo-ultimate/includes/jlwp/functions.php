@@ -279,6 +279,19 @@ class suwp {
 		
 		return false;
 	}
+	
+	function get_admin_scope() {
+		if (is_blog_admin())
+			return 'blog';
+		
+		if (is_network_admin())
+			return 'network';
+		
+		if (is_user_admin())
+			return 'user';
+		
+		return false;
+	}
 }
 
 ?>

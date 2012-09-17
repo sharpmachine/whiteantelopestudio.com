@@ -61,7 +61,14 @@ class EM_User_Fields {
 		if( array_key_exists($field['fieldid'], $EM_Form->user_fields) ){
 			$real_field = $EM_Form->form_fields[$field['fieldid']];
 			$real_field['label'] = $field['label'];
-			echo $EM_Form->output_field_input($real_field, $post);
+			if( empty($_REQUEST[$field['fieldid']]) && is_user_logged_in() && !defined('EM_FORCE_REGISTRATION') ){
+				$post = get_user_meta(get_current_user_id(), $field['fieldid'], true);
+			}
+			if( get_option('dbem_emp_booking_form_reg_input') || !is_user_logged_in() || defined('EM_FORCE_REGISTRATION') ){
+				echo $EM_Form->output_field_input($real_field, $post);
+			}else{
+				echo $post;
+			}
 		}
 	}
 	
@@ -108,24 +115,32 @@ class EM_User_Fields {
 			ob_start();
 			//a bit of repeated stuff from the original EM_Person::display_summary() function
 			?>
-			<table>
+			<table class="em-form-fields">
 				<tr>
 					<td><?php echo get_avatar($EM_Person->ID); ?></td>
 					<td style="padding-left:10px; vertical-align: top;">
-						<strong><?php _e('Name','dbem'); ?></strong> : <a href="<?php echo EM_ADMIN_URL ?>&amp;page=events-manager-bookings&amp;person_id=<?php echo $EM_Person->ID; ?>"><?php echo $EM_Person->get_name() ?></a><br /><br />
-						<strong><?php _e('Email','dbem'); ?></strong> : <?php echo $EM_Person->user_email; ?><br /><br />
-						<?php foreach($EM_Form->form_fields as $field_id => $field): ?>
-						<?php
-							$value = get_user_meta($EM_Person->ID, $field_id, true);
-							if( empty($value) && !empty($EM_Booking->booking_meta['registration'][$field_id]) ){
-								$value = $EM_Booking->booking_meta['registration'][$field_id];
-							}elseif( empty($value) ){
-								$value = "<em>n/a</em>";
-							}
-							if( is_array($value) ) $value = implode(', ', $value);
-						?>
-						<strong><?php echo $field['label']; ?></strong> : <?php echo $value; ?><br /><br />	
-						<?php endforeach; ?>
+						<table>
+							<tr><th><?php _e('Name','dbem'); ?> : </th><th><a href="<?php echo EM_ADMIN_URL ?>&amp;page=events-manager-bookings&amp;person_id=<?php echo $EM_Person->ID; ?>"><?php echo $EM_Person->get_name() ?></a></th></tr>
+							<tr><th><?php _e('Email','dbem'); ?> : </th><td><?php echo $EM_Person->user_email; ?></td></tr>
+							<?php foreach( $EM_Form->form_fields as $field_id => $field ){
+								$value = get_user_meta($EM_Person->ID, $field_id, true);
+								//override by registration value in case value is now empty, otherwise show n/a
+								if( !empty($EM_Booking->booking_meta['registration'][$field_id]) && (empty($value) || get_option('dbem_bookings_registration_disable')) ){
+									$value = $EM_Booking->booking_meta['registration'][$field_id];
+								}elseif( empty($value) || get_option('dbem_bookings_registration_disable') ){
+									$value = "<em>".__('n/a','em-pro')."</em>";
+								}
+								//Country should be converted to full name
+								if($field['type'] == 'country' && $value != "<em>".__('n/a','em-pro')."</em>"){ 
+									$countries = em_get_countries();
+									$value = $countries[$value];
+								}
+								//implode arrays
+								if( is_array($value) ) $value = implode(', ', $value);
+								?>
+								<tr><th><?php echo $field['label']; ?> : </th><td><?php echo $value; ?></td></tr>	
+							<?php } ?>
+						</table>
 					</td>
 				</tr>
 			</table>

@@ -17,12 +17,51 @@ class SU_Uninstall extends SU_Module {
 	function get_module_title() { return __('Uninstaller', 'seo-ultimate'); }
 	function get_module_subtitle() { return __('Uninstall', 'seo-ultimate'); }
 	
+	function get_admin_page_tabs() {
+		if ($this->current_user_can_uninstall())
+			return array(array('title' => __('Uninstall', 'seo-ultimate'), 'id' => 'su-uninstall', 'callback' => 'uninstall_tab'));
+		else
+			return false;
+	}
+	
+	function belongs_in_admin($admin_scope = null) {
+		
+		if ($admin_scope === null)
+			$admin_scope = suwp::get_admin_scope();
+		
+		switch ($admin_scope) {
+			case 'blog':
+				
+				if ( ! function_exists( 'is_plugin_active_for_network' ) )
+					require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
+				
+				return !is_multisite() || !is_plugin_active_for_network($this->plugin->plugin_basename);
+				break;
+			case 'network':
+				return true;
+				break;
+			default:
+				return false;
+				break;
+		}
+	}
+	
+	function current_user_can_uninstall() {
+		return current_user_can('delete_plugins') && (!is_multisite() || is_super_admin());
+	}
+	
 	function init() {
 		if ($this->is_action('su-uninstall'))
 			add_filter('su_custom_admin_page-settings', array(&$this, 'do_uninstall'));
 	}
 	
-	function admin_page_contents() {
+	function uninstall_tab() {
+		
+		if (!$this->current_user_can_uninstall()) {
+			$this->print_message('error', __('You do not have sufficient permissions to delete plugins on this site.', 'seo-ultimate'));
+			return;
+		}
+		
 		echo "\n<p>";
 		_e('Uninstalling SEO Ultimate will delete your settings and the plugin&#8217;s files.', 'seo-ultimate');
 		echo "</p>\n";
@@ -37,6 +76,10 @@ class SU_Uninstall extends SU_Module {
 	}
 	
 	function do_uninstall() {
+		
+		if (!$this->current_user_can_uninstall())
+			wp_die(__('You do not have sufficient permissions to delete plugins on this site.', 'seo-ultimate'));
+		
 		echo "<script type='text/javascript'>jQuery('#adminmenu .current').hide(); jQuery('#toplevel_page_seo').hide();</script>";
 		echo "<div class=\"wrap\">\n";
 		echo "\n<h2>".__('Uninstall SEO Ultimate', 'seo-ultimate')."</h2>\n";

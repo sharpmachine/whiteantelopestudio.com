@@ -38,5 +38,5 @@ function su_confirm_unload_message() {
 
 jQuery(document).ready(function() {
 	jQuery('input, textarea, select', 'div.su-module').change(su_enable_unload_confirm);
-	jQuery('form#su-admin-form').submit(su_disable_unload_confirm);
+	jQuery('form', 'div.su-module').submit(su_disable_unload_confirm);
 });

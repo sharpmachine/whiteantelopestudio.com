@@ -134,16 +134,22 @@ class EM_Calendar extends EM_Object {
 		$next_url = "?ajaxCalendar=1&amp;mo={$month_next}&amp;yr={$year_next}&amp;{$link_args}";
 		
 	 	$weekdays = array('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday');
-	   $n = 0 ;
-		while( $n < $start_of_week ) {   
+	 	if(!empty($args['full'])) {
+ 		    if( get_option('dbem_full_calendar_abbreviated_weekdays') ) $weekdays = array('Sun','Mon','Tue','Wed','Thu','Fri','Sat');
+ 			$day_initials_length =  get_option('dbem_full_calendar_initials_length');
+ 		} else {
+ 		    if ( get_option('dbem_small_calendar_abbreviated_weekdays') ) $weekdays = array('Sun','Mon','Tue','Wed','Thu','Fri','Sat');
+	 		$day_initials_length = get_option('dbem_small_calendar_initials_length');
+ 		}
+ 		
+		for( $n = 0; $n < $start_of_week; $n++ ) {   
 			$last_day = array_shift($weekdays);     
-			$weekdays[]= $last_day; 
-			$n++;
+			$weekdays[]= $last_day;
 		}
 	   
 		$days_initials_array = array();
 		foreach($weekdays as $weekday) {
-			$days_initials_array[] = self::translate_and_trim($weekday);
+			$days_initials_array[] = self::translate_and_trim($weekday, $day_initials_length);
 		} 
 		
 		$calendar_array['links'] = array( 'previous_url'=>$previous_url, 'next_url'=>$next_url);
@@ -310,11 +316,14 @@ class EM_Calendar extends EM_Object {
 	}
 	 
 	function translate_and_trim($string, $length = 1) {
-		if(function_exists('mb_substr')){ //fix for diacritic calendar names
-			return mb_substr(__($string), 0, $length);
-		}else{ 
-    		return substr(__($string), 0, $length); 
-    	}
+	    if( $length > 0 ){
+			if(function_exists('mb_substr')){ //fix for diacritic calendar names
+			    return mb_substr(__($string,'dbem'), 0, $length, 'UTF-8');
+			}else{ 
+	    		return substr(__($string,'dbem'), 0, $length); 
+	    	}
+	    }
+	    return __($string,'dbem');
 	}  
 	
 	/**

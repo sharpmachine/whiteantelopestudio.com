@@ -1,4 +1,6 @@
 <?php
+if (!defined('ABSPATH')) die();
+
 include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 
 class SU_Installer extends Plugin_Upgrader {
@@ -57,7 +59,7 @@ class SU_Installer extends Plugin_Upgrader {
 					)
 				));
 		
-		// Cleanup our hooks, incase something else does a upgrade on this connection.
+		// Clean up our hooks, in case something else does an upgrade
 		remove_filter('upgrader_pre_install', array(&$this, 'deactivate_plugin_before_upgrade'));
 		remove_filter('upgrader_clear_destination', array(&$this, 'delete_old_plugin'));
 		
