@@ -2,8 +2,8 @@
 Contributors: Elliot Condon
 Tags: custom, field, custom field, advanced, simple fields, magic fields, more fields, repeater, matrix, post, type, text, textarea, file, image, edit, admin
 Requires at least: 3.0
-Tested up to: 3.3
-Stable tag: 3.3
+Tested up to: 3.4.2
+Stable tag: 3.4.2
 
 Fully customise WordPress edit screens with powerful fields. Boasting a professional interface and a powerfull API, it’s a must have for any web developer working with WordPress.Field types include: Wysiwyg, text, textarea, image, file, select, checkbox, page link, post object, date picker, color picker and more!
 
@@ -84,6 +84,13 @@ http://support.advancedcustomfields.com/
 
 
 == Changelog ==
+
+= 3.4.2 =
+* [Fixed] Fix API functions for 'user_$ID' post ID parameter
+* [Added] Color Picker Field: Default Value
+* [Added] Add custom save action for all saves - http://support.advancedcustomfields.com/discussion/2954/hook-on-save-options
+* [Updated] Update Dutch translations
+* [Updated] Update get_field_object function to allow for field_key / field_name + option to load_value
 
 = 3.4.1 =
 * [Added] Save user fields into wp_usermeta http://support.advancedcustomfields.com/discussion/2758/get_users-and-meta_key
