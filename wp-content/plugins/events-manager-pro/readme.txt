@@ -3,7 +3,7 @@ Contributors: netweblogic
 Tags: events, event, event registration, event calendar, events calendar, event management, paypal, registration, ticket, tickets, ticketing, tickets, theme, widget, locations, maps, booking, attendance, attendee, buddypress, calendar, gigs, payment, payments, sports,
 Requires at least: 3.1
 Tested up to: 3.4.1
-Stable tag: 2.2.1
+Stable tag: 2.2.2
 
 == Description ==
 
@@ -22,6 +22,20 @@ http://wp-events-plugin.com/support/
 Please visit http://wp-events-plugin.com/documentation/installation/
 
 == Changelog ==
+= 2.2.2 =
+* fixed no-user mode and user fields bug still happening in CSV exports
+* fixed MS global mode showing network transactions on all blogs
+* cleaned up options html for form editor
+* added tip text to every field and fixed display of tip text
+* fixed some badly named options
+* fixed custom user form field options not superceding defaults and vice versa
+* fixed paypal bookings resume payment button not working as expected
+* added cancel link to paypal bookings in progress
+* fixed AIM fatal error when using address 2 in forms etc.
+* fixed no-user mode not updating custom user fields for already logged in users
+* fixed name user field not validating properly
+* streamlined emp-forms.php validation switch, name and email validated like other reg fields
+
 = 2.2.1 =
 * fixed MS network blog tables not being deleted by WP along with rest of blog
 * fixed no-user mode bug showing assigned user information on the booking information page

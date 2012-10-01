@@ -29,6 +29,7 @@ class EM_User_Fields {
 	function get_form(){
 		if( empty(self::$form) ){
 			self::$form = new EM_Form('em_user_fields');
+			self::$form->form_required_error = get_option('em_booking_form_error_required');
 		}
 		return self::$form;
 	}
@@ -47,6 +48,21 @@ class EM_User_Fields {
 	function validate($result, $field, $value, $form){
 		$EM_Form = self::get_form();
 		if( array_key_exists($field['fieldid'], $EM_Form->user_fields) ){
+			//override default regex and error message
+			//first figure out the type to modify
+			$true_field_type = $EM_Form->form_fields[$field['fieldid']]['type'];
+			$true_option_type = $true_field_type;
+			if( $true_field_type == 'textarea' ) $true_option_type = 'text';
+			if( in_array($true_field_type, array('select','multiselect')) ) $true_option_type = 'select';
+			if( in_array($true_field_type, array('checkboxes','radio')) ) $true_option_type = 'selection';
+			//now do the overriding
+			if( !empty($field['options_reg_error']) ){
+				$EM_Form->form_fields[$field['fieldid']]['options_'.$true_option_type.'_error'] = $field['options_reg_error'];
+			}
+			if( !empty($field['options_reg_regex']) ){
+				$EM_Form->form_fields[$field['fieldid']]['options_'.$true_option_type.'_regex'] = $field['options_reg_regex'];
+			}
+			//validate the original field type
 			if( !$EM_Form->validate_field($field['fieldid'], $value) ){
 				$form->add_error($EM_Form->get_errors());
 				return false;
@@ -81,11 +97,11 @@ class EM_User_Fields {
 		$EM_Form = self::get_form();
 		if( array_key_exists($col, $EM_Form->form_fields) ){
 			$field = $EM_Form->form_fields[$col];
-			$value = get_user_meta($EM_Booking->get_person()->ID, $col, true);
+			$value = !get_option('dbem_bookings_registration_disable') ? get_user_meta($EM_Booking->get_person()->ID, $col, true):'';
 			if( empty($value) && !empty($EM_Booking->booking_meta['registration'][$col]) ){
 				$value = is_array($EM_Booking->booking_meta['registration'][$col]) ? explode(', ', $EM_Booking->booking_meta['registration'][$col]):$EM_Booking->booking_meta['registration'][$col];
 			}elseif( empty($value) ){
-				$value = "";			 
+			    $value = "";
 			}
 			if( is_array($value) ) $value = implode(', ', $value);
 		}
@@ -223,11 +239,12 @@ class EM_User_Fields {
 		}
 		//enable dbem_bookings_tickets_single_form if enabled
 	}
+	
 	function admin_page() {
 		$EM_Form = self::get_form();
 		//enable dbem_bookings_tickets_single_form if enabled
 		?>
-		<a name="user_fields"></a>
+		<a id="user_fields"></a>
 		<div id="poststuff" class="metabox-holder">
 			<!-- END OF SIDEBAR -->
 			<div id="post-body">

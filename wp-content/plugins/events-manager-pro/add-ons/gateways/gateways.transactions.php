@@ -310,7 +310,7 @@ class EM_Gateways_Transactions{
 		if( is_multisite() && (!is_main_blog() || is_admin()) ){ //if not main blog, we show only blog specific booking info
 			global $blog_id;
 			$join = "tx JOIN $table ON $table.booking_id=tx.booking_id";
-			$conditions[] = "$table.booking_id IN (SELECT $table.booking_id FROM $table, ".EM_EVENTS_TABLE." e WHERE e.blog_id=".$blog_id.")";
+			$conditions[] = "$table.booking_id IN (SELECT $table.booking_id FROM $table, ".EM_EVENTS_TABLE." e WHERE $table.event_id=e.event_id AND e.blog_id=".$blog_id.")";
 		}
 		//filter by gateway
 		if( !empty($this->gateway) ){

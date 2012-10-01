@@ -50,7 +50,7 @@ class EM_Form extends EM_Object {
 	
 	public $form_fields = array();
 	public $form_name = 'Default';
-	private $field_values = array();
+	public $field_values = array();
 	public $user_fields = array();
 	protected $core_user_fields = array(
 		'name' => 'Name',
@@ -66,6 +66,7 @@ class EM_Form extends EM_Object {
 		'about' => 'Biographical Info'
 	);
 	protected $custom_user_fields = array();
+	public $form_required_error = '';
 	static $validate;
 	
 	function __construct( $form_data, $form_name=false, $user_fields = true ){
@@ -87,7 +88,8 @@ class EM_Form extends EM_Object {
 	}
 	
 	function get_post( $validate = true ){
-		foreach($this->form_fields as $fieldid => $field){
+		foreach($this->form_fields as $field){
+		    $fieldid = $field['fieldid'];
 			$value = '';
 			if( isset($_REQUEST[$fieldid]) && $_REQUEST[$fieldid] != '' ){
 				if( !is_array($_REQUEST[$fieldid])){
@@ -98,11 +100,11 @@ class EM_Form extends EM_Object {
 			}
 			//dates and time are special
 			if( in_array($field['type'], array('date','time')) ){
-				if( !empty($_REQUEST[$fieldid.'_start']) ){
-					$this->field_values[$fieldid] = $_REQUEST[$fieldid.'_start'];
+				if( !empty($_REQUEST[$fieldid]['start']) ){
+					$this->field_values[$fieldid] = $_REQUEST[$fieldid]['start'];
 				}
-				if( $field['options_'.$field['type'].'_range'] && !empty($_REQUEST[$fieldid.'_end']) ){
-					$this->field_values[$fieldid] .= ','. $_REQUEST[$fieldid.'_end'];
+				if( $field['options_'.$field['type'].'_range'] && !empty($_REQUEST[$fieldid]['end']) ){
+					$this->field_values[$fieldid] .= ','. $_REQUEST[$fieldid]['end'];
 				}
 			}
 		}
@@ -114,6 +116,45 @@ class EM_Form extends EM_Object {
 	
 	function get_values(){
 		return $this->field_values;
+	}
+	
+	function get_formatted_value( $field, $field_value ){
+		switch( $field['type'] ){
+			case 'checkbox':
+				$field_value = ($field_value) ? __('Yes','dbem'):__('No','dbem');
+				break;
+			case 'date':
+			    //split ranges (or create single array) and format, then re-implode
+				$date_format = ( get_option('dbem_date_format') ) ? get_option('dbem_date_format'):get_option('date_format');
+			    $field_values = explode(',', $field_value);
+			    foreach($field_values as $key => $value){
+					$field_values[$key] = date($date_format, strtotime($value));
+				}
+			    $field_value = implode(',', $field_values);
+			    //set seperator and replace the comma
+				$seperator = empty($field['options_date_range_seperator']) ? ' - ': $field['options_date_range_seperator'];
+				$field_value = str_replace(',',' '.$seperator.' ', $field_value);
+				break;
+			case 'time':
+			    //split ranges (or create single array) and format, then re-implode
+				$time_format = ( get_option('dbem_time_format') ) ? get_option('dbem_time_format'):get_option('time_format');
+			    $field_values = explode(',', $field_value);
+			    foreach($field_values as $key => $value){
+					$field_values[$key] = date($time_format, strtotime('2010-01-01 '.$value));
+				}
+			    $field_value = implode(',', $field_values);
+				//set seperator and replace the comma
+				$seperator = empty($field['options_time_range_seperator']) ? ' - ': $field['options_time_range_seperator'];
+				$field_value = str_replace(',',' '.$seperator.' ', $field_value);
+				break;
+			case 'booking_comment':
+				if( $field_value == 'n/a' && !empty($EM_Booking->booking_comment) ){ $field_value = $EM_Booking->booking_comment; }
+				break;
+			default:
+			    if( is_array($field_value) ){ $field_value = implode(',', $field_value); }
+			    break;
+		}
+		return $field_value;
 	}
 	
 	/**
@@ -151,11 +192,15 @@ class EM_Form extends EM_Object {
 			case 'country':
 			case 'multiselect':
 			case 'time':
+				$tip_type = $field['type'];
+				if( $field['type'] == 'textarea' ) $tip_type = 'text';
+				if( in_array($field['type'], array('select','multiselect')) ) $tip_type = 'select';
+				if( in_array($field['type'], array('checkboxes','radio')) ) $tip_type = 'selection';
 				?>
 				<p class="input-group input-<?php echo $field['type']; ?> input-field-<?php echo $field['fieldid'] ?>">
 					<label for='<?php echo $field['fieldid'] ?>'>
-						<?php if( !empty($field['options_'.$field['type'].'_tip']) ): ?>
-							<span class="form-tip" title="<?php echo $field['options_'.$field['type'].'_tip']; ?>">
+						<?php if( !empty($field['options_'.$tip_type.'_tip']) ): ?>
+							<span class="form-tip" title="<?php echo $field['options_'.$tip_type.'_tip']; ?>">
 								<?php echo $field['label'] ?> <?php echo $required  ?>
 							</span>
 						<?php else: ?>
@@ -177,7 +222,7 @@ class EM_Form extends EM_Object {
 				}
 				break;
 			default:
-			    $is_hidden_reg = is_user_logged_in() && in_array($field['fieldid'], array('first_name','last_name', 'user_email','user_login', 'name', 'user_password'));
+			    $is_hidden_reg = is_user_logged_in() && in_array($field['type'], array('first_name','last_name', 'user_email','user_login', 'name', 'user_password'));
 				if( array_key_exists($field['type'], $this->user_fields) && self::show_reg_fields() && !(!defined('EM_FORCE_REGISTRATION') && $is_hidden_reg) ){
 					if( empty($_REQUEST[$field['fieldid']]) && is_user_logged_in() && !defined('EM_FORCE_REGISTRATION') ){
 						if( $field['type'] == 'name' ){
@@ -209,7 +254,15 @@ class EM_Form extends EM_Object {
 					}elseif( array_key_exists($field['type'], $this->custom_user_fields) ) {
 						?>
 						<p class="input-<?php echo $field['type']; ?> input-user-field">
-							<label for='<?php echo $field['fieldid'] ?>'><?php echo $field['label'] . $required ?></label> 
+							<label for='<?php echo $field['fieldid'] ?>'>
+								<?php if( !empty($field['options_reg_tip']) ): ?>
+									<span class="form-tip" title="<?php echo $field['options_reg_tip']; ?>">
+										<?php echo $field['label'] ?> <?php echo $required  ?>
+									</span>
+								<?php else: ?>
+									<?php echo $field['label'] ?> <?php echo $required  ?>
+								<?php endif; ?>
+							</label>
 							<?php do_action('em_form_output_field_custom_'.$field['type'], $field, $post); ?>
 						</p>
 						<?php
@@ -228,23 +281,24 @@ class EM_Form extends EM_Object {
 		}elseif( $post !== true && !empty($post) ){
 			$default = $post;
 		}
+		$field_name = !empty($field['name']) ? $field['name']:$field['fieldid'];
 		switch($field['type']){
 			case 'html':
 			    echo $field['options_html_content'];
 			    break;			
 			case 'text':
 				?>
-				<input type="text" name="<?php echo $field['fieldid'] ?>" id="<?php echo $field['fieldid'] ?>" class="input" value="<?php echo $default; ?>"  />
+				<input type="text" name="<?php echo $field_name ?>" id="<?php echo $field['fieldid'] ?>" class="input" value="<?php echo $default; ?>"  />
 				<?php
 				break;	
 			case 'textarea':
 				?>
-				<textarea name="<?php echo $field['fieldid'] ?>" id="<?php echo $field['fieldid'] ?>" class="input"><?php echo $default; ?></textarea>
+				<textarea name="<?php echo $field_name ?>" id="<?php echo $field['fieldid'] ?>" class="input"><?php echo $default; ?></textarea>
 				<?php
 				break;
 			case 'checkbox':
 				?>
-				<input type="checkbox" name="<?php echo $field['fieldid'] ?>" id="<?php echo $field['fieldid'] ?>" value="1" <?php if($default || $field['options_checkbox_checked']) echo 'checked="checked"'; ?> />
+				<input type="checkbox" name="<?php echo $field_name ?>" id="<?php echo $field['fieldid'] ?>" value="1" <?php if($default || $field['options_checkbox_checked']) echo 'checked="checked"'; ?> />
 				<?php
 				break;
 			case 'checkboxes':
@@ -253,7 +307,7 @@ class EM_Form extends EM_Object {
 				$values = explode("\r\n",$field['options_selection_values']);
 				foreach($values as $value){ 
 					$value = trim($value); 
-					?><input type="checkbox" name="<?php echo $field['fieldid'] ?>[]" class="<?php echo $field['fieldid'] ?>" value="<?php echo esc_attr($value) ?>" <?php if(in_array($value, $default)) echo 'checked="checked"'; ?> /> <?php echo $value ?><br /><?php 
+					?><input type="checkbox" name="<?php echo $field_name ?>[]" class="<?php echo $field['fieldid'] ?>" value="<?php echo esc_attr($value) ?>" <?php if(in_array($value, $default)) echo 'checked="checked"'; ?> /> <?php echo $value ?><br /><?php 
 				}
 				echo "</span>";
 				break;
@@ -262,7 +316,7 @@ class EM_Form extends EM_Object {
 				$values = explode("\r\n",$field['options_selection_values']);
 				foreach($values as $value){
 					$value = trim($value); 
-					?><input type="radio" name="<?php echo $field['fieldid'] ?>" class="<?php echo $field['fieldid'] ?>" value="<?php echo esc_attr($value) ?>" <?php if($value == $default) echo 'checked="checked"'; ?> /> <?php echo $value ?><br /><?php
+					?><input type="radio" name="<?php echo $field_name ?>" class="<?php echo $field['fieldid'] ?>" value="<?php echo esc_attr($value) ?>" <?php if($value == $default) echo 'checked="checked"'; ?> /> <?php echo $value ?><br /><?php
 				}
 				break;
 				echo "</span>";
@@ -272,7 +326,7 @@ class EM_Form extends EM_Object {
 				$multi = $field['type'] == 'multiselect';
 				if($multi && !is_array($default)) $default = (empty($default)) ? array():array($default);
 				?>
-				<select name="<?php echo $field['fieldid'] ?><?php echo ($multi) ? '[]':''; ?>" class="<?php echo $field['fieldid'] ?>" <?php echo ($multi) ? 'multiple':''; ?>>
+				<select name="<?php echo $field_name ?><?php echo ($multi) ? '[]':''; ?>" class="<?php echo $field['fieldid'] ?>" <?php echo ($multi) ? 'multiple':''; ?>>
 				<?php 
 					//calculate default value to be checked
 					if( !$field['options_select_default'] ){
@@ -292,7 +346,7 @@ class EM_Form extends EM_Object {
 				break;
 			case 'country':
 				?>
-				<select name="<?php echo $field['fieldid'] ?>" class="<?php echo $field['fieldid'] ?>">
+				<select name="<?php echo $field_name ?>" class="<?php echo $field['fieldid'] ?>">
 				<?php foreach(em_get_countries(__('none selected','dbem')) as $country_key => $country_name): ?>
 					<option value="<?php echo $country_key; ?>"  <?php echo ($country_key == $default) ?'selected="selected"':''; ?>><?php echo $country_name; ?></option>
 					<?php endforeach; ?>
@@ -301,42 +355,46 @@ class EM_Form extends EM_Object {
 				break;
 			case 'date':
 			    $date_type = !empty($field['options_date_range']) ? 'em-date-range':'em-date-single';
-				if( !empty($_REQUEST[$field['fieldid'].'_start']) ) {
-					$default = array( $_REQUEST[$field['fieldid'].'_start'] );
-					if( !empty($_REQUEST[$field['fieldid'].'_end']) ){
-						$default = array( $_REQUEST[$field['fieldid'].'_end'] );
+				if( !empty($_REQUEST[$field_name]['start']) ) {
+					$default = array( $_REQUEST[$field_name]['start'] );
+					if( !empty($_REQUEST[$field_name]['end']) ){
+						$default = array( $_REQUEST[$field_name]['end'] );
 					}
 				}else{
 					$default = explode(',',$default);
 				}
+				//we're adding a [%s] to the field id and replacing this for the start-end field names because this way other bits (e.g. attendee forms) can manipulate where the [start] and [end] are placed in the element name. 
+				$field_id = strstr($field_name,'[') ? $field_name:$field_name.'[%s]';
 				?>
     			<span class="<?php echo $date_type; ?>">			
-					<input class="em-date-start em-date-input-loc" type="text" name="event_start_date_loc" />
-					<input class="em-date-input" type="hidden" name="<?php echo $field['fieldid'] ?>_start" value="<?php echo !empty($default[0]) ? $default[0]:'' ?>" />
+					<input class="em-date-start em-date-input-loc" type="text" name="<?php echo str_replace('[%s]','[start_loc]', $field_id); ?>" />
+					<input class="em-date-input" type="hidden" name="<?php echo str_replace('[%s]','[start]', $field_id); ?>" value="<?php echo !empty($default[0]) ? $default[0]:'' ?>" />
 					<?php if( !empty($field['options_date_range']) ) : ?>
 					<?php echo $field['options_date_range_seperator']; ?>
-					<input class="em-date-end em-date-input-loc" type="text" name="event_end_date_loc" />
-					<input class="em-date-input" type="hidden" name="<?php echo $field['fieldid'] ?>_end" value="<?php echo !empty($default[1]) ? $default[1]:'' ?>" />
+					<input class="em-date-end em-date-input-loc" type="text" name="<?php echo str_replace('[%s]','[end_loc]', $field_id); ?>" />
+					<input class="em-date-input" type="hidden" name="<?php echo str_replace('[%s]','[end]', $field_id); ?>" value="<?php echo !empty($default[1]) ? $default[1]:'' ?>" />
 					<?php endif; ?>
 				</span>
     			<?php
     			break;	
 			case 'time':
 			    $date_type = !empty($field['options_time_range']) ? 'em-time-range':'em-time-single';
-				if( !empty($_REQUEST[$field['fieldid'].'_start']) ) {
-					$default = array( $_REQUEST[$field['fieldid'].'_start'] );
-					if( !empty($_REQUEST[$field['fieldid'].'_end']) ){
-						$default = array( $_REQUEST[$field['fieldid'].'_end'] );
+				if( !empty($_REQUEST[$field_name]['start']) ) {
+					$default = array( $_REQUEST[$field_name]['start'] );
+					if( !empty($_REQUEST[$field_name]['end']) ){
+						$default = array( $_REQUEST[$field_name]['end'] );
 					}
 				}else{
 					$default = explode(',',$default);
 				}
+				//we're adding a [%s] to the field id and replacing this for the start-end field names because this way other bits (e.g. attendee forms) can manipulate where the [start] and [end] are placed in the element name. 
+				$field_id = strstr($field_name,'[') ? $field_name:$field_name.'[%s]';
 				?>
     			<span class="<?php echo $date_type; ?>">			
-					<input class="em-time-input em-time-start" type="text" size="8" maxlength="8" name="<?php echo $field['fieldid'] ?>_start" value="<?php echo !empty($default[0]) ? $default[0]:'' ?>" />
+					<input class="em-time-input em-time-start" type="text" size="8" maxlength="8" name="<?php echo str_replace('[%s]','[start]', $field_id); ?>" value="<?php echo !empty($default[0]) ? $default[0]:'' ?>" />
 					<?php if( !empty($field['options_time_range']) ) : ?>
 					<?php echo $field['options_time_range_seperator']; ?>
-					<input class="em-time-input em-time-end" type="text" size="8" maxlength="8" name="<?php echo $field['fieldid'] ?>_end" value="<?php echo !empty($default[1]) ? $default[1]:'' ?>" />
+					<input class="em-time-input em-time-end" type="text" size="8" maxlength="8" name="<?php echo str_replace('[%s]','[end]', $field_id); ?>" value="<?php echo !empty($default[1]) ? $default[1]:'' ?>" />
 					<?php endif; ?>					
 				</span>
     			<?php
@@ -356,7 +414,7 @@ class EM_Form extends EM_Object {
 					//registration fields
 				    if( get_option('dbem_emp_booking_form_reg_input') || !is_user_logged_in() || defined('EM_FORCE_REGISTRATION') ){
 						?>
-						<input type="text" name="<?php echo $field['fieldid'] ?>" id="<?php echo $field['fieldid'] ?>" class="input" value="<?php echo $default; ?>"  />
+						<input type="text" name="<?php echo $field_name ?>" id="<?php echo $field['fieldid'] ?>" class="input" value="<?php echo $default; ?>"  />
 						<?php
 					}else{
 						echo $default;
@@ -390,46 +448,10 @@ class EM_Form extends EM_Object {
 	function validate_field( $field_id, $value ){
 		$field = array_key_exists($field_id, $this->form_fields) ? $this->form_fields[$field_id]:false;
 		$value = (is_array($value)) ? $value:trim($value);
-		$err = sprintf(get_option('em_booking_form_error_required'), $field['label']);
+		$err = sprintf($this->form_required_error, $field['label']);
 		if( is_array($field) ){
 			$result = true; //innocent until proven guilty
 			switch($field['type']){
-				case 'email': //depreciated
-				case 'user_email':
-					if( self::show_reg_fields() && is_user_logged_in() && defined('EM_FORCE_REGISTRATION') ){
-						// Check the e-mail address
-						if ( $value == '' ) {
-							$this->add_error($err);
-							$result = false;
-						} elseif ( ! is_email( $value ) ) {
-							$this->add_error( __( 'The email address isn&#8217;t correct.', 'dbem') );
-							$result = false;
-						}
-						//regex
-						if( !empty($field['options_reg_regex']) && !@preg_match('/'.$field['options_reg_regex'].'/',$value) ){
-							$this_err = (!empty($field['options_reg_error'])) ? $field['options_reg_error']:$err;
-							$this->add_error($this_err);
-							$result = false;
-						}
-					}
-					break;
-				case 'name':
-					if( self::show_reg_fields() && is_user_logged_in() && defined('EM_FORCE_REGISTRATION') ){
-						//regex
-						if( !empty($field['options_text_regex']) && !@preg_match('/'.$field['options_text_regex'].'/',$value) ){
-							if( !($value == '' && $field['required']) ){
-								$this_err = (!empty($field['options_text_error'])) ? $field['options_text_error']:$err;
-								$this->add_error($this_err);
-								$result = false;
-							}
-						}
-						//non-empty match
-						if( trim($value) == '' && $field['required'] ){
-							$this->add_error($err);
-							$result = false;
-						}
-					}
-					break;
 				case 'text':
 				case 'textarea':
 					//regex
@@ -594,21 +616,28 @@ class EM_Form extends EM_Object {
 					break;
 				default:
 					//Registration and custom fields
-					if( (!is_user_logged_in() || defined('EM_FORCE_REGISTRATION')) && array_key_exists($field['type'], $this->user_fields) ){
+				    $is_hidden_reg = is_user_logged_in() && in_array($field['fieldid'], array('first_name','last_name', 'user_email','user_login', 'name', 'user_password'));
+					if( array_key_exists($field['type'], $this->user_fields) && self::show_reg_fields() && !(!defined('EM_FORCE_REGISTRATION') && $is_hidden_reg) ){
 						//preliminary checks
 						if( in_array($field['type'], array('user_login','first_name','last_name')) && is_user_logged_in() && !defined('EM_FORCE_REGISTRATION') ) break;
-						//regex
-						if( !empty($field['options_reg_regex']) && !@preg_match('/'.$field['options_reg_regex'].'/',$value) ){
-							if( !($value == '' && !$field['required']) ){
-								$this_err = (!empty($field['options_reg_error'])) ? $field['options_reg_error']:$err;
-								$this->add_error($this_err);
+						if ( $field['type'] == 'user_email' && ! is_email( $value ) ) {
+							$this->add_error( __( 'The email address isn&#8217;t correct.', 'dbem') );
+							$result = false;
+						}
+						if( array_key_exists($field['type'], $this->core_user_fields) ){
+							//regex
+							if( !empty($field['options_reg_regex']) && !@preg_match('/'.$field['options_reg_regex'].'/',$value) ){
+								if( !($value == '' && !$field['required']) ){
+									$this_err = (!empty($field['options_reg_error'])) ? $field['options_reg_error']:$err;
+									$this->add_error($this_err);
+									$result = false;
+								}
+							}
+							//non-empty match
+							if( empty($value) && ($field['required']) ){
+								$this->add_error($err);
 								$result = false;
 							}
-						}
-						//non-empty match
-						if( empty($value) && ($field['required']) ){
-							$this->add_error($err);
-							$result = false;
 						}
 						//custom field chekcs
 						if( array_key_exists($field['type'], $this->custom_user_fields)) {
@@ -636,8 +665,8 @@ class EM_Form extends EM_Object {
 			'options_text_regex','options_text_error','options_text_tip',
 			'options_reg_regex', 'options_reg_error','options_reg_tip',
 			'options_captcha_theme','options_captcha_key_priv','options_captcha_key_pub', 'options_captcha_error', 'options_captcha_tip',
-			'options_date_error','options_date_range','options_date_range_seperator','options_date_error_format','options_date_error_end','options_date_error_tip',
-			'options_time_error','options_time_range','options_time_range_seperator','options_time_error_format','options_time_error_end','options_time_error_start','options_time_error_tip',
+			'options_date_error','options_date_range','options_date_range_seperator','options_date_error_format','options_date_error_end','options_date_tip',
+			'options_time_error','options_time_range','options_time_range_seperator','options_time_error_format','options_time_error_end','options_time_error_start','options_time_tip',
 			'options_html_content'
 		);
 		return apply_filters('em_form_get_fields_map', $map);
@@ -807,11 +836,18 @@ class EM_Form extends EM_Object {
 								<div class="bct-field">
 									<div class="bct-label"><?php _e('Error Message','em-pro'); ?></div>
 									<div class="bct-input">
-										<input type="text" name="options_select_error[]" <?php self::input_default('options_select_error',$field_values); ?> />
+										<input type="text" name="options_country_error[]" <?php self::input_default('options_country_error',$field_values); ?> />
 										<em>
 											<?php _e('This error will show if a value isn\'t chosen.','em-pro'); ?>
 											<br /><?php _e('Default:','em-pro'); echo ' <code>'.sprintf(get_option('em_booking_form_error_required'), '[FIELD]').'</code>'; ?>
 										</em>
+									</div>
+								</div>
+								<div class="bct-field">
+									<div class="bct-label"><?php _e('Tip Text','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="text" name="options_country_tip[]" <?php self::input_default('options_country_tip',$field_values); ?> />
+										<em><?php _e('Will appear next to your field label as a question mark with a popup tip bubble.','em-pro'); ?></em>
 									</div>
 								</div>
 								<?php do_action('emp_forms_editor_country_options', $this, $field_values); ?>
@@ -825,11 +861,22 @@ class EM_Form extends EM_Object {
 										<input type="hidden" name="options_date_range[]" <?php self::input_default('options_date_range',$field_values); ?> /> 
 										<em><?php _e('If selected, this field will also have an end-date.','em-pro'); ?></em>
 									</div>
+								</div>
+								<div class="bct-field">
 									<div class="bct-label"><?php _e('Seperator','em-pro'); ?></div>
 									<div class="bct-input">
 										<input type="text" name="options_date_range_seperator[]" <?php self::input_default('options_date_range_seperator',$field_values); ?> />
 										<em><?php _e('This text will appear between the two date fields if this is a date range.','em-pro'); ?></em>
 									</div>
+								</div>
+								<div class="bct-field">
+									<div class="bct-label"><?php _e('Tip Text','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="text" name="options_date_tip[]" <?php self::input_default('options_date_tip',$field_values); ?> />
+										<em><?php _e('Will appear next to your field label as a question mark with a popup tip bubble.','em-pro'); ?></em>
+									</div>
+								</div>
+								<div class="bct-field">
 									<p><strong><?php _e('Error Messages','em-pro'); ?></strong></p>
 									<div class="bct-label"><?php _e('Field Required','em-pro'); ?></div>
 									<div class="bct-input">
@@ -839,6 +886,8 @@ class EM_Form extends EM_Object {
 											<br /><?php _e('Default:','em-pro'); echo ' <code>'.sprintf(get_option('em_booking_form_error_required'), '[FIELD]').'</code>'; ?>
 										</em>
 									</div>
+								</div>
+								<div class="bct-field">
 									<div class="bct-label"><?php _e('Incorrect Formatting','em-pro'); ?></div>
 									<div class="bct-input">
 										<input type="text" name="options_date_error_format[]" <?php self::input_default('options_date_error_format',$field_values); ?> />
@@ -847,6 +896,8 @@ class EM_Form extends EM_Object {
 											<br /><?php _e('Default:','em-pro'); echo ' <code>'.__('Please use the date picker provided to select the appropriate date format.','em-pro').'</code>'; ?>
 										</em>
 									</div>
+								</div>
+								<div class="bct-field">
 									<div class="bct-label"><?php _e('End date required','em-pro'); ?></div>
 									<div class="bct-input">
 										<input type="text" name="options_date_error_end[]" <?php self::input_default('options_date_error_end',$field_values); ?> />
@@ -855,6 +906,8 @@ class EM_Form extends EM_Object {
 											<br /><?php _e('Default:','em-pro'); echo ' <code>'.__('You must provide an end date.','em-pro').'</code>'; ?>
 										</em>
 									</div>
+								</div>
+								<div class="bct-field">
 									<div class="bct-label"><?php _e('Start date required','em-pro'); ?></div>
 									<div class="bct-input">
 										<input type="text" name="options_date_error_start[]" <?php self::input_default('options_date_error_start',$field_values); ?> />
@@ -874,12 +927,23 @@ class EM_Form extends EM_Object {
 										<input type="hidden" name="options_time_range[]" <?php self::input_default('options_time_range',$field_values); ?> /> 
 										<em><?php _e('If selected, this field will also have an end-time.','em-pro'); ?></em>
 									</div>
+								</div>
+								<div class="bct-field">
 									<div class="bct-label"><?php _e('Seperator','em-pro'); ?></div>
 									<div class="bct-input">
 										<input type="text" name="options_time_range_seperator[]" <?php self::input_default('options_time_range_seperator',$field_values); ?> />
 										<em><?php _e('This text will appear between the two date fields if this is a date range.','em-pro'); ?></em>
 									</div>
-									<p><strong><?php _e('Error Messages','em-pro'); ?></strong></p>
+								</div>
+								<div class="bct-field">
+									<div class="bct-label"><?php _e('Tip Text','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="text" name="options_time_tip[]" <?php self::input_default('options_time_tip',$field_values); ?> />
+										<em><?php _e('Will appear next to your field label as a question mark with a popup tip bubble.','em-pro'); ?></em>
+									</div>
+								</div>
+								<p><strong><?php _e('Error Messages','em-pro'); ?></strong></p>
+								<div class="bct-field">
 									<div class="bct-label"><?php _e('Field Required','em-pro'); ?></div>
 									<div class="bct-input">
 										<input type="text" name="options_time_error[]" <?php self::input_default('options_time_error',$field_values); ?> />
@@ -888,6 +952,8 @@ class EM_Form extends EM_Object {
 											<br /><?php _e('Default:','em-pro'); echo ' <code>'.sprintf(get_option('em_booking_form_error_required'), '[FIELD]').'</code>'; ?>
 										</em>
 									</div>
+								</div>
+								<div class="bct-field">
 									<div class="bct-label"><?php _e('Incorrect Formatting','em-pro'); ?></div>
 									<div class="bct-input">
 										<input type="text" name="options_time_error_format[]" <?php self::input_default('options_time_error_format',$field_values); ?> />
@@ -896,6 +962,8 @@ class EM_Form extends EM_Object {
 											<br /><?php _e('Default:','em-pro'); echo ' <code>'.__('Please use the time picker provided to select the appropriate time format.','em-pro').'</code>'; ?>
 										</em>
 									</div>
+								</div>
+								<div class="bct-field">
 									<div class="bct-label"><?php _e('End time required','em-pro'); ?></div>
 									<div class="bct-input">
 										<input type="text" name="options_time_error_end[]" <?php self::input_default('options_time_error_end',$field_values); ?> />
@@ -904,6 +972,8 @@ class EM_Form extends EM_Object {
 											<br /><?php _e('Default:','em-pro'); echo ' <code>'.__('You must provide an end time.','em-pro').'</code>'; ?>
 										</em>
 									</div>
+								</div>
+								<div class="bct-field">
 									<div class="bct-label"><?php _e('Start time required','em-pro'); ?></div>
 									<div class="bct-input">
 										<input type="text" name="options_time_error_start[]" <?php self::input_default('options_time_error_start',$field_values); ?> />
@@ -925,6 +995,13 @@ class EM_Form extends EM_Object {
 									</div>
 								</div>
 								<div class="bct-field">
+									<div class="bct-label"><?php _e('Tip Text','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="text" name="options_selection_tip[]" <?php self::input_default('options_selection_tip',$field_values); ?> />
+										<em><?php _e('Will appear next to your field label as a question mark with a popup tip bubble.','em-pro'); ?></em>
+									</div>
+								</div>
+								<div class="bct-field">
 									<div class="bct-label"><?php _e('Error Message','em-pro'); ?></div>
 									<div class="bct-input">
 										<input type="text" name="options_selection_error[]" <?php self::input_default('options_selection_error',$field_values); ?> />
@@ -943,6 +1020,13 @@ class EM_Form extends EM_Object {
 									<div class="bct-input">
 										<input type="checkbox" <?php self::input_default('options_checkbox_checked',$field_values,'checkbox'); ?> value="1" />
 										<input type="hidden" name="options_checkbox_checked[]" <?php self::input_default('options_checkbox_checked',$field_values); ?> /> 
+									</div>
+								</div>
+								<div class="bct-field">
+									<div class="bct-label"><?php _e('Tip Text','em-pro'); ?></div>
+									<div class="bct-input">
+										<input type="text" name="options_checkbox_tip[]" <?php self::input_default('options_checkbox_tip',$field_values); ?> />
+										<em><?php _e('Will appear next to your field label as a question mark with a popup tip bubble.','em-pro'); ?></em>
 									</div>
 								</div>
 								<div class="bct-field">
@@ -1023,16 +1107,16 @@ class EM_Form extends EM_Object {
 									$recaptcha_url = "https://www.google.com/recaptcha/admin/create?domains={$uri['host']}&amp;app=wordpress"; 
 								?>
 								<div class="bct-field">
-									<div class="bct-label"><?php _e('Private Key','em-pro'); ?></div>
+									<div class="bct-label"><?php _e('Public Key','em-pro'); ?></div>
 									<div class="bct-input">
-										<input type="text" name="options_captcha_key_priv[]" <?php self::input_default('options_captcha_key_priv',$field_values); ?> />
+										<input type="text" name="options_captcha_key_pub[]" <?php self::input_default('options_captcha_key_pub',$field_values); ?> />
 										<em><?php echo sprintf(__('Required, get your keys <a href="%s">here</a>','em-pro'),$recaptcha_url); ?></em>
 									</div>
 								</div>
 								<div class="bct-field">
-									<div class="bct-label"><?php _e('Public Key','em-pro'); ?></div>
+									<div class="bct-label"><?php _e('Private Key','em-pro'); ?></div>
 									<div class="bct-input">
-										<input type="text" name="options_captcha_key_pub[]" <?php self::input_default('options_captcha_key_pub',$field_values); ?> />
+										<input type="text" name="options_captcha_key_priv[]" <?php self::input_default('options_captcha_key_priv',$field_values); ?> />
 										<em><?php echo sprintf(__('Required, get your keys <a href="%s">here</a>','em-pro'),$recaptcha_url); ?></em>
 									</div>
 								</div>
@@ -1113,7 +1197,7 @@ class EM_Form extends EM_Object {
 						html : ['html'],
 						selection : ['checkboxes','radio'],
 						checkbox : ['checkbox'],
-						text : ['text','textarea','email','name'],
+						text : ['text','textarea','email'],
 						registration : ['<?php echo implode("', '", array_keys($this->user_fields)); ?>'],
 						captcha : ['captcha']							
 					}

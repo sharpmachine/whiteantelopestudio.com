@@ -271,8 +271,11 @@ class EM_Gateway_Authorize_AIM extends EM_Gateway {
         $names = explode(' ', $EM_Booking->get_person()->get_name());
         if( !empty($names[0]) ) $sale->first_name = array_shift($names);
         if( implode(' ',$names) != '' ) $sale->last_name = implode(' ',$names);
-        if( EM_Gateways::get_customer_field('address', $EM_Booking) != '' ) $sale->address = EM_Gateways::get_customer_field('address', $EM_Booking);
-        if( EM_Gateways::get_customer_field('address_2', $EM_Booking) != '' ) $sale->address_2 = EM_Gateways::get_customer_field('address_2', $EM_Booking);
+        //address slightly special address field
+        $address = '';
+        if( EM_Gateways::get_customer_field('address', $EM_Booking) != '' ) $address = EM_Gateways::get_customer_field('address', $EM_Booking);
+        if( EM_Gateways::get_customer_field('address_2', $EM_Booking) != '' ) $address .= ', ' .EM_Gateways::get_customer_field('address_2', $EM_Booking);
+        if( !empty($address) ) $sale->address = substr($address, 0, 60); //cut off at 60 characters
         if( EM_Gateways::get_customer_field('city', $EM_Booking) != '' ) $sale->city = EM_Gateways::get_customer_field('city', $EM_Booking);
         if( EM_Gateways::get_customer_field('state', $EM_Booking) != '' ) $sale->state = EM_Gateways::get_customer_field('state', $EM_Booking);
         if( EM_Gateways::get_customer_field('zip', $EM_Booking) != '' ) $sale->zip = EM_Gateways::get_customer_field('zip', $EM_Booking);

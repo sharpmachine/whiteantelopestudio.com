@@ -1,4 +1,5 @@
 <?php
+//include('bookings-attendees-form.php');
 class EM_Booking_Form {
 	static $validate;
 	/**
@@ -13,7 +14,7 @@ class EM_Booking_Form {
 		//Menu/admin page
 		add_action('admin_init',array('EM_Booking_Form', 'admin_page_actions'), 10);
 		add_action('emp_forms_admin_page',array('EM_Booking_Form', 'admin_page'),10);
-		//add_action('em_bookings_ticket_footer', array('EM_Booking_Form', 'ticket_meta_box'),1,1); //specific ticket booking info
+		//Booking admin and exports
 		add_action('em_bookings_single_custom', array('EM_Booking_Form', 'em_bookings_single_custom'),1,1); //show booking form and ticket summary
 		add_action('em_csv_bookings_loop_after', array('EM_Booking_Form', 'em_csv_bookings_loop_after'),1,3); //show booking form and ticket summary
 		add_action('em_csv_bookings_headers', array('EM_Booking_Form', 'em_csv_bookings_headers'),1,1); //show booking form and ticket summary
@@ -22,8 +23,6 @@ class EM_Booking_Form {
 		add_filter('em_bookings_table_cols_template', array('EM_Booking_Form','em_bookings_table_cols_template'),10,2);
 		// Actions and Filters
 		add_filter('em_booking_form_custom', array('EM_Booking_Form','booking_form'),10,2); //handle the booking form template
-		add_filter('em_booking_form_js', array('EM_Booking_Form','js'),10,2); //JS, so we can handle the ajax return differently
-		add_filter('em_booking_form_tickets_loop', array('EM_Booking_Form','ticket_form'),10,2); 
 		//Booking interception
 		//add_filter('em_booking_add', array('EM_Booking_Form', 'em_booking_add'), 1, 2); //called only when bookin is added
 		add_filter('em_booking_get_post_pre', array('EM_Booking_Form', 'em_booking_get_post_pre'), 1, 1); //turns on flag so we know not to double validate
@@ -70,6 +69,7 @@ class EM_Booking_Form {
 				self::$form_name = $form_data['name'];
 			}
 			self::$form = new EM_Form($form_data['form'], 'em_bookings_form');
+			self::$form->form_required_error = get_option('em_booking_form_error_required');
 		}
 		return self::$form;
 	}
@@ -92,32 +92,6 @@ class EM_Booking_Form {
 			$forms[$form_data->meta_id] = $form['name'];
 		}
 		return $forms;
-	}
-	
-	/**
-	 * replaces default js to 
-	 * @param string $original_js
-	 * @param EM_Event $EM_Event
-	 * 
-	 * @return string
-	 */
-	function js($original_js, $EM_Event){
-		ob_start();
-		/* 
-		//when em_tickets[<?php echo self::id ?>][spaces] changes, add a row under that with new rows
-		?>		
-		<script type="text/javascript">
-			jQuery(document).ready( function($){
-				$('.em-booking-form select.em-ticket-select').change( function(e){
-					e.preventDefault();
-					var tr = $(this).parents('tr.em-ticket').first();
-					var id = tr.attr('id').substr(10);
-				});			
-			});
-		</script>
-		<?php
-		*/
-		return apply_filters('emp_booking_form_js', $original_js.ob_get_clean(),$original_js, $EM_Event);	//different filter to avoid collisions	
 	}
 	
 	/**
@@ -215,7 +189,7 @@ class EM_Booking_Form {
 	function em_bookings_add($result){
 		global $EM_Booking;
 		$EM_Form = self::get_form($EM_Booking->event_id);
-		if( !empty($EM_Booking->booking_meta['registration']) && is_array($EM_Booking->booking_meta['registration']) &&  !get_option('dbem_bookings_registration_disable') ){
+		if( !empty($EM_Booking->booking_meta['registration']) && is_array($EM_Booking->booking_meta['registration']) &&  (!get_option('dbem_bookings_registration_disable') || is_user_logged_in()) ){
 			$user_data = array();
 			foreach($EM_Booking->booking_meta['registration'] as $fieldid => $field){
 				if( trim($field) !== '' && array_key_exists($fieldid, $EM_Form->form_fields) ){
@@ -376,16 +350,11 @@ class EM_Booking_Form {
 		foreach($EM_Form->form_fields as $fieldid => $field){
 			if( !array_key_exists($fieldid, $EM_Form->user_fields) && !in_array($fieldid, array('user_email','user_name')) ){
 				$input_value = $field_value = (isset($EM_Booking->booking_meta['booking'][$fieldid])) ? $EM_Booking->booking_meta['booking'][$fieldid]:'n/a';
-				if(is_array($field_value)){ $field_value = implode(', ', $field_value); }
-				if($field['type'] == 'checkbox'){ $field_value = ($field_value) ? __('Yes','dbem'):__('No','dbem'); }
-				if($field['type'] == 'date'){ $field_value = str_replace(',',' '.$field['options_date_range_seperator'].' ', $field_value); }
-				//backward compatibility for old booking forms
-				if( $field['fieldid'] == 'booking_comment' && $field_value == 'n/a' && !empty($EM_Booking->booking_comment) ){ $field_value = $EM_Booking->booking_comment; }
 				?>
 				<tr>
 					<th><?php echo $field['label'] ?></th>
 					<td>
-						<span class="em-booking-single-info"><?php echo $field_value; ?></span>
+						<span class="em-booking-single-info"><?php echo $EM_Form->get_formatted_value($field, $input_value); ?></span>
 						<div class="em-booking-single-edit"><?php echo $EM_Form->output_field_input($field, $input_value)?></div>
 					</td>
 				</tr>
@@ -430,6 +399,7 @@ class EM_Booking_Form {
 					<?php endif; ?>
 				<?php endforeach; ?>
 			</select>
+			<?php do_action('emp_bookings_form_select_footer'); ?>
 		</div>
 		<?php
 	}
@@ -514,14 +484,13 @@ class EM_Booking_Form {
 	function admin_page() {
 		$EM_Form = self::get_form();
 		?>
-		<a name="booking-form"></a>
-		<div id="poststuff" class="metabox-holder">
+		<div id="poststuff" class="metabox-holder" >
 			<!-- END OF SIDEBAR -->
 			<div id="post-body">
 				<div id="post-body-content">
 					<?php do_action('em_booking_form_custom_admin_page_header'); ?>
 					<div id="em-booking-form-editor" class="stuffbox">
-						<h3>
+						<h3 id="booking-form">
 							<?php _e ( 'Booking Form - General Information', 'em-pro' ); ?>
 						</h3>
 						<div class="inside">

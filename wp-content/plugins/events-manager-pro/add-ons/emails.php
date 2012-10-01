@@ -58,13 +58,16 @@ class EM_Emails {
 	    //make sure we don't get past events, only events starting that specific date
 	    $events_are_past = get_option('dbem_events_current_are_past');
 	    update_option('dbem_events_current_are_past', true);
+		$output_type = get_option('dbem_smtp_html') ? 'html':'email';
 	    foreach( EM_Events::get(array('scope'=>$scope,'private'=>1,'blog'=>false)) as $EM_Event ){
 	        /* @var $EM_Event EM_Event */
 	        $emails = array();
 	    	//get ppl attending
 	    	foreach( $EM_Event->get_bookings()->get_bookings()->bookings as $EM_Booking ){ //get confirmed bookings
 	    	    if( is_email($EM_Booking->get_person()->user_email) ){
-		    	    $emails[] = array($EM_Booking->get_person()->user_email, $EM_Booking->output(get_option('dbem_emp_emails_reminder_subject')), $EM_Booking->output(get_option('dbem_emp_emails_reminder_body')), $EM_Booking->booking_id);
+			    	$subject = $EM_Event->output(get_option('dbem_emp_emails_reminder_subject'),'raw');
+			    	$message = $EM_Event->output(get_option('dbem_emp_emails_reminder_body'),$output_type);
+		    	    $emails[] = array($EM_Booking->get_person()->user_email, $subject, $message, $EM_Booking->booking_id);
 	    	    }
 	    	}
 	    	if(count($emails) > 0){
@@ -74,18 +77,18 @@ class EM_Emails {
 		    	    $upload_dir = wp_upload_dir();
 		    	    $icalfilename = trailingslashit($upload_dir['basedir'])."em-cache/invite_".$EM_Event->event_id.".ics";
 		    	    $icalfile = fopen($icalfilename,'w+');
-					ob_start();
-					em_locate_template('templates/ical-event.php', true);
-					$icalcontent = preg_replace("/([^\r])\n/", "$1\r\n", ob_get_clean());
-					fwrite($icalfile, $icalcontent);
-					fclose($icalfile);
-					$ical_file_array = array('name'=>'invite.ics', 'type'=>'text/calendar','path'=>$icalfilename);
-					$attachments = serialize(array($ical_file_array));
+		    	    if( $icalfile ){
+						ob_start();
+						em_locate_template('templates/ical-event.php', true);
+						$icalcontent = preg_replace("/([^\r])\n/", "$1\r\n", ob_get_clean());
+						fwrite($icalfile, $icalcontent);
+						fclose($icalfile);
+						$ical_file_array = array('name'=>'invite.ics', 'type'=>'text/calendar','path'=>$icalfilename);
+						$attachments = serialize(array($ical_file_array));
+		    	    }
 	    	    }
 	    	    foreach($emails as $email){
-			    	$subject = $EM_Event->output(get_option('dbem_emp_emails_reminder_subject'));
-			    	$message = $EM_Event->output(get_option('dbem_emp_emails_reminder_body'));
-			    	$wpdb->insert(EM_EMAIL_QUEUE_TABLE, array('subject'=>$email[1],'body'=>$email[2],'email'=>$email[0], 'attachment'=>$attachments,'event_id'=>$EM_Event->event_id, 'booking_id'=>$email[3]));
+			    	$wpdb->insert(EM_EMAIL_QUEUE_TABLE, array('email'=>$email[0],'subject'=>$email[1],'body'=>$email[2],'attachment'=>$attachments,'event_id'=>$EM_Event->event_id,'booking_id'=>$email[3]));
 	    	    }
 	    	}
 	    	

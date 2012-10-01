@@ -127,7 +127,7 @@ class EM_Gateway_Paypal extends EM_Gateway {
 		if($this->uses_gateway($EM_Booking) && $EM_Booking->booking_status == $this->status){
 		    //first make sure there's no pending payments
 		    $pending_payments = $wpdb->get_var('SELECT COUNT(*) FROM '.EM_TRANSACTIONS_TABLE. " WHERE booking_id='{$EM_Booking->booking_id}' AND transaction_gateway='{$this->gateway}' AND transaction_status='Pending'");
-		    if( count($pending_payments) == 0 ){
+		    if( $pending_payments == 0 ){
 				//user owes money!
 				$paypal_vars = $this->get_paypal_vars($EM_Booking);
 				$form = '<form action="'.$this->get_paypal_url().'" method="post">';
@@ -136,7 +136,7 @@ class EM_Gateway_Paypal extends EM_Gateway {
 				}
 				$form .= '<input type="submit" value="'.__('Resume Payment','em-pro').'">';
 				$form .= '</form>';
-				$message = $form;
+				$message .= $form;
 		    }
 		}
 		return $message;		
