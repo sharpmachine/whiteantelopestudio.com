@@ -136,7 +136,11 @@ class EM_User_Fields {
 					<td><?php echo get_avatar($EM_Person->ID); ?></td>
 					<td style="padding-left:10px; vertical-align: top;">
 						<table>
+							<?php if( get_option('dbem_bookings_registration_disable') && $EM_Person->ID == get_option('dbem_bookings_registration_user') ): ?>
+							<tr><th><?php _e('Name','dbem'); ?> : </th><th><?php echo $EM_Person->get_name() ?></th></tr>
+							<?php else: ?>
 							<tr><th><?php _e('Name','dbem'); ?> : </th><th><a href="<?php echo EM_ADMIN_URL ?>&amp;page=events-manager-bookings&amp;person_id=<?php echo $EM_Person->ID; ?>"><?php echo $EM_Person->get_name() ?></a></th></tr>
+							<?php endif; ?>
 							<tr><th><?php _e('Email','dbem'); ?> : </th><td><?php echo $EM_Person->user_email; ?></td></tr>
 							<?php foreach( $EM_Form->form_fields as $field_id => $field ){
 								$value = get_user_meta($EM_Person->ID, $field_id, true);

@@ -49,8 +49,10 @@ class EM_Gateways {
 	}
 	
 	static function em_wp_localize_script( $vars ){
-	    $vars['booking_delete'] .= ' '.__('All transactional history associated with this booking will also be deleted.','em-pro');
-	    $vars['transaction_delete'] = __('Are you sure you want to delete? This may make your transaction history out of sync with your payment gateway provider.', 'em-pro');
+		if( is_user_logged_in() && get_option('dbem_rsvp_enabled') ){
+		    $vars['booking_delete'] .= ' '.__('All transactional history associated with this booking will also be deleted.','em-pro');
+		    $vars['transaction_delete'] = __('Are you sure you want to delete? This may make your transaction history out of sync with your payment gateway provider.', 'em-pro');
+		}
 	    return $vars;
 	}
 	

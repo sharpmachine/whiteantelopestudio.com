@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Remote
 Description: Manage your WordPress site with <a href="https://wpremote.com/">WP Remote</a>. Deactivate to clear your API Key.
-Version: 2.2.5
+Version: 2.3.1
 Author: Human Made Limited
 Author URI: http://hmn.md/
 */
@@ -143,10 +143,14 @@ function wprp_catch_api_call() {
 add_action( 'init', 'wprp_catch_api_call', 1 );
 
 function _wprp_upgrade_core()  {
-	
+
 	include_once ( ABSPATH . 'wp-admin/includes/admin.php' );
 	include_once ( ABSPATH . 'wp-admin/includes/upgrade.php' );
 	include_once ( ABSPATH . 'wp-includes/update.php' );
+
+	// check for filesystem access
+	if ( ! _wpr_check_filesystem_access() )
+		return array( 'status' => 'error', 'error' => 'The filesystem is not writable with the supplied credentials' );
 
 	// force refresh
 	wp_version_check();
@@ -170,7 +174,7 @@ function _wprp_upgrade_core()  {
 		return $result;
 
 	global $wp_current_db_version, $wp_db_version;
-	
+
 	// we have to include version.php so $wp_db_version
 	// will take the version of the updated version of wordpress
 	require( ABSPATH . WPINC . '/version.php' );
@@ -179,3 +183,33 @@ function _wprp_upgrade_core()  {
 
 	return true;
 }
+
+function _wpr_check_filesystem_access() {
+
+	ob_start();
+	$success = request_filesystem_credentials();
+	ob_end_clean();
+
+	return (bool) $success;
+}
+
+function _wpr_set_filesystem_credentials( $credentials ) {
+
+	if ( empty( $_GET['filesystem_details'] ) )
+		return $credentials;
+
+	$_credentials = array(
+		'username' => $_GET['filesystem_details']['credentials']['username'],
+		'password' => $_GET['filesystem_details']['credentials']['password'],
+		'hostname' => $_GET['filesystem_details']['credentials']['hostname'],
+		'connection_type' => $_GET['filesystem_details']['method']
+	);
+
+	// check whether the credentials can be used
+	if ( ! WP_Filesystem( $_credentials ) ) {
+		return $credentials;
+	}
+
+	return $_credentials;
+}
+add_filter( 'request_filesystem_credentials', '_wpr_set_filesystem_credentials' );

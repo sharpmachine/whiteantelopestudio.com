@@ -135,6 +135,8 @@ class EM_Gateway {
 				$txn_id = $wpdb->get_var($sql);
 				if(!empty($txn_id)){
 					$result = $this->BOOKINGTXNID = $txn_id;
+				}else{
+				    $result = '';
 				}
 			}else{
 				$result = $this->BOOKINGTXNID;

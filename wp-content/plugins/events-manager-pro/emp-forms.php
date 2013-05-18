@@ -108,9 +108,6 @@ class EM_Form extends EM_Object {
 				}
 			}
 		}
-		if( $validate ){
-			return $this->validate();
-		}
 		return true;
 	}
 	
@@ -125,27 +122,31 @@ class EM_Form extends EM_Object {
 				break;
 			case 'date':
 			    //split ranges (or create single array) and format, then re-implode
-				$date_format = ( get_option('dbem_date_format') ) ? get_option('dbem_date_format'):get_option('date_format');
-			    $field_values = explode(',', $field_value);
-			    foreach($field_values as $key => $value){
-					$field_values[$key] = date($date_format, strtotime($value));
-				}
-			    $field_value = implode(',', $field_values);
-			    //set seperator and replace the comma
-				$seperator = empty($field['options_date_range_seperator']) ? ' - ': $field['options_date_range_seperator'];
-				$field_value = str_replace(',',' '.$seperator.' ', $field_value);
+			    if( $field_value != 'n/a' ){
+					$date_format = ( get_option('dbem_date_format') ) ? get_option('dbem_date_format'):get_option('date_format');
+				    $field_values = explode(',', $field_value);
+				    foreach($field_values as $key => $value){
+						$field_values[$key] = date($date_format, strtotime($value));
+					}
+				    $field_value = implode(',', $field_values);
+				    //set seperator and replace the comma
+					$seperator = empty($field['options_date_range_seperator']) ? ' - ': $field['options_date_range_seperator'];
+					$field_value = str_replace(',',' '.$seperator.' ', $field_value);
+			    }
 				break;
 			case 'time':
 			    //split ranges (or create single array) and format, then re-implode
-				$time_format = ( get_option('dbem_time_format') ) ? get_option('dbem_time_format'):get_option('time_format');
-			    $field_values = explode(',', $field_value);
-			    foreach($field_values as $key => $value){
-					$field_values[$key] = date($time_format, strtotime('2010-01-01 '.$value));
+			    if( $field_value != 'n/a' ){
+					$time_format = ( get_option('dbem_time_format') ) ? get_option('dbem_time_format'):get_option('time_format');
+				    $field_values = explode(',', $field_value);
+				    foreach($field_values as $key => $value){
+						$field_values[$key] = date($time_format, strtotime('2010-01-01 '.$value));
+					}
+				    $field_value = implode(',', $field_values);
+					//set seperator and replace the comma
+					$seperator = empty($field['options_time_range_seperator']) ? ' - ': $field['options_time_range_seperator'];
+					$field_value = str_replace(',',' '.$seperator.' ', $field_value);
 				}
-			    $field_value = implode(',', $field_values);
-				//set seperator and replace the comma
-				$seperator = empty($field['options_time_range_seperator']) ? ' - ': $field['options_time_range_seperator'];
-				$field_value = str_replace(',',' '.$seperator.' ', $field_value);
 				break;
 			case 'booking_comment':
 				if( $field_value == 'n/a' && !empty($EM_Booking->booking_comment) ){ $field_value = $EM_Booking->booking_comment; }
@@ -318,8 +319,8 @@ class EM_Form extends EM_Object {
 					$value = trim($value); 
 					?><input type="radio" name="<?php echo $field_name ?>" class="<?php echo $field['fieldid'] ?>" value="<?php echo esc_attr($value) ?>" <?php if($value == $default) echo 'checked="checked"'; ?> /> <?php echo $value ?><br /><?php
 				}
-				break;
 				echo "</span>";
+				break;
 			case 'select':
 			case 'multiselect':
 				$values = explode("\r\n",$field['options_select_values']);
@@ -358,7 +359,7 @@ class EM_Form extends EM_Object {
 				if( !empty($_REQUEST[$field_name]['start']) ) {
 					$default = array( $_REQUEST[$field_name]['start'] );
 					if( !empty($_REQUEST[$field_name]['end']) ){
-						$default = array( $_REQUEST[$field_name]['end'] );
+						$default[] = $_REQUEST[$field_name]['end'];
 					}
 				}else{
 					$default = explode(',',$default);
@@ -382,7 +383,7 @@ class EM_Form extends EM_Object {
 				if( !empty($_REQUEST[$field_name]['start']) ) {
 					$default = array( $_REQUEST[$field_name]['start'] );
 					if( !empty($_REQUEST[$field_name]['end']) ){
-						$default = array( $_REQUEST[$field_name]['end'] );
+						$default[] = $_REQUEST[$field_name]['end'];
 					}
 				}else{
 					$default = explode(',',$default);
@@ -430,9 +431,13 @@ class EM_Form extends EM_Object {
 	 * @return array|string
 	 */
 	function validate(){
-		foreach( array_keys($this->form_fields) as $field_id ){
-			$value = ( array_key_exists($field_id, $this->field_values) ) ? $this->field_values[$field_id] : '';
-			$this->validate_field($field_id, $value);
+		$reg_fields = self::validate_reg_fields();
+		foreach( $this->form_fields as $field ){
+			$field_id = $field['fieldid'];
+			if( $reg_fields || ( !$reg_fields && !array_key_exists($field['type'], $this->user_fields) ) ){ //don't validate reg info if we won't grab anything in get_post
+				$value = ( array_key_exists($field_id, $this->field_values) ) ? $this->field_values[$field_id] : '';
+				$this->validate_field($field_id, $value);
+			}
 		}
 		if( count($this->get_errors()) > 0 ){
 			return false;
@@ -528,7 +533,7 @@ class EM_Form extends EM_Object {
 					}				
 					break;			
 				case 'date':
-				    $dates = explode(',',$value);
+				    $dates = !is_array($value) ? explode(',',$value):$value;
 				    $start_date = $dates[0];
 				    $end_date = !empty($dates[1]) ? $dates[1]:'';
 				    if( !empty($start_date) ){
@@ -569,7 +574,7 @@ class EM_Form extends EM_Object {
 					}
 					break;			
 				case 'time':
-				    $times = explode(',',$value);
+				    $times = !is_array($value) ? explode(',',$value):$value;
 				    $start_time = $times[0];
 				    $end_time = !empty($times[1]) ? $times[1]:'';
 				    if( !empty($start_time) ){
@@ -616,14 +621,18 @@ class EM_Form extends EM_Object {
 					break;
 				default:
 					//Registration and custom fields
-				    $is_hidden_reg = is_user_logged_in() && in_array($field['fieldid'], array('first_name','last_name', 'user_email','user_login', 'name', 'user_password'));
-					if( array_key_exists($field['type'], $this->user_fields) && self::show_reg_fields() && !(!defined('EM_FORCE_REGISTRATION') && $is_hidden_reg) ){
-						//preliminary checks
-						if( in_array($field['type'], array('user_login','first_name','last_name')) && is_user_logged_in() && !defined('EM_FORCE_REGISTRATION') ) break;
+					$is_manual_booking_new_user = ( !empty($_REQUEST['manual_booking']) && wp_verify_nonce($_REQUEST['manual_booking'], 'em_manual_booking_'.$_REQUEST['event_id']) && $_REQUEST['person_id'] == -1 );
+				    $is_hidden_reg = (is_user_logged_in() && !$is_manual_booking_new_user) && in_array($field['type'], array('first_name','last_name', 'user_email','user_login', 'name', 'user_password'));
+					if( array_key_exists($field['type'], $this->user_fields) && self::validate_reg_fields() && !(!defined('EM_FORCE_REGISTRATION') && $is_hidden_reg) ){
+						//preliminary checks/exceptions
+						if( in_array($field['type'], array('user_login','first_name','last_name')) && (is_user_logged_in() && !$is_manual_booking_new_user) && !defined('EM_FORCE_REGISTRATION') ) break;
+						if( is_user_logged_in() && !get_option('dbem_emp_booking_form_reg_input') ) break;
+						//add field-specific validation
 						if ( $field['type'] == 'user_email' && ! is_email( $value ) ) {
 							$this->add_error( __( 'The email address isn&#8217;t correct.', 'dbem') );
 							$result = false;
 						}
+						//validate the rest
 						if( array_key_exists($field['type'], $this->core_user_fields) ){
 							//regex
 							if( !empty($field['options_reg_regex']) && !@preg_match('/'.$field['options_reg_regex'].'/',$value) ){
@@ -704,8 +713,13 @@ class EM_Form extends EM_Object {
 	function input_default($key, $fields, $type = 'text', $value=""){ echo self::get_input_default($key, $fields, $type, $value); }
 
 	
-	private function show_reg_fields(){
+	private static function show_reg_fields(){
 		return ((!is_user_logged_in() || defined('EM_FORCE_REGISTRATION')) && get_option('dbem_bookings_anonymous')) || (is_user_logged_in() && get_option('dbem_emp_booking_form_reg_show')); 
+	}
+
+	private static function validate_reg_fields(){
+		$validate = is_user_logged_in() ? get_option('dbem_emp_booking_form_reg_show') && get_option('dbem_emp_booking_form_reg_input') : true;
+		return self::show_reg_fields() && $validate;
 	}
 	
 	function editor($user_fields = true, $custom_fields = true, $captcha_fields = true){

@@ -2,7 +2,7 @@
 Contributors: netweblogic
 Tags: events, event, event registration, event calendar, events calendar, event management, paypal, registration, ticket, tickets, ticketing, tickets, theme, widget, locations, maps, booking, attendance, attendee, buddypress, calendar, gigs, payment, payments, sports,
 Requires at least: 3.1
-Tested up to: 3.4.1
+Tested up to: 3.4.2
 Stable tag: 2.2.2
 
 == Description ==
@@ -22,6 +22,16 @@ http://wp-events-plugin.com/support/
 Please visit http://wp-events-plugin.com/documentation/installation/
 
 == Changelog ==
+= 2.2.3 =
+* added attendee forms - alpha - add define('EM_ATTENDEES',true); to your wp-config.php file
+* fixed some display / validation errors in booking forms when modifying booking
+* fixed #_BOOKINGTXNID returning placeholder if there's an empty value, now returns an empty value
+* fixed minimum spaces calculations for attendees, as per fix in 5.2.5.2
+* fixed non-editable user fields breaking validation
+* updated German translation
+* fixed link still showing on the single booking view to the assigned default user for no-user bookings
+* hid some js localized vars if bookings disabled
+
 = 2.2.2 =
 * fixed no-user mode and user fields bug still happening in CSV exports
 * fixed MS global mode showing network transactions on all blogs

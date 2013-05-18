@@ -63,7 +63,7 @@ class EM_Gateway_Offline extends EM_Gateway {
 	}
 	
 	function em_wp_localize_script($vars){
-		if( is_user_logged_in() ){
+		if( is_user_logged_in() && get_option('dbem_rsvp_enabled') ){
 			$vars['offline_confirm'] = __('Be aware that by approving a booking awaiting payment, a full payment transaction will be registered against this booking, meaning that it will be considered as paid.','dbem');
 		}
 		return $vars;
