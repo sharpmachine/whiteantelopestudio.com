@@ -20,16 +20,29 @@ class blcHTMLImage extends blcParser {
 	
 	//                    \1                        \2      \3 URL    \4
 	var $img_pattern = '/(<img[\s]+[^>]*src\s*=\s*)([\"\'])([^>]+?)\2([^<>]*>)/i';
+
+	/** @var string Used in link editing callbacks. */
+	private $old_url = '';
+	/** @var string */
+	private $new_url = '';
 	
   /**
    * Parse a string for HTML images - <img src="URL">
    *
    * @param string $content The text to parse.
-   * @param string $base_url The base URL to use for normalizing relative URLs. If ommitted, the blog's root URL will be used. 
+   * @param string $base_url The base URL to use for normalizing relative URLs. If omitted, the blog's root URL will be used.
    * @param string $default_link_text 
    * @return array An array of new blcLinkInstance objects. The objects will include info about the links found, but not about the corresponding container entity. 
    */
 	function parse($content, $base_url = '', $default_link_text = ''){
+		global $blclog;
+
+		$charset = get_bloginfo('charset');
+		if ( strtoupper($charset) === 'UTF8' ) {
+			$charset = 'UTF-8';
+		}
+		$blclog->info('Blog charset is "' . $charset . '"');
+
 		$instances = array();
 		
 		//remove all <code></code> blocks first
@@ -40,11 +53,14 @@ class blcHTMLImage extends blcParser {
 			foreach($matches as $link){
 				$url = $raw_url = $link[3];
 				//FB::log($url, "Found image");
+				$blclog->info('Found image. SRC attribute: "' . $raw_url . '"');
 				
 				//Decode &amp; and other entities
-				$url = html_entity_decode($url);
+				$url = html_entity_decode($url, ENT_QUOTES, $charset);
+				$blclog->info('Decoded image URL: "' . $url . '"');
 				$url = trim($url);
-				
+				$blclog->info('Trimmed image URL: "' . $url . '"');
+
 				//Allow shortcodes in image URLs.
 				$url = do_shortcode($url);
 				
@@ -55,15 +71,26 @@ class blcHTMLImage extends blcParser {
 				};
 				
 				if ( !isset($parts['scheme']) ){
-					//No sheme - likely a relative URL. Turn it into an absolute one.
+					//No scheme - likely a relative URL. Turn it into an absolute one.
+					$relativeUrl = $url;
 					$url = $this->relative2absolute($url, $base_url);
+
+					$blclog->info(sprintf(
+						'%s:%s Resolving relative URL. Relative URL = "%s", base URL = "%s", result = "%s"',
+						__CLASS__,
+						__FUNCTION__,
+						$relativeUrl,
+						$base_url,
+						$url
+					));
 				}
 				
 				//Skip invalid URLs (again)
 				if ( !$url || (strlen($url)<6) ) {
 					continue;
-				} 
-			    
+				}
+
+				$blclog->info('Final URL: "' . $url . '"');
 			    //The URL is okay, create and populate a new link instance.
 			    $instance = new blcLinkInstance();
 			    
@@ -160,7 +187,7 @@ class blcHTMLImage extends blcParser {
 		
 		$image = sprintf(
 			'<img src="%s" class="blc-small-image" alt="%2$s" title="%2$s"> ',
-			esc_attr(plugins_url('/images/image.png', BLC_PLUGIN_FILE)),
+			esc_attr(plugins_url('/images/font-awesome/font-awesome-picture.png', BLC_PLUGIN_FILE)),
 			esc_attr($text)
 		);
 		
@@ -171,5 +198,3 @@ class blcHTMLImage extends blcParser {
 		return $text;
 	}
 }
-
-?>

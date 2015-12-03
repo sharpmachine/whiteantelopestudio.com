@@ -12,8 +12,8 @@
  * @access private
  */
 class blcPostTypeOverlord {
-	var $enabled_post_types = array();  //Post types currently selected for link checking
-	var $enabled_post_statuses = array('publish'); //Only posts that have one of these statuses shall be checked
+	public $enabled_post_types = array();  //Post types currently selected for link checking
+	public $enabled_post_statuses = array('publish'); //Only posts that have one of these statuses shall be checked
 	 
 	var $plugin_conf;  
 	var $resynch_already_done = false;
@@ -44,8 +44,7 @@ class blcPostTypeOverlord {
 		
 		$post_types = get_post_types(array(), 'objects');
 		$exceptions = array('revision', 'nav_menu_item', 'attachment');
-		$built_in = array('post', 'page');
-		
+
 		foreach($post_types as $data){
 			$post_type = $data->name;
 			
@@ -159,16 +158,17 @@ class blcPostTypeOverlord {
 
         $post_container->mark_as_unsynched();
 	}
-	
-	
-  /**
-   * Create or update synchronization records for all posts.
-   *
-   * @param bool $forced If true, assume that all synch. records are gone and will need to be recreated from scratch. 
-   * @return void
-   */
+
+
+	/**
+	 * Create or update synchronization records for all posts.
+	 *
+	 * @param string $container_type
+	 * @param bool $forced If true, assume that all synch. records are gone and will need to be recreated from scratch.
+	 * @return void
+	 */
 	function resynch($container_type = '', $forced = false){
-		global $wpdb;
+		global $wpdb; /** @var wpdb $wpdb */
 		global $blclog;
 		
 		//Resynch is expensive in terms of DB performance. Thus we only do it once, processing
@@ -185,12 +185,13 @@ class blcPostTypeOverlord {
 			return;
 		}
 		
-		$escaped_post_types = array_map(array(&$wpdb, 'escape'), $this->enabled_post_types);
-		$escaped_post_statuses = array_map(array(&$wpdb, 'escape'), $this->enabled_post_statuses);
+		$escaped_post_types = array_map('esc_sql', $this->enabled_post_types);
+		$escaped_post_statuses = array_map('esc_sql', $this->enabled_post_statuses);
 		
 		if ( $forced ){
 			//Create new synchronization records for all posts. 
 			$blclog->log('...... Creating synch records for these post types: '.implode(', ', $escaped_post_types) . ' that have one of these statuses: ' . implode(', ', $escaped_post_statuses));
+			$start = microtime(true);
 	    	$q = "INSERT INTO {$wpdb->prefix}blc_synch(container_id, container_type, synched)
 				  SELECT posts.id, posts.post_type, 0
 				  FROM {$wpdb->posts} AS posts
@@ -203,11 +204,12 @@ class blcPostTypeOverlord {
 				"'" . implode("', '", $escaped_post_types) . "'"
 			);
 	 		$wpdb->query( $q );
-	 		$blclog->log(sprintf('...... %d rows inserted', $wpdb->rows_affected));
+	 		$blclog->log(sprintf('...... %d rows inserted in %.3f seconds', $wpdb->rows_affected, microtime(true) - $start));
  		} else {
  			//Delete synch records corresponding to posts that no longer exist.
  			$blclog->log('...... Deleting synch records for removed posts');
- 			$q = "DELETE synch.*
+			$start = microtime(true);
+			$q = "DELETE synch.*
 				  FROM 
 					 {$wpdb->prefix}blc_synch AS synch LEFT JOIN {$wpdb->posts} AS posts
 					 ON posts.ID = synch.container_id
@@ -218,12 +220,34 @@ class blcPostTypeOverlord {
 				"'" . implode("', '", $escaped_post_types) . "'"
 			);
 			$wpdb->query( $q );
-			$blclog->log(sprintf('...... %d rows deleted', $wpdb->rows_affected));
- 			
+			$elapsed = microtime(true) - $start;
+			$blclog->debug($q);
+			$blclog->log(sprintf('...... %d rows deleted in %.3f seconds', $wpdb->rows_affected, $elapsed));
+
+			//Delete records where the post status is not one of the enabled statuses.
+			$blclog->log('...... Deleting synch records for posts that have a disallowed status');
+			$start = microtime(true);
+			$q = "DELETE synch.*
+				  FROM
+					 {$wpdb->prefix}blc_synch AS synch
+					 LEFT JOIN {$wpdb->posts} AS posts
+					 ON (synch.container_id = posts.ID and synch.container_type = posts.post_type)
+				  WHERE
+					 posts.post_status NOT IN (%s)";
+			$q = sprintf(
+				$q,
+				"'" . implode("', '", $escaped_post_statuses) . "'"
+			);
+			$wpdb->query( $q );
+			$elapsed = microtime(true) - $start;
+			$blclog->debug($q);
+			$blclog->log(sprintf('...... %d rows deleted in %.3f seconds', $wpdb->rows_affected, $elapsed));
+
 			//Remove the 'synched' flag from all posts that have been updated
 			//since the last time they were parsed/synchronized.
 			$blclog->log('...... Marking changed posts as unsynched');
-			$q = "UPDATE 
+			$start = microtime(true);
+			$q = "UPDATE
 					{$wpdb->prefix}blc_synch AS synch
 					JOIN {$wpdb->posts} AS posts ON (synch.container_id = posts.ID and synch.container_type=posts.post_type)
 				  SET 
@@ -231,10 +255,13 @@ class blcPostTypeOverlord {
 				  WHERE
 					synch.last_synch < posts.post_modified";
 			$wpdb->query( $q );
-			$blclog->log(sprintf('...... %d rows updated', $wpdb->rows_affected));
+			$elapsed = microtime(true) - $start;
+			$blclog->debug($q);
+			$blclog->log(sprintf('...... %d rows updated in %.3f seconds', $wpdb->rows_affected, $elapsed));
 			
 			//Create synch. records for posts that don't have them.
 			$blclog->log('...... Creating synch records for new posts');
+			$start = microtime(true);
 			$q = "INSERT INTO {$wpdb->prefix}blc_synch(container_id, container_type, synched)
 				  SELECT posts.id, posts.post_type, 0
 				  FROM 
@@ -250,7 +277,9 @@ class blcPostTypeOverlord {
 				"'" . implode("', '", $escaped_post_types) . "'"
 			);
 			$wpdb->query($q);
-			$blclog->log(sprintf('...... %d rows inserted', $wpdb->rows_affected)); 				
+			$elapsed = microtime(true) - $start;
+			$blclog->debug($q);
+			$blclog->log(sprintf('...... %d rows inserted in %.3f seconds', $wpdb->rows_affected, $elapsed));
 		}
 		
 		$this->resynch_already_done = true;
@@ -270,7 +299,7 @@ class blcPostTypeOverlord {
         	return $content;
        	}
         
-        //Retrieve info about all occurences of broken links in the current post 
+        //Retrieve info about all occurrences of broken links in the current post
         $q = "
 			SELECT instances.raw_url
 			FROM {$wpdb->prefix}blc_instances AS instances JOIN {$wpdb->prefix}blc_links AS links 
@@ -403,14 +432,14 @@ class blcAnyPostContainer extends blcContainer {
 					$actions['trash'] = sprintf(
 						"<span class='trash'><a class='submitdelete' title='%s' href='%s'>%s</a>",
 						esc_attr(__('Move this item to the Trash')),
-						get_delete_post_link($this->container_id, '', false),
+						esc_attr(get_delete_post_link($this->container_id, '', false)),
 						__('Trash')
 					);
 				} else {
 					$actions['delete'] = sprintf(
 						"<span><a class='submitdelete' title='%s' href='%s'>%s</a>",
 						esc_attr(__('Delete this item permanently')),
-						get_delete_post_link($this->container_id, '', true),
+						esc_attr(get_delete_post_link($this->container_id, '', true)),
 						__('Delete')
 					);
 				}
@@ -519,15 +548,17 @@ class blcAnyPostContainer extends blcContainer {
 				__('Nothing to update', 'broken-link-checker')
 			);
 		}
-		
-		$id = wp_update_post($this->wrapped_object);
-		if ( $id != 0 ){
-			return true;
-		} else {
+
+		$post_id = wp_update_post($this->wrapped_object, true);
+		if ( is_wp_error($post_id) ) {
+			return $post_id;
+		} else if ( $post_id == 0 ){
 			return new WP_Error(
 				'update_failed',
 				sprintf(__('Updating post %d failed', 'broken-link-checker'), $this->container_id)
 			);
+		} else {
+			return true;
 		}
 	}
 	
@@ -566,7 +597,7 @@ class blcAnyPostContainer extends blcContainer {
 						$this->container_id
 					)
 				);
-			};
+			}
 		}
 	}
 	
@@ -605,7 +636,7 @@ class blcAnyPostContainer extends blcContainer {
 					$this->container_id
 				)
 			);
-		};
+		}
 	}
 	
 	/**
@@ -638,7 +669,7 @@ class blcAnyPostContainerManager extends blcContainerManager {
 	
 	function init(){
 		parent::init();
-		
+
 		//Notify the overlord that the post/container type that this instance is 
 		//responsible for is enabled.
 		$overlord = blcPostTypeOverlord::getInstance();
@@ -741,5 +772,3 @@ class blcAnyPostContainerManager extends blcContainerManager {
 		return sprintf($delete_msg, $n, $type_name);
 	}
 }
-
-?>

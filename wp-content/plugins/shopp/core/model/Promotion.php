@@ -1,6 +1,6 @@
 <?php
 /**
- * Promotion class
+ * ShoppPromo class
  * Handles special promotion deals
  *
  * @author Jonathan Davis
@@ -9,7 +9,9 @@
  * @package shopp
  **/
 
-class Promotion extends DatabaseObject {
+defined( 'WPINC' ) || header( 'HTTP/1.1 403' ) & exit; // Prevent direct access
+
+class ShoppPromo extends ShoppDatabaseObject {
 	static $table = "promo";
 
 	static $values = array(
@@ -32,110 +34,148 @@ class Promotion extends DatabaseObject {
 		"Customer type" => "text"
 	);
 
-	function Promotion ($id=false) {
+	function __construct ($id=false) {
 		$this->init(self::$table);
 		if ($this->load($id)) return true;
 		else return false;
 	}
 
-	function catalog_discounts () {
-		$db = DB::get();
+	function catalog () {
 
-		$product_table = WPDatabaseObject::tablename(Product::$table);
-		$price_table = DatabaseObject::tablename(Price::$table);
+		$product_table = WPDatabaseObject::tablename(ShoppProduct::$table);
+		$price_table = ShoppDatabaseObject::tablename(ShoppPrice::$table);
 
-		$where_notdiscounted = array("0 = FIND_IN_SET($this->id,discounts)");
+		// $where_notdiscounted = array("0 = FIND_IN_SET($this->id,discounts)");
 		$where = array();
+		$excludes = array();
+
 		// Go through each rule to construct an SQL query
 		// that gets all applicable product & price ids
-		if (!empty($this->rules) && is_array($this->rules)) {
-			foreach ($this->rules as $rule) {
+		foreach ( (array) $this->rules as $rule ) {
 
-				if (Promotion::$values[$rule['property']] == "price")
-					$value = floatvalue($rule['value']);
-				else $value = $rule['value'];
+			if ( 'price' == ShoppPromo::$values[ $rule['property'] ] )
+				$value = Shopp::floatval($rule['value']);
+			else $value = $rule['value'];
 
-				switch($rule['logic']) {
-					case "Is equal to": $match = "='$value'"; break;
-					case "Is not equal to": $match = "!='$value'"; break;
-					case "Contains": $match = " LIKE '%$value%'"; break;
-					case "Does not contain": $match = " NOT LIKE '%$value%'"; break;
-					case "Begins with": $match = " LIKE '$value%'"; break;
-					case "Ends with": $match = " LIKE '%$value'"; break;
-					case "Is greater than": $match = "> $value"; break;
-					case "Is greater than or equal to": $match = ">= $value"; break;
-					case "Is less than": $match = "< $value"; break;
-					case "Is less than or equal to": $match = "<= $value"; break;
-				}
+			switch( $rule['logic'] ) {
+				case "Is equal to": $match = "='$value'"; break;
+				case "Is not equal to": $match = "!='$value'"; break;
+				case "Contains": $match = " LIKE '%$value%'"; break;
+				case "Does not contain": $match = " NOT LIKE '%$value%'"; break;
+				case "Begins with": $match = " LIKE '$value%'"; break;
+				case "Ends with": $match = " LIKE '%$value'"; break;
+				case "Is greater than": $match = "> $value"; break;
+				case "Is greater than or equal to": $match = ">= $value"; break;
+				case "Is less than": $match = "< $value"; break;
+				case "Is less than or equal to": $match = "<= $value"; break;
+			}
 
-				switch($rule['property']) {
-					case "Name":
-						$where[] = "p.post_title$match";
-						$joins[$product_table] = "INNER JOIN $product_table as p ON prc.product=p.id";
-						break;
-					case "Category":
-						$where[] = "tm.name$match";
-						global $wpdb;
-						$joins[$wpdb->term_relationships] = "INNER JOIN $wpdb->term_relationships AS tr ON (prc.product=tr.object_id)";
-						$joins[$wpdb->term_taxonomy] = "INNER JOIN $wpdb->term_taxonomy AS tt ON (tr.term_taxonomy_id=tt.term_taxonomy_id)";
-						$joins[$wpdb->terms] = "INNER JOIN $wpdb->terms AS tm ON (tm.term_id=tt.term_id)";
-						break;
-					case "Variation": $where[] = "prc.label$match"; break;
-					case "Price": $where[] = "prc.price$match"; break;
-					case "Sale price": $where[] = "(prc.onsale='on' AND prc.saleprice$match)"; break;
-					case "Type": $where[] = "prc.type$match"; break;
-					case "In stock": $where[] = "(prc.inventory='on' AND prc.stock$match)"; break;
-				}
-
+			switch( $rule['property'] ) {
+				case "Name":
+					$where[] = "p.post_title$match";
+					$joins[ $product_table ] = "INNER JOIN $product_table as p ON prc.product=p.id";
+					break;
+				case "Category":
+					$where[] = "tm.name$match";
+					if ( '!' == $match{0} )
+						$excludes[] = "tm.name" . ltrim($match, '!');
+					global $wpdb;
+					$joins[ $wpdb->term_relationships ] = "INNER JOIN $wpdb->term_relationships AS tr ON (prc.product=tr.object_id)";
+					$joins[ $wpdb->term_taxonomy ] = "INNER JOIN $wpdb->term_taxonomy AS tt ON (tr.term_taxonomy_id=tt.term_taxonomy_id)";
+					$joins[ $wpdb->terms ] = "INNER JOIN $wpdb->terms AS tm ON (tm.term_id=tt.term_id)";
+					break;
+				case "Variation": $where[] = "prc.label$match"; break;
+				case "Price": $where[] = "prc.price$match"; break;
+				case "Sale price": $where[] = "(prc.onsale='on' AND prc.saleprice$match)"; break;
+				case "Type": $where[] = "prc.type$match"; break;
+				case "In stock": $where[] = "(prc.inventory='on' AND prc.stock$match)"; break;
 			}
 
 		}
 
-		if (!empty($where)) $where = "WHERE ".join(" AND ",$where);
+
+		$operator = 'all' == strtolower($this->search) ? ' AND ' : ' OR ';
+
+		if ( ! empty($where) ) $where = "WHERE " . join($operator, $where);
 		else $where = false;
 
-		if (!empty($joins)) $joins = join(' ',$joins);
+		if ( ! empty($joins) ) $joins = join(' ', $joins);
 		else $joins = false;
 
 		// Find all the pricetags the promotion is *currently assigned* to
 		$query = "SELECT id FROM $price_table WHERE 0 < FIND_IN_SET($this->id,discounts)";
-		$current = DB::query($query,'array','col','id');
+		$current = sDB::query($query, 'array', 'col', 'id');
+
+		$exclude = '';
+		if ( ! empty($excludes) ) {
+			// Find all the pricetags the promotion should exclude
+			$subquery = "SELECT prc.id FROM $price_table AS prc $joins WHERE " . join( ' OR ', $excludes);
+			$exclude = " AND prc.id NOT IN ($subquery)";
+		}
 
 		// Find all the pricetags the promotion is *going to apply* to
 		$query = "SELECT prc.id,prc.product,prc.discounts FROM $price_table AS prc
 					$joins
-					$where";
-		$updates = DB::query($query,'array','col','id');
+					$where $exclude";
+		$updates = sDB::query($query, 'array', 'col', 'id');
 
 		// Determine which records need promo added to and removed from
-		$added = array_diff($updates,$current);
-		$removed = array_diff($current,$updates);
+		$added = array_diff($updates, $current);
+		$removed = array_diff($current, $updates);
 
 		// Add discounts to specific rows
 		$query = "UPDATE $price_table
 					SET discounts=CONCAT(discounts,IF(discounts='','$this->id',',$this->id'))
-					WHERE id IN (".join(',',$added).")";
-		if (!empty($added)) DB::query($query);
+					WHERE id IN (" . join(',', $added) . ")";
+		if ( ! empty($added) ) sDB::query($query);
 
 		// Remove discounts from pricetags that now don't match the conditions
-		if (!empty($removed)) $this->uncatalog_discounts($removed);
+		if ( ! empty($removed) ) $this->uncatalog($removed);
 
 		// Recalculate product stats for products with pricetags that have changed
 		$Collection = new PromoProducts(array('id' => $this->id));
-		$Collection->load( array('load'=>array('prices'),'pagination' => false) );
+		$Collection->load( array('load' => array('prices'), 'pagination' => false) );
 	}
 
-	function uncatalog_discounts ($pricetags) {
-		$_table = DatabaseObject::tablename(Price::$table);
-		if (empty($pricetags)) return;
+	function uncatalog ( $pricetags ) {
+		if ( empty($pricetags) ) return;
 
-		$discounted = DB::query("SELECT id,discounts,FIND_IN_SET($this->id,discounts) AS offset FROM $_table WHERE id IN ('".join(',',$pricetags)."')",'array');
+		$table = ShoppDatabaseObject::tablename(ShoppPrice::$table);
+		//echo "SELECT id,product,discounts,FIND_IN_SET($this->id,discounts) AS offset FROM $table WHERE id IN ('" . join(',', $pricetags) . "')";
+		$discounted = sDB::query("SELECT id,product,discounts,FIND_IN_SET($this->id,discounts) AS offset FROM $table WHERE id IN ('" . join(',', $pricetags) . "')", 'array');
 
-		foreach ($discounted as $index => $pricetag) {
-			$promos = explode(',',$pricetag->discounts);
-			array_splice($promos,($offset-1),1);
-			DB::query("UPDATE LOW_PRIORITY $_table SET discounts='".join(',',$promos)."' WHERE id=$pricetag->id");
+		$products = array();
+		foreach ( $discounted as $index => $pricetag ) {
+			$products[] = $pricetag->product;
+			$promos = explode(',', $pricetag->discounts);
+			array_splice($promos, ($pricetag->offset - 1), 1); // Remove the located promotion ID from the discounts list
+			//echo "UPDATE $table SET discounts='" . join(',', $promos) . "' WHERE id=$pricetag->id";
+			sDB::query("UPDATE $table SET discounts='" . join(',', $promos) . "' WHERE id=$pricetag->id");
 		}
+
+		// Force resum on products next load
+		$summary = ShoppDatabaseObject::tablename('summary');
+		//echo "UPDATE $summary SET modified='" . ProductSummary::RECALCULATE . "' WHERE product IN (" . join(',', $products). ")";
+		sDB::query("UPDATE $summary SET modified='" . ProductSummary::RECALCULATE . "' WHERE product IN (" . join(',', $products). ")");
+	}
+
+	/**
+	 * Finds all price records that have the specified list of discounts applied to them
+	 *
+	 * @author Jonathan Davis
+	 * @since 1.2.4
+	 *
+	 * @param array $ids List of promotion IDs
+	 * @return array List of price record IDs
+	 **/
+	static function discounted_prices ( $ids ) {
+		$where = array();
+		foreach ( $ids as $id )
+			$where[ $id ] = "0 < FIND_IN_SET('$id',discounts)";
+		$table = ShoppDatabaseObject::tablename('price');
+		$query = "SELECT id FROM $table WHERE " . join(" OR ", $where);
+		$pricetags = sDB::query($query, 'array', 'col', 'id');
+		return (array)$pricetags;
 	}
 
 	/**
@@ -146,10 +186,10 @@ class Promotion extends DatabaseObject {
 		switch($op) {
 			// String or Numeric operations
 			case "Is equal to":
-			 	if($property && Promotion::$values[$property] == 'price') {
-					return ( floatvalue($subject) != 0
-					&& floatvalue($value) != 0
-					&& floatvalue($subject) == floatvalue($value));
+			 	if($property && ShoppPromo::$values[$property] == 'price') {
+					return ( Shopp::floatval($subject) != 0
+					&& Shopp::floatval($value) != 0
+					&& Shopp::floatval($subject) == Shopp::floatval($value));
 				} else {
 					if (is_array($subject)) return (in_array($value,$subject));
 					return ("$subject" === "$value");
@@ -158,9 +198,9 @@ class Promotion extends DatabaseObject {
 			case "Is not equal to":
 				if (is_array($subject)) return (!in_array($value,$subject));
 				return ("$subject" !== "$value"
-						|| (floatvalue($subject) != 0
-						&& floatvalue($value) != 0
-						&& floatvalue($subject) != floatvalue($value)));
+						|| (Shopp::floatval($subject) != 0
+						&& Shopp::floatval($value) != 0
+						&& Shopp::floatval($subject) != Shopp::floatval($value)));
 						break;
 
 			// String operations
@@ -195,16 +235,16 @@ class Promotion extends DatabaseObject {
 
 			// Numeric operations
 			case "Is greater than":
-				return (floatvalue($subject,false) > floatvalue($value,false));
+				return (Shopp::floatval($subject,false) > Shopp::floatval($value,false));
 				break;
 			case "Is greater than or equal to":
-				return (floatvalue($subject,false) >= floatvalue($value,false));
+				return (Shopp::floatval($subject,false) >= Shopp::floatval($value,false));
 				break;
 			case "Is less than":
-				return (floatvalue($subject,false) < floatvalue($value,false));
+				return (Shopp::floatval($subject,false) < Shopp::floatval($value,false));
 				break;
 			case "Is less than or equal to":
-				return (floatvalue($subject,false) <= floatvalue($value,false));
+				return (Shopp::floatval($subject,false) <= Shopp::floatval($value,false));
 				break;
 		}
 
@@ -217,17 +257,16 @@ class Promotion extends DatabaseObject {
 	 * @author Jonathan Davis
 	 * @since 1.1
 	 *
-	 * @param array $promos A list of Promotion ids of the promotions to be updated
+	 * @param array $promos A list of ShoppPromo ids of the promotions to be updated
 	 * @return void
 	 **/
-	function used ($promos) {
-		$db =& DB::get();
-		if (empty($promos) || !is_array($promos)) return;
-		$table = DatabaseObject::tablename(self::$table);
-		$db->query("UPDATE LOW_PRIORITY $table SET uses=uses+1 WHERE 0 < FIND_IN_SET(id,'".join(',',$promos)."')");
+	public static function used ($promos) {
+		if ( empty($promos) || ! is_array($promos) ) return;
+		$table = ShoppDatabaseObject::tablename(self::$table);
+		sDB::query("UPDATE $table SET uses=uses+1 WHERE 0 < FIND_IN_SET(id,'" . join(',', $promos) . "')");
 	}
 
-	static function activedates () {
+	public static function activedates () {
 
 		// By default the promotion editor will save a value of 1
 		// for the start and end dates if no date values are provided.
@@ -277,8 +316,16 @@ class Promotion extends DatabaseObject {
 	    )";
 	}
 
+	/**
+	 * Duplicates a promotion
+	 *
+	 * @author Jonathan Davis
+	 * @since 1.1
+	 *
+	 * @return ShoppPromo The newly created ShoppPromo object
+	 **/
 	function duplicate () {
-		$Promotion = new Promotion();
+		$Promotion = new ShoppPromo();
 		$Promotion->copydata($this);
 		$Promotion->name = sprintf(__('%s copy','Shopp'),$Promotion->name);
 		$Promotion->status = 'disabled';
@@ -286,6 +333,7 @@ class Promotion extends DatabaseObject {
 		$Promotion->created = null;
 		$Promotion->modified = null;
 		$Promotion->save();
+		return $Promotion;
 	}
 
 	/**
@@ -294,7 +342,7 @@ class Promotion extends DatabaseObject {
 	 * @author Jonathan Davis
 	 * @since 1.2
 	 *
-	 * @return void Description...
+	 * @return void
 	 **/
 	static function pricing ($pricetag,$ids) {
 		$discount = new StdClass();
@@ -303,9 +351,9 @@ class Promotion extends DatabaseObject {
 
 		if (empty($pricetag) || empty($ids)) return $discount;
 
-		$table = DatabaseObject::tablename(self::$table);
-		$query = "SELECT type,SUM(discount) AS amount FROM $table WHERE 0 < FIND_IN_SET(id,'$ids') AND (discount > 0 OR type='Free Shipping') AND status='enabled' GROUP BY type ORDER BY type DESC";
-		$discounts = DB::query($query,'array');
+		$table = ShoppDatabaseObject::tablename(self::$table);
+		$query = "SELECT type,SUM(discount) AS amount FROM $table WHERE 0 < FIND_IN_SET(id,'$ids') AND (discount > 0 OR type='Free Shipping') AND status='enabled' AND " . self::activedates() . " GROUP BY type ORDER BY type DESC";
+		$discounts = sDB::query($query,'array');
 		if (empty($discounts)) return $discount;
 
 		$freeship = false;
@@ -338,8 +386,19 @@ class Promotion extends DatabaseObject {
 	 **/
 	static function deleteset ($ids) {
 		if (empty($ids) || !is_array($ids)) return false;
-		$table = DatabaseObject::tablename(self::$table);
-		DB::query("DELETE FROM $table WHERE id IN (".join(',',$ids).")");
+
+		$prices = self::discounted_prices($ids);	// Get the discounted price records
+
+		foreach ( $ids as $id ) {
+			$Promo = new ShoppPromo($id);
+			if ( 'Catalog' == $Promo->target )
+				$Promo->uncatalog($prices);			// Remove the deleted price discounts
+		}
+
+
+		$table = ShoppDatabaseObject::tablename(self::$table);
+		sDB::query("DELETE FROM $table WHERE id IN (" . join(',', $ids) . ")"); // Delete the promotions
+
 		return true;
 	}
 
@@ -354,13 +413,13 @@ class Promotion extends DatabaseObject {
 	 **/
 	static function enableset ($ids) {
 		if (empty($ids) || !is_array($ids)) return false;
-		$table = DatabaseObject::tablename(self::$table);
-		DB::query("UPDATE $table SET status='enabled' WHERE id IN (".join(',',$ids).")");
+		$table = ShoppDatabaseObject::tablename(self::$table);
+		sDB::query("UPDATE $table SET status='enabled' WHERE id IN (".join(',',$ids).")");
 
-		$catalogpromos = DB::query("SELECT id FROM $table WHERE target='Catalog'",'array','col','id');
+		$catalogpromos = sDB::query("SELECT id FROM $table WHERE target='Catalog'",'array','col','id');
 		foreach ($catalogpromos as $promoid) {
-			$Promo = new Promotion($promoid);
-			$Promo->catalog_discounts();
+			$Promo = new ShoppPromo($promoid);
+			$Promo->catalog();
 		}
 
 		return true;
@@ -377,19 +436,17 @@ class Promotion extends DatabaseObject {
 	 **/
 	static function disableset ($ids) {
 		if (empty($ids) || !is_array($ids)) return false;
-		$table = DatabaseObject::tablename(self::$table);
-		DB::query("UPDATE $table SET status='disabled' WHERE id IN (".join(',',$ids).")");
+		$table = ShoppDatabaseObject::tablename(self::$table);
+		sDB::query("UPDATE $table SET status='disabled' WHERE id IN (".join(',',$ids).")");
 
-		$catalogpromos = DB::query("SELECT id FROM $table WHERE target='Catalog'",'array','col','id');
+		$catalogpromos = sDB::query("SELECT id FROM $table WHERE target='Catalog'",'array','col','id');
 		foreach ($catalogpromos as $promoid) {
-			$Promo = new Promotion($promoid);
-			$Promo->catalog_discounts();
+			$Promo = new ShoppPromo($promoid);
+			$Promo->catalog();
 		}
 
 		return true;
 	}
 
 
-} // END clas Promotion
-
-?>
+} // END class ShoppPromo

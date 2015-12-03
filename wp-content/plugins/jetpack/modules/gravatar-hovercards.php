@@ -1,30 +1,37 @@
 <?php
 /**
  * Module Name: Gravatar Hovercards
- * Module Description: Show a pop-up business card of your users' gravatar profiles in comments.
- * Sort Order: 8
+ * Module Description: Enable pop-up business cards over commenters’ Gravatars.
+ * Jumpstart Description: Let commenters link their profiles to their Gravatar accounts, making it easy for your visitors to learn more about your community.
+ * Sort Order: 11
+ * Recommendation Order: 13
  * First Introduced: 1.1
+ * Requires Connection: No
+ * Auto Activate: Yes
+ * Module Tags: Social, Appearance
+ * Feature: Jumpstart
+ * Additional Search Queries: gravatar, hovercards
  */
 
 define( 'GROFILES__CACHE_BUSTER', gmdate( 'YM' ) . 'aa' ); // Break CDN cache, increment when gravatar.com/js/gprofiles.js changes
 
 function grofiles_hovercards_init() {
-	add_filter( 'get_avatar', 'grofiles_get_avatar', 10, 2 );
-	add_action( 'wp_footer',  'grofiles_attach_cards' );
-	add_action( 'wp_footer',  'grofiles_extra_data' );
-	add_action( 'admin_init', 'grofiles_add_settings' );
-	
+	add_filter( 'get_avatar',          'grofiles_get_avatar', 10, 2 );
+	add_action( 'wp_enqueue_scripts',  'grofiles_attach_cards' );
+	add_action( 'wp_footer',           'grofiles_extra_data' );
+	add_action( 'admin_init',          'grofiles_add_settings' );
+
 	add_action( 'load-index.php',              'grofiles_admin_cards' );
 	add_action( 'load-users.php',              'grofiles_admin_cards' );
-	add_action( 'load-edit-comments.php',      'grofiles_admin_cards' );	
-	add_action( 'load-options-discussion.php', 'grofiles_admin_cards_forced' );	
+	add_action( 'load-edit-comments.php',      'grofiles_admin_cards' );
+	add_action( 'load-options-discussion.php', 'grofiles_admin_cards_forced' );
 
 	Jetpack::enable_module_configurable( __FILE__ );
 	Jetpack::module_configuration_load( __FILE__, 'gravatar_hovercards_configuration_load' );
 }
 
 function gravatar_hovercards_configuration_load() {
-	wp_safe_redirect( admin_url( 'options-discussion.php#gravatar-hovercard-options' ) );
+	wp_safe_redirect( admin_url( 'options-discussion.php#show_avatars' ) );
 	exit;
 }
 
@@ -52,7 +59,7 @@ function grofiles_setting_callback() {
 	global $current_user;
 
 	$checked = 'disabled' == get_option( 'gravatar_disable_hovercards' ) ? '' : 'checked="checked" ';
- 
+
  	echo "<label id='gravatar-hovercard-options'><input {$checked}name='gravatar_disable_hovercards' id='gravatar_disable_hovercards' type='checkbox' value='enabled' class='code' /> " . __( "View people's profiles when you mouse over their Gravatars", 'jetpack' ) . "</label>";
 ?>
 <style type="text/css">
@@ -141,7 +148,7 @@ function grofiles_get_avatar( $avatar, $author ) {
 		if ( false !== strpos( $author, '@' ) ) {
 			grofiles_gravatars_to_append( $author );
 		} else {
-			if ( $user = get_userdatabylogin( $author ) )
+			if ( $user = get_user_by( 'slug', $author ) )
 				grofiles_gravatars_to_append( $user->ID );
 		}
 	} else if ( isset( $author->comment_type ) ) {
@@ -167,12 +174,19 @@ function grofiles_get_avatar( $avatar, $author ) {
  */
 function grofiles_attach_cards() {
 	global $blog_id;
-	
-	if ( 'disabled' == get_option( 'gravatar_disable_hovercards' ) )
-		return;
 
-	wp_enqueue_script( 'grofiles-cards', ( is_ssl() ? 'https://secure' : 'http://s' ) . '.gravatar.com/js/gprofiles.js', array( 'jquery' ), GROFILES__CACHE_BUSTER );
-	wp_enqueue_script( 'wpgroho', plugins_url( 'wpgroho.js', __FILE__ ), array( 'grofiles-cards' ) );
+	// Is the display of Avatars disabled?
+	if ( ! get_option( 'show_avatars' ) ) {
+		return;
+	}
+
+	// Is the display of Gravatar Hovercards disabled?
+	if ( 'disabled' == get_option( 'gravatar_disable_hovercards' ) ) {
+		return;
+	}
+
+	wp_enqueue_script( 'grofiles-cards', ( is_ssl() ? 'https://secure' : 'http://s' ) . '.gravatar.com/js/gprofiles.js', array( 'jquery' ), GROFILES__CACHE_BUSTER, true );
+	wp_enqueue_script( 'wpgroho', plugins_url( 'wpgroho.js', __FILE__ ), array( 'grofiles-cards' ), false, true );
 	if ( is_user_logged_in() ) {
 		$cu = wp_get_current_user();
 		$my_hash = md5( $cu->user_email );
@@ -182,7 +196,6 @@ function grofiles_attach_cards() {
 		$my_hash = '';
 	}
 	wp_localize_script( 'wpgroho', 'WPGroHo', compact( 'my_hash' ) );
-	wp_print_scripts( 'wpgroho' );
 }
 
 function grofiles_attach_cards_forced() {
@@ -246,6 +259,15 @@ function grofiles_hovercards_data_html( $author ) {
  * @return array( data_key => data_callback, ... )
  */
 function grofiles_hovercards_data_callbacks() {
+	/**
+	 * Filter the Gravatar Hovercard PHP callbacks.
+	 *
+	 * @module gravatar-hovercards
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $args Array of data callbacks.
+	 */
 	return apply_filters( 'grofiles_hovercards_data_callbacks', array() );
 }
 

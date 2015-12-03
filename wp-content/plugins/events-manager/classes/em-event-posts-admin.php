@@ -1,6 +1,6 @@
 <?php
 class EM_Event_Posts_Admin{
-	function init(){
+	public static function init(){
 		global $pagenow;
 		if( $pagenow == 'edit.php' && !empty($_REQUEST['post_type']) && $_REQUEST['post_type'] == EM_POST_TYPE_EVENT ){ //only needed for events list
 			if( !empty($_REQUEST['category_id']) && is_numeric($_REQUEST['category_id']) ){
@@ -23,13 +23,15 @@ class EM_Event_Posts_Admin{
 			//collumns
 			add_filter('manage_edit-'.EM_POST_TYPE_EVENT.'_columns' , array('EM_Event_Posts_Admin','columns_add'));
 			add_filter('manage_'.EM_POST_TYPE_EVENT.'_posts_custom_column' , array('EM_Event_Posts_Admin','columns_output'),10,2 );
-			//TODO alter views of locations, events and recurrences, specifically find a good way to alter the wp_count_posts method to force user owned posts only
-			//add_filter('views_edit-'.EM_POST_TYPE_EVENT, array('EM_Event_Posts_Admin','views'),10,1);
 		}
+		//clean up the views in the admin selection area - WIP
+		//add_filter('views_edit-'.EM_POST_TYPE_EVENT, array('EM_Event_Posts_Admin','restrict_views'),10,2);
+		//add_filter('views_edit-event-recurring', array('EM_Event_Posts_Admin','restrict_views'),10,2);
+		//add filters to event post list tables
 		add_action('restrict_manage_posts', array('EM_Event_Posts_Admin','restrict_manage_posts'));
 	}
 	
-	function admin_head(){
+	public static function admin_head(){
 		//quick hacks to make event admin table make more sense for events
 		?>
 		<script type="text/javascript">
@@ -56,7 +58,68 @@ class EM_Event_Posts_Admin{
 		<?php
 	}
 	
-	function restrict_manage_posts(){
+	/**
+	 * Handles WP_Query filter option in the admin area, which gets executed before EM_Event_Post::parse_query
+	 * Not yet in use 
+	 */
+	public static function parse_query(){
+		global $wp_query;
+		//Search Query Filtering
+	    if( !empty($wp_query->query_vars[EM_TAXONOMY_CATEGORY]) && is_numeric($wp_query->query_vars[EM_TAXONOMY_CATEGORY]) ){
+	        //sorts out filtering admin-side as it searches by id
+	        $term = get_term_by('id', $wp_query->query_vars[EM_TAXONOMY_CATEGORY], EM_TAXONOMY_CATEGORY);
+	        $wp_query->query_vars[EM_TAXONOMY_CATEGORY] = ( $term !== false && !is_wp_error($term) )? $term->slug:0;
+	    }
+		if( !empty($wp_query->query_vars['post_type']) && ($wp_query->query_vars['post_type'] == EM_POST_TYPE_EVENT || $wp_query->query_vars['post_type'] == 'event-recurring') && (empty($wp_query->query_vars['post_status']) || !in_array($wp_query->query_vars['post_status'],array('trash','pending','draft'))) ) {
+		    //Set up Scope for EM_Event_Post
+			$scope = $wp_query->query_vars['scope'] = (!empty($_REQUEST['scope'])) ? $_REQUEST['scope']:'future';
+		}
+	}
+	
+	/**
+	 * Adds Future view to make things simpler, and also changes counts if user doesn't have edit_others_events permission
+	 * @param array $views
+	 * @return array
+	 */
+	public static function restrict_views( $views ){
+		global $wp_query;
+		//TODO alter views of locations, events and recurrences, specifically find a good way to alter the wp_count_posts method to force user owned posts only
+		$post_type = get_current_screen()->post_type;
+		if( in_array($post_type, array(EM_POST_TYPE_EVENT, 'event-recurring')) ){
+			//get counts for future events
+			$num_posts = wp_count_posts( $post_type, 'readable' );
+			//prepare to alter cache if neccessary
+			if( !isset($num_posts->em_future) ){
+				$cache_key = $post_type;
+				$user = wp_get_current_user();
+				if ( is_user_logged_in() && !current_user_can('read_private_events') ) {
+					$cache_key .= '_readable_' . $user->ID; //as seen on wp_count_posts
+				}
+				$args = array('scope'=>'future', 'status'=>'all');
+				if( $post_type == 'event-recurring' ) $args['recurring'] = 1;
+				$num_posts->em_future = EM_Events::count($args);
+				wp_cache_set($cache_key, $num_posts, 'counts');
+			}
+			$class = '';
+			//highlight the 'Future' status if necessary
+			if( empty($_REQUEST['post_status']) && !empty($wp_query->query_vars['scope']) && $wp_query->query_vars['scope'] == 'future'){
+				$class = ' class="current"';
+				foreach($views as $key => $view){
+					$views[$key] = str_replace(' class="current"','', $view);
+				}
+			}
+			//change the 'All' status to have scope=all
+			$views['all'] = str_replace('edit.php?', 'edit.php?scope=all&', $views['all'] );
+			//merge new custom status into views
+			$old_views = $views;
+			$views = array('em_future' => "<a href='edit.php?post_type=$post_type'$class>" . sprintf( _nx( 'Future <span class="count">(%s)</span>', 'Future <span class="count">(%s)</span>', $num_posts->em_future, 'events', 'dbem' ), number_format_i18n( $num_posts->em_future ) ) . '</a>');
+			$views = array_merge($views, $old_views);
+		}
+		
+		return $views;
+	}
+	
+	public static function restrict_manage_posts(){
 		global $wp_query;
 		if( $wp_query->query_vars['post_type'] == EM_POST_TYPE_EVENT || $wp_query->query_vars['post_type'] == 'event-recurring' ){
 			?>
@@ -75,20 +138,20 @@ class EM_Event_Posts_Admin{
 			if( get_option('dbem_categories_enabled') ){
 				//Categories
 	            $selected = !empty($_GET['event-categories']) ? $_GET['event-categories'] : 0;
-				wp_dropdown_categories(array( 'hide_empty' => 1, 'name' => 'event-categories',
-                              'hierarchical' => true, 'id' => EM_TAXONOMY_CATEGORY,
+				wp_dropdown_categories(array( 'hide_empty' => 1, 'name' => EM_TAXONOMY_CATEGORY,
+                              'hierarchical' => true, 'orderby'=>'name', 'id' => EM_TAXONOMY_CATEGORY,
                               'taxonomy' => EM_TAXONOMY_CATEGORY, 'selected' => $selected,
                               'show_option_all' => __('View all categories')));
 			}
             if( !empty($_REQUEST['author']) ){
             	?>
-            	<input type="hidden" name="author" value="<?php echo $_REQUEST['author'] ?>" />
+            	<input type="hidden" name="author" value="<?php echo esc_attr($_REQUEST['author']); ?>" />
             	<?php            	
             }
 		}
 	}
 	
-	function views($views){
+	public static function views($views){
 		if( !current_user_can('edit_others_events') ){
 			//alter the views to reflect correct numbering
 			 
@@ -96,7 +159,7 @@ class EM_Event_Posts_Admin{
 		return $views;
 	}
 	
-	function columns_add($columns) {
+	public static function columns_add($columns) {
 		if( array_key_exists('cb', $columns) ){
 			$cb = $columns['cb'];
 	    	unset($columns['cb']);
@@ -119,7 +182,7 @@ class EM_Event_Posts_Admin{
 	    return $columns;
 	}
 	
-	function columns_output( $column ) {
+	public static function columns_output( $column ) {
 		global $post, $EM_Event;
 		$EM_Event = em_get_event($post, 'post_id');
 		/* @var $post EM_Event */
@@ -175,11 +238,11 @@ class EM_Event_Posts_Admin{
 		}
 	}
 	
-	function row_actions($actions, $post){
+	public static function row_actions($actions, $post){
 		if($post->post_type == EM_POST_TYPE_EVENT){
 			global $post, $EM_Event;
 			$EM_Event = em_get_event($post, 'post_id');
-			$actions['duplicate'] = '<a href="'.admin_url().'edit.php?action=event_duplicate&amp;event_id='.$EM_Event->event_id.'&amp;_wpnonce='.wp_create_nonce('event_duplicate_'.$EM_Event->event_id).'" title="'.sprintf(__('Duplicate %s','dbem'), __('Event','dbem')).'">'.__('Duplicate','dbem').'</a>';
+			$actions['duplicate'] = '<a href="'.$EM_Event->duplicate_url().'" title="'.sprintf(__('Duplicate %s','dbem'), __('Event','dbem')).'">'.__('Duplicate','dbem').'</a>';
 		}
 		return $actions;
 	}
@@ -190,7 +253,7 @@ add_action('admin_init', array('EM_Event_Posts_Admin','init'));
  * Recurring Events
  */
 class EM_Event_Recurring_Posts_Admin{
-	function init(){
+	public static function init(){
 		global $pagenow;
 		if( $pagenow == 'edit.php' && !empty($_REQUEST['post_type']) && $_REQUEST['post_type'] == 'event-recurring' ){
 			//hide some cols by default:
@@ -210,12 +273,12 @@ class EM_Event_Recurring_Posts_Admin{
 		}
 	}
 	
-	function admin_notices(){
+	public static function admin_notices(){
 		$warning = sprintf(__( 'Modifications to these events will cause all recurrences of each event to be deleted and recreated and previous bookings will be deleted! You can edit individual recurrences and detach them from recurring events by visiting the <a href="%s">events page</a>.', 'dbem' ), admin_url().'edit.php?post_type='.EM_POST_TYPE_EVENT);
 		?><div class="updated"><p><?php echo $warning; ?></p></div><?php
 	}
 	
-	function admin_head(){
+	public static function admin_head(){
 		//quick hacks to make event admin table make more sense for events
 		?>
 		<script type="text/javascript">
@@ -233,7 +296,7 @@ class EM_Event_Recurring_Posts_Admin{
 		<?php
 	}
 	
-	function columns_add($columns) {
+	public static function columns_add($columns) {
 		if( array_key_exists('cb', $columns) ){
 			$cb = $columns['cb'];
 	    	unset($columns['cb']);
@@ -245,14 +308,14 @@ class EM_Event_Recurring_Posts_Admin{
 	    unset($columns['date']);
 	    unset($columns['author']);
 	    return array_merge($id_array, $columns, array(
-	    	'location' => __('Location'),
-	    	'date-time' => __('Date and Time'),
+	    	'location' => __('Location','dbem'),
+	    	'date-time' => __('Date and Time','dbem'),
 	    	'author' => __('Owner','dbem'),
 	    ));
 	}
 
 	
-	function columns_output( $column ) {
+	public static function columns_output( $column ) {
 		global $post, $EM_Event;
 		if( $post->post_type == 'event-recurring' ){
 			$post = $EM_Event = em_get_event($post);

@@ -15,8 +15,8 @@ add_filter('su_settings_export_array', 'su_meta_descriptions_export_filter');
 
 class SU_MetaDescriptions extends SU_Module {
 	
-	function get_module_title() { return __('Meta Description Editor', 'seo-ultimate'); }
-	function get_menu_title()   { return __('Meta Descriptions', 'seo-ultimate'); }
+	static function get_module_title() { return __('Meta Description Editor', 'seo-ultimate'); }
+	static function get_menu_title()   { return __('Meta Descriptions', 'seo-ultimate'); }
 	function get_settings_key() { return 'meta'; }
 	
 	function init() {
@@ -166,17 +166,16 @@ class SU_MetaDescriptions extends SU_Module {
 			return $desc;
 	}
 	
-	function postmeta_fields($fields) {
+	function postmeta_fields($fields, $screen) {
 		$id = '_su_description';
 		$value = su_esc_attr($this->get_postmeta('description'));
 		
 		$fields['serp'][20]['description'] =
-			  "<tr class='su textarea' valign='top'>\n<th scope='row' class='su'><label for='$id'>".__('Meta Description:', 'seo-ultimate')."</label></th>\n"
-			. "<td class='su'><textarea name='$id' id='$id' class='regular-text' cols='60' rows='3' tabindex='2'"
+			"<div class='form-group su textarea'>\n<label class='col-sm-4 col-md-4 control-label' for='$id'>".__('Meta Description:', 'seo-ultimate')."</label>\n<div class='col-sm-4 col-md-4'>"
+			. "<textarea name='$id' id='$id' class='form-control regular-text' cols='60' rows='3' tabindex='2'"
 			. " onkeyup=\"javascript:document.getElementById('su_meta_description_charcount').innerHTML = document.getElementById('_su_description').value.length\">$value</textarea>"
-			. "<br />".sprintf(__('You&#8217;ve entered %s characters. Most search engines use up to 140.', 'seo-ultimate'), "<strong id='su_meta_description_charcount'>".strlen($value)."</strong>")
-			. "</td>\n</tr>\n"
-		;
+			. "</div>\n<div class='col-sm-4 col-md-4 help-text'>".sprintf(__('You&#8217;ve entered %s characters. Most search engines use up to 140.', 'seo-ultimate'), "<strong id='su_meta_description_charcount'>".strlen($value)."</strong>")
+			. "</div>\n</div>\n";
 		
 		return $fields;
 	}
@@ -200,13 +199,13 @@ class SU_MetaDescriptions extends SU_Module {
 ", 'seo-ultimate')));
 
 		$screen->add_help_tab(array(
-			  'id' => 'su-meta-descriptions-settings'
-			, 'title' => __('Settings Help', 'seo-ultimate')
+			  'id' => 'su-meta-descriptions-blog-homepage'
+			, 'title' => __('Blog Homepage Tab', 'seo-ultimate')
 			, 'content' => __("
 <p>Here&#8217;s information on the various settings:</p>
 
 <ul>
-	<li><strong>Blog Homepage Meta Description</strong> &mdash; When your blog homepage appears in search results, it&#8217;ll have a title and a description. When you insert content into the description field below, the Meta Editor will add code to your blog homepage (the <code>&lt;meta name=&quot;description&quot; /&gt;</code> tag) that asks search engines to use what you&#8217;ve entered as the homepage&#8217;s search results description.</li>
+	<li><strong>Blog Homepage Meta Description</strong> &mdash; When your blog homepage appears in search results, it&#8217;ll have a title and a description. When you type a description into this box, the Meta Editor will add code to your blog homepage (the <code>&lt;meta name=&quot;description&quot; /&gt;</code> tag) that asks search engines to use what you&#8217;ve entered as the homepage&#8217;s search results description.</li>
 	<li><strong>Use this blog&#8217;s tagline as the default homepage description.</strong> &mdash; If this box is checked and if the Blog Homepage Meta Description field is empty, Meta Editor will use your blog&#8217;s tagline as the meta description. You can edit the blog&#8217;s tagline under <a href='options-general.php'>Settings &rArr; General</a>.</li>
 </ul>
 ", 'seo-ultimate')));
@@ -216,7 +215,7 @@ class SU_MetaDescriptions extends SU_Module {
 			, 'title' => __('FAQ', 'seo-ultimate')
 			, 'content' => __("
 <ul>
-	<li><strong>How do I edit the meta description of my homepage?</strong><br />If you are using a &#8220;blog homepage&#8221; (the default option of showing your blog posts on your homepage), just use the Blog Homepage field. If you have configured your <a href='options-reading.php'>Settings &rArr; Reading</a> section to use a &#8220;frontpage&#8221; (i.e. a Page as your homepage), just edit that Page&#8217;s meta description on the &#8220;Pages&#8221; tab.</li>
+	<li><strong>How do I edit the meta description of my homepage?</strong><br />If you have configured your <a href='options-reading.php'>Settings &rArr; Reading</a> section to use a &#8220;front page&#8221; and/or a &#8220;posts page,&#8221; just edit those pages&#8217;s meta descriptions on the &#8220;Pages&#8221; tab. Otherwise, just use the Blog Homepage field.</li>
 </ul>
 ", 'seo-ultimate')));
 		
@@ -228,7 +227,7 @@ class SU_MetaDescriptions extends SU_Module {
 	<li>
 		<p><strong>What do I do if my site has multiple meta tags?</strong><br />First, try removing your theme&#8217;s built-in meta tags if it has them. Go to <a href='theme-editor.php' target='_blank'>Appearance &rArr; Editor</a> and edit <code>header.php</code>. Delete or comment-out any <code>&lt;meta&gt;</code> tags.</p>
 		<p>If the problem persists, try disabling other SEO plugins that may be generating meta tags.</p>
-		<p>Troubleshooting tip: Go to <a href='options-general.php?page=seo-ultimate'>Settings &rArr; SEO Ultimate</a> and enable the &#8220;Insert comments around HTML code insertions&#8221; option. This will mark SEO Ultimate&#8217;s meta tags with comments, allowing you to see which meta tags are generated by SEO Ultimate and which aren&#8217;t.</p>
+		<p>Troubleshooting tip: Go to <a href='options-general.php?page=seo-ultimate'>Settings &rArr; SEO Ultimate</a> and enable the &#8220;Identify the plugin&#8217;s HTML code insertions with HTML comment tags&#8221; option. This will mark SEO Ultimate&#8217;s meta tags with comments, allowing you to see which meta tags are generated by SEO Ultimate and which aren&#8217;t.</p>
 	</li>
 </ul>
 ", 'seo-ultimate')));

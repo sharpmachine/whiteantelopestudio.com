@@ -4,21 +4,21 @@
  *
  * Developer api calls for adding file assets programmattically to your site.
  *
- * @author Jonathan Davis, John Dillick
- * @version 1.0
  * @copyright Ingenesis Limited, June 23, 2011
- * @license GNU GPL version 3 (or later) {@see license.txt}
- * @package shopp
- * @since 1.2
- * @subpackage shopp
+ * @license   GNU GPL version 3 (or later) {@see license.txt}
+ * @package   Shopp/API/Asset
+ * @version   1.0
+ * @since     1.2
  **/
+
+defined( 'WPINC' ) || header( 'HTTP/1.1 403' ) & exit; // Prevent direct access
 
 /**
  * shopp_add_image
  *
  * Add an image by filename, and associate with a user defined context.  Requires full path to the file on your filesystem, or a correct relative path for the scripts current working directory.
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $id Object id to attach the image asset to.
@@ -28,27 +28,27 @@
  **/
 function shopp_add_image ( $id, $context, $file ) {
 	if ( empty($id) || empty($context) || empty($file) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: One or more missing parameters.", __FUNCTION__, SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: One or more missing parameters.");
 		return false;
 	}
 
 	if ( ! is_file($file) || ! is_readable($file) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed for file $file: File missing or unreadable." , __FUNCTION__, SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed for file $file: File missing or unreadable.");
 	}
 
 	if ( 'product' == $context ) {
-		$Object = new Product($id);
+		$Object = new ShoppProduct($id);
 		$Image = new ProductImage();
 	} else if ( 'category' == $context ) {
 		$Object = new ProductCategory($id);
 		$Image = new CategoryImage();
 	} else {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed for file $file: Invalid context $context.", __FUNCTION__, SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed for file $file: Invalid context $context.");
 		return false;
 	}
 
 	if ( empty($Object->id) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed for file $file: Unable to find a $context with id $id.", __FUNCTION__, SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed for file $file: Unable to find a $context with id $id.");
 		return false;
 	}
 
@@ -61,7 +61,7 @@ function shopp_add_image ( $id, $context, $file ) {
 	$Image->size = filesize($file);
 
 	if ( ! $Image->unique() ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed for file $file: Too many images exist with this name.", __FUNCTION__, SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed for file $file: Too many images exist with this name.");
 		return false;
 	}
 
@@ -70,7 +70,7 @@ function shopp_add_image ( $id, $context, $file ) {
 
 	if ( $Image->id ) return $Image->id;
 
-	if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed for file $file.", __FUNCTION__, SHOPP_DEBUG_ERR);
+	shopp_debug(__FUNCTION__ . " failed for file $file.");
 	return false;
 }
 
@@ -79,7 +79,7 @@ function shopp_add_image ( $id, $context, $file ) {
  *
  * remove an image record from the database
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $image the image id
@@ -88,7 +88,7 @@ function shopp_add_image ( $id, $context, $file ) {
  **/
 function shopp_rmv_image ( $image, $context ) {
 	if ( empty($image) || empty($context) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: Missing parameters",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: Missing parameters");
 		return false;
 	}
 
@@ -97,12 +97,12 @@ function shopp_rmv_image ( $image, $context ) {
 	} else if ( 'category' == $context ) {
 		$Image = new CategoryImage($image);
 	} else {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: Invalid context $context.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: Invalid context $context.");
 		return false;
 	}
 
 	if ( empty($Image->id) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: No such $context image with id $image",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: No such $context image with id $image");
 		return false;
 	}
 	return $Image->delete();
@@ -130,7 +130,7 @@ function shopp_add_product_image ( $product, $file ) {
  *
  * Remove a product image by image asset id.
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $image image id to remove from product.
@@ -145,7 +145,7 @@ function shopp_rmv_product_image ( $image ) {
  *
  * Remove a category image by image asset id.
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $image image id to remove from product category.
@@ -176,7 +176,7 @@ function shopp_add_category_image ( $category, $file ) {
  *
  * Add product download file to a product/variation.
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $product id of the product the download asset will be added to
@@ -186,31 +186,31 @@ function shopp_add_category_image ( $category, $file ) {
  **/
 function shopp_add_product_download ( $product, $file, $variant = false ) {
 	if ( empty($product) || empty($file) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__.' failed: One or more missing parameters.',__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__.' failed: One or more missing parameters.');
 		return false;
 	}
 
 	$File = new ProductDownload();
 	$instore = $File->found($file);
 	if( ! $instore && ( ! is_file($file) || ! is_readable($file) ) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed for file $file: File missing or unreadable.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed for file $file: File missing or unreadable.");
 		return false;
 	}
 
-	$Product = new Product($product);
+	$Product = new ShoppProduct($product);
 	if ( empty($Product->id) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed for file $file: No such product with id $product.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed for file $file: No such product with id $product.");
 		return false;
 	}
 	$Product->load_data(array('summary', 'prices'));
 	if ( "on" == $Product->variants && false === $variant ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed for file $file: You must specify the variant id parameter for product $product.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed for file $file: You must specify the variant id parameter for product $product.");
 		return false;
 	}
 
 	$Price = reset($Product->prices);
 	if ( empty($Price->id) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed for file $file: Failed to load product variants.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed for file $file: Failed to load product variants.");
 		return false;
 	}
 
@@ -220,7 +220,7 @@ function shopp_add_product_download ( $product, $file, $variant = false ) {
 			if ( $variant == $Price->id ) break;
 		}
 		if ( false === $Price ) {
-			if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed for file $file: You must specify a valid variant id parameter for product $product.",__FUNCTION__,SHOPP_DEBUG_ERR);
+			shopp_debug(__FUNCTION__ . " failed for file $file: You must specify a valid variant id parameter for product $product.");
 			return false;
 		}
 	}
@@ -244,7 +244,7 @@ function shopp_add_product_download ( $product, $file, $variant = false ) {
 
 	if ( $File->id ) return $File->id;
 
-	if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed for file $file",__FUNCTION__,SHOPP_DEBUG_ERR);
+	shopp_debug(__FUNCTION__ . " failed for file $file");
 	return false;
 }
 
@@ -253,7 +253,7 @@ function shopp_add_product_download ( $product, $file, $variant = false ) {
  *
  * Remove a product download asset
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $download the product asset id
@@ -261,17 +261,15 @@ function shopp_add_product_download ( $product, $file, $variant = false ) {
  **/
 function shopp_rmv_product_download ( $download ) {
 	if ( empty($download) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__.' failed: download parameter required.',__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__.' failed: download parameter required.');
 		return false;
 	}
 
 	$File = new ProductDownload($download);
 	if ( empty($File->id) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: No such product download with id $download.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: No such product download with id $download.");
 		return false;
 	}
 
 	return $File->delete();
 }
-
-?>

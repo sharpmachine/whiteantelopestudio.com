@@ -3,7 +3,7 @@
 	<div class="icon32"></div>
 	<h2><?php _e('Category Editor','Shopp'); ?></h2>
 
-	<?php do_action('shopp_admin_notice'); ?>
+	<?php do_action('shopp_admin_notices'); ?>
 
 	<div id="ajax-response"></div>
 	<form name="category" id="category" action="<?php echo admin_url('admin.php'); ?>" method="post">
@@ -40,8 +40,11 @@
 					</div>
 				</div>
 				<div id="<?php echo user_can_richedit() ? 'postdivrich' : 'postdiv'; ?>" class="postarea">
-				<?php the_editor($Category->description,'content','Description', false); ?>
-				<?php wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', false ); ?>
+				<?php
+					$media_buttons = ( defined('SHOPP_EDITOR_MEDIA_BTNS') && SHOPP_EDITOR_MEDIA_BTNS );
+					wp_editor($Category->description, 'content', array( 'media_buttons' => $media_buttons ));
+					wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', false );
+				?>
 				</div>
 
 			<?php
@@ -51,7 +54,7 @@
 
 			</div>
 			</div>
-
+			<div class="clear">&nbsp;</div>
 		</div> <!-- #poststuff -->
 	</form>
 </div>
@@ -67,12 +70,12 @@ var flashuploader = <?php echo ($uploader == 'flash' && !(false !== strpos(strto
 	prices = <?php echo json_encode($Category->prices) ?>,
 	uidir = '<?php echo SHOPP_ADMIN_URI; ?>',
 	siteurl = '<?php bloginfo('url'); ?>',
-	adminurl = '<?php echo SHOPP_WPADMIN_URL; ?>',
-	canonurl = '<?php echo trailingslashit(shoppurl( '' != get_option('permalink_structure') ? get_class_property('ProductCategory','namespace') : $Category->taxonomy.'=' )); ?>',
+	adminurl = '<?php echo admin_url(); ?>',
+	canonurl = '<?php echo trailingslashit(Shopp::url( '' != get_option('permalink_structure') ? get_class_property('ProductCategory','namespace') : $Category->taxonomy.'=' )); ?>',
 	ajaxurl = adminurl+'admin-ajax.php',
-	addcategory_url = '<?php echo wp_nonce_url(SHOPP_WPADMIN_URL."admin-ajax.php", "shopp-ajax_add_category"); ?>',
-	editslug_url = '<?php echo wp_nonce_url(SHOPP_WPADMIN_URL."admin-ajax.php", "wp_ajax_shopp_edit_slug"); ?>',
-	fileverify_url = '<?php echo wp_nonce_url(SHOPP_WPADMIN_URL."admin-ajax.php", "shopp-ajax_verify_file"); ?>',
+	addcategory_url = '<?php echo wp_nonce_url(admin_url()."admin-ajax.php", "shopp-ajax_add_category"); ?>',
+	editslug_url = '<?php echo wp_nonce_url(admin_url()."admin-ajax.php", "wp_ajax_shopp_edit_slug"); ?>',
+	fileverify_url = '<?php echo wp_nonce_url(admin_url()."admin-ajax.php", "shopp-ajax_verify_file"); ?>',
 	adminpage = '<?php echo $this->Admin->pagename('categories'); ?>',
 	request = <?php echo json_encode(stripslashes_deep($_GET)); ?>,
 	worklist = <?php echo json_encode($this->categories(true)); ?>,

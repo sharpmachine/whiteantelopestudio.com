@@ -6,7 +6,7 @@
 class AudioShortcode {
 
 	static $add_script = false;
-	
+
 	/**
 	 * Add all the actions & resgister the shortcode
 	 */
@@ -14,6 +14,16 @@ class AudioShortcode {
 		add_shortcode( 'audio', array( $this, 'audio_shortcode' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'check_infinite' ) );
 		add_action( 'infinite_scroll_render', array( $this, 'audio_shortcode_infinite' ), 11 );
+	}
+
+	/**
+	 * Return the $url of the audio
+	 */
+	static function get_audio_id( $atts ) {
+		if ( isset( $atts[0] ) )
+			return $atts[0];
+		else
+			return 0;
 	}
 
 	/**
@@ -26,12 +36,23 @@ class AudioShortcode {
 	function audio_shortcode( $atts ) {
 		global $ap_playerID;
 		global $post;
+
 		if ( ! is_array( $atts ) ) {
 			return '<!-- Audio shortcode passed invalid attributes -->';
 		}
 
 		if ( ! isset( $atts[0] ) ) {
-			return '<!-- Audio shortcode source not set -->';
+			if ( isset( $atts['src'] ) ) {
+				$atts[0] = $atts['src'];
+				unset( $atts['src'] );
+			} else {
+				return '<!-- Audio shortcode source not set -->';
+			}
+		}
+
+		$post_id = 0;
+		if ( isset( $post ) ) {
+		    $post_id = $post->ID;
 		}
 
 		// add the special .js
@@ -46,6 +67,30 @@ class AudioShortcode {
 		self::$add_script = true;
 		$atts[0] = strip_tags( join( ' ', $atts ) );
 		$src = ltrim( $atts[0], '=' );
+
+		/**
+		 * Set the audio player default colors.
+		 *
+		 * @module shortcodes
+		 *
+		 * @since 1.4.0
+		 *
+		 * @param array $ap_options {
+		 *      The default colors for the audio player in hexidecimal format (e.g. 0x#F8F8F8).
+		 *
+		 *      @type string $bg              Background color.
+		 *      @type string $leftbg          Left background color.
+		 *      @type string $lefticon        Left icon color.
+		 *      @type string $rightbg         Right background color.
+		 *      @type string $rightbghover    Right background hover color.
+		 *      @type string $righticon       Right icon color.
+		 *      @type string $righticonhover  Right icon hover color.
+		 *      @type string $text            Text color.
+		 *      @type string $slider          Slider color.
+		 *      @type string $track           Track color.
+		 *      @type string $border          Border color.
+		 *      @type string $loader          Loader color.
+		 */
 		$ap_options = apply_filters(
 			'audio_player_default_colors',
 			array(
@@ -79,6 +124,13 @@ class AudioShortcode {
 		$data = preg_split( "/\|/", $src );
 		$sound_file = $data[0];
 		$sound_files = explode( ',', $sound_file );
+
+		if ( is_ssl() ) {
+			for ( $i = 0; $i < count( $sound_files ); $i++ ) {
+				$sound_files[ $i ] = preg_replace( '#^http://([^.]+).files.wordpress.com/#', 'https://$1.files.wordpress.com/', $sound_files[ $i ] );
+			}
+		}
+
 		$sound_files = array_map( 'trim', $sound_files );
 		$sound_files = array_map( array( $this, 'rawurlencode_spaces' ), $sound_files );
 		$sound_files = array_map( 'esc_url_raw', $sound_files ); // Ensure each is a valid URL
@@ -161,8 +213,8 @@ class AudioShortcode {
 
 		// generate default titles
 		$file_titles = array();
-		for ( $i = 0; $i < $num_files; $i++ ) { 
-			$file_titles[] = 'Track #' . ($i+1); 
+		for ( $i = 0; $i < $num_files; $i++ ) {
+			$file_titles[] = 'Track #' . ($i+1);
 		}
 
 		// replace with real titles if they exist
@@ -190,7 +242,7 @@ class AudioShortcode {
 		$to_remove = array();
 		foreach ( $sound_files as $i => $sfile ) {
 			$file_extension = pathinfo( $sfile, PATHINFO_EXTENSION );
-			if ( ! preg_match( '/^(mp3|wav|ogg|oga|m4a|aac|webm)$/', $file_extension ) ) {
+			if ( ! preg_match( '/^(mp3|wav|ogg|oga|m4a|aac|webm)$/i', $file_extension ) ) {
 				$html5_audio .= '<!-- Audio shortcode unsupported audio format -->';
 				if ( 1 == $num_files ) {
 					$html5_audio .= $not_supported;
@@ -199,15 +251,15 @@ class AudioShortcode {
 				$to_remove[] = $i; // make a note of the bad files
 				$all_mp3 = false;
 				continue;
-			} elseif ( ! preg_match( '/^mp3$/', $file_extension ) ) {
+			} elseif ( ! preg_match( '/^mp3$/i', $file_extension ) ) {
 				$all_mp3 = false;
 			}
 
 			if ( 0 == $i ) { // only need one player
 				$html5_audio .= <<<AUDIO
-				<span id="wp-as-{$post->ID}_{$ap_playerID}-container">
-					<audio id='wp-as-{$post->ID}_{$ap_playerID}' controls preload='none' $loop style='background-color:$bgcolor;width:{$width}px;'>
-						<span id="wp-as-{$post->ID}_{$ap_playerID}-nope">$not_supported</span>
+				<span id="wp-as-{$post_id}_{$ap_playerID}-container">
+					<audio id='wp-as-{$post_id}_{$ap_playerID}' controls preload='none' $loop style='background-color:$bgcolor;width:{$width}px;'>
+						<span id="wp-as-{$post_id}_{$ap_playerID}-nope">$not_supported</span>
 					</audio>
 				</span>
 				<br />
@@ -219,33 +271,44 @@ AUDIO;
 		// player controls, if needed
 		if ( 1 < $num_files ) {
 			$html5_audio .= <<<CONTROLS
-				<span id='wp-as-{$post->ID}_{$ap_playerID}-controls' style='display:none;'>
-					<a id='wp-as-{$post->ID}_{$ap_playerID}-prev'
-						href='javascript:audioshortcode.prev_track( "{$post->ID}_{$ap_playerID}" );'
+				<span id='wp-as-{$post_id}_{$ap_playerID}-controls' style='display:none;'>
+					<a id='wp-as-{$post_id}_{$ap_playerID}-prev'
+						href='javascript:audioshortcode.prev_track( "{$post_id}_{$ap_playerID}" );'
 						style='font-size:1.5em;'>&laquo;</a>
 					|
-					<a id='wp-as-{$post->ID}_{$ap_playerID}-next'
-						href='javascript:audioshortcode.next_track( "{$post->ID}_{$ap_playerID}", true, $script_loop );'
+					<a id='wp-as-{$post_id}_{$ap_playerID}-next'
+						href='javascript:audioshortcode.next_track( "{$post_id}_{$ap_playerID}", true, $script_loop );'
 						style='font-size:1.5em;'>&raquo;</a>
 				</span>
 CONTROLS;
 		}
-		$html5_audio .= "<span id='wp-as-{$post->ID}_{$ap_playerID}-playing'></span>";
+		$html5_audio .= "<span id='wp-as-{$post_id}_{$ap_playerID}-playing'></span>";
 
+		/**
+		 * Sets external resource URL.
+		 *
+		 * @module shortcodes
+		 *
+		 * @since 1.4.0
+		 *
+		 * @param string $args URL of external resource.
+		 *
+		 */
 		$swfurl = apply_filters(
 			'jetpack_static_url',
-			'http://en.wordpress.com/wp-content/plugins/audio-player/player.swf' );
+			set_url_scheme( "http://en.wordpress.com/wp-content/plugins/audio-player/player.swf" )
+		 );
 
 		// all the fancy javascript is causing Google Reader to break, just include flash in GReader
 		// override html5 audio code w/ just not supported code
 		if ( is_feed() ) {
 			$html5_audio = $not_supported;
-		} 
+		}
 
-		if ( $all_mp3 ) { 
+		if ( $all_mp3 ) {
 			// process regular flash player, inserting HTML5 tags into object as fallback
 			$audio_tags = <<<FLASH
-				<object id='wp-as-{$post->ID}_{$ap_playerID}-flash' type='application/x-shockwave-flash' data='$swfurl' width='$width' height='24'>
+				<object id='wp-as-{$post_id}_{$ap_playerID}-flash' type='application/x-shockwave-flash' data='$swfurl' width='$width' height='24'>
 					<param name='movie' value='$swfurl' />
 					<param name='FlashVars' value='{$flash_vars}' />
 					<param name='quality' value='high' />
@@ -268,9 +331,10 @@ FLASH;
 
 		// mashup the artist/titles for the script
 		$script_titles = array();
-		for ( $i = 0; $i < $num_files; $i++ ) { 
-			$script_titles[] = $file_artists[$i] . $file_titles[$i];
-
+		for ( $i = 0; $i < $num_files; $i++ ) {
+			if ( isset( $file_artists[ $i ] ) && isset( $file_titles[ $i ] ) ) {
+				$script_titles[] = $file_artists[ $i ] . $file_titles[ $i ];
+			}
 		}
 
 		// javacript to control audio
@@ -283,7 +347,7 @@ FLASH;
 				var prep = function() {
 					if ( 'undefined' === typeof window.audioshortcode ) { return; }
 					audioshortcode.prep(
-						'{$post->ID}_{$ap_playerID}',
+						'{$post_id}_{$ap_playerID}',
 						$script_files,
 						$script_titles,
 						$volume,
@@ -300,7 +364,7 @@ FLASH;
 					jQuery(document).on( 'ready as-script-load', prep );
 				}
 			})();
-			//]]> 
+			//]]>
 			</script>
 SCRIPT;
 
@@ -308,7 +372,7 @@ SCRIPT;
 		if ( 0 < $num_good && ! is_feed() ) {
 			$audio_tags .= $script;
 		}
-		
+
 		return "<span style='text-align:left;display:block;'><p>$audio_tags</p></span>";
 	}
 
@@ -316,10 +380,10 @@ SCRIPT;
 	 * If the theme uses infinite scroll, include jquery at the start
 	 */
 	function check_infinite() {
-		if ( current_theme_supports( 'infinite-scroll' ) ) {
+		if ( current_theme_supports( 'infinite-scroll' ) && class_exists( 'The_Neverending_Home_Page' ) && The_Neverending_Home_Page::archive_supports_infinity() )
 			wp_enqueue_script( 'jquery' );
-		}
 	}
+
 
 	/**
 	 * Dynamically load the .js, if needed
@@ -342,8 +406,8 @@ SCRIPT;
 					wp_as_js.type = 'text/javascript';
 					wp_as_js.src = $script_url;
 					wp_as_js.async = true;
-					wp_as_js.onload = function() { 
-						jQuery( document.body ).trigger( 'as-script-load' ); 
+					wp_as_js.onload = function() {
+						jQuery( document.body ).trigger( 'as-script-load' );
 					};
 					document.getElementsByTagName( 'head' )[0].appendChild( wp_as_js );
 				} else {

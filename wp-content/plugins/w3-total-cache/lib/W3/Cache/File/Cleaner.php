@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
     die();
 }
 
-require_once W3TC_LIB_W3_DIR . '/Cache/File.php';
+w3_require_once(W3TC_LIB_W3_DIR . '/Cache/File.php');
 
 /**
  * Class W3_Cache_File_Cleaner
@@ -46,16 +46,6 @@ class W3_Cache_File_Cleaner {
     }
 
     /**
-     * PHP4-style constructor
-     *
-     * @param array $config
-     * @return void
-     */
-    function W3_Cache_File_Cleaner($config = array()) {
-        $this->__construct($config);
-    }
-
-    /**
      * Run clean operation
      *
      * @return boolean
@@ -63,7 +53,7 @@ class W3_Cache_File_Cleaner {
     function clean() {
         @set_time_limit($this->_clean_timelimit);
 
-        return $this->_clean($this->_cache_dir, false);
+        $this->_clean($this->_cache_dir, false);
     }
 
     /**

@@ -8,10 +8,10 @@ class WPCF7_Contact_Form_List_Table extends WP_List_Table {
 	public static function define_columns() {
 		$columns = array(
 			'cb' => '<input type="checkbox" />',
-			'title' => __( 'Title', 'wpcf7' ),
-			'shortcode' => __( 'Shortcode', 'wpcf7' ),
-			'author' => __( 'Author', 'wpcf7' ),
-			'date' => __( 'Date', 'wpcf7' ) );
+			'title' => __( 'Title', 'contact-form-7' ),
+			'shortcode' => __( 'Shortcode', 'contact-form-7' ),
+			'author' => __( 'Author', 'contact-form-7' ),
+			'date' => __( 'Date', 'contact-form-7' ) );
 
 		return $columns;
 	}
@@ -56,7 +56,7 @@ class WPCF7_Contact_Form_List_Table extends WP_List_Table {
 
 		$this->items = WPCF7_ContactForm::find( $args );
 
-		$total_items = WPCF7_ContactForm::$found_items;
+		$total_items = WPCF7_ContactForm::count();
 		$total_pages = ceil( $total_items / $per_page );
 
 		$this->set_pagination_args( array(
@@ -80,90 +80,99 @@ class WPCF7_Contact_Form_List_Table extends WP_List_Table {
 
 	function get_bulk_actions() {
 		$actions = array(
-			'delete' => __( 'Delete', 'wpcf7' ) );
+			'delete' => __( 'Delete', 'contact-form-7' ) );
 
 		return $actions;
 	}
 
 	function column_default( $item, $column_name ) {
 		return '';
-    }
+	}
 
 	function column_cb( $item ) {
 		return sprintf(
 			'<input type="checkbox" name="%1$s[]" value="%2$s" />',
 			$this->_args['singular'],
-			$item->id );
+			$item->id() );
 	}
 
 	function column_title( $item ) {
-		$url = admin_url( 'admin.php?page=wpcf7&post=' . absint( $item->id ) );
+		$url = admin_url( 'admin.php?page=wpcf7&post=' . absint( $item->id() ) );
 		$edit_link = add_query_arg( array( 'action' => 'edit' ), $url );
 
 		$actions = array(
-			'edit' => '<a href="' . $edit_link . '">' . __( 'Edit', 'wpcf7' ) . '</a>' );
+			'edit' => sprintf( '<a href="%1$s">%2$s</a>',
+				esc_url( $edit_link ),
+				esc_html( __( 'Edit', 'contact-form-7' ) ) ) );
 
-		if ( current_user_can( 'wpcf7_edit_contact_form', $item->id ) ) {
+		if ( current_user_can( 'wpcf7_edit_contact_form', $item->id() ) ) {
 			$copy_link = wp_nonce_url(
 				add_query_arg( array( 'action' => 'copy' ), $url ),
-				'wpcf7-copy-contact-form_' . absint( $item->id ) );
+				'wpcf7-copy-contact-form_' . absint( $item->id() ) );
 
 			$actions = array_merge( $actions, array(
-				'copy' => '<a href="' . $copy_link . '">' . __( 'Copy', 'wpcf7' ) . '</a>' ) );
+				'copy' => sprintf( '<a href="%1$s">%2$s</a>',
+					esc_url( $copy_link ),
+					esc_html( __( 'Duplicate', 'contact-form-7' ) ) ) ) );
 		}
 
 		$a = sprintf( '<a class="row-title" href="%1$s" title="%2$s">%3$s</a>',
-			$edit_link,
-			esc_attr( sprintf( __( 'Edit &#8220;%s&#8221;', 'wpcf7' ), $item->title ) ),
-			esc_html( $item->title ) );
+			esc_url( $edit_link ),
+			esc_attr( sprintf( __( 'Edit &#8220;%s&#8221;', 'contact-form-7' ),
+				$item->title() ) ),
+			esc_html( $item->title() ) );
 
 		return '<strong>' . $a . '</strong> ' . $this->row_actions( $actions );
-    }
+	}
 
 	function column_author( $item ) {
-		$post = get_post( $item->id );
+		$post = get_post( $item->id() );
 
-		if ( ! $post )
+		if ( ! $post ) {
 			return;
+		}
 
 		$author = get_userdata( $post->post_author );
 
+		if ( false === $author ) {
+			return;
+		}
+
 		return esc_html( $author->display_name );
-    }
+	}
 
 	function column_shortcode( $item ) {
-		$shortcodes = array(
-			sprintf( '[contact-form-7 id="%1$d" title="%2$s"]', $item->id, $item->title ) );
+		$shortcodes = array( $item->shortcode() );
 
 		$output = '';
 
 		foreach ( $shortcodes as $shortcode ) {
-			$output .= "\n" . '<input type="text" onfocus="this.select();" readonly="readonly"
-				value="' . esc_attr( $shortcode ) . '" class="shortcode-in-list-table" />';
+			$output .= "\n" . '<span class="shortcode"><input type="text"'
+				. ' onfocus="this.select();" readonly="readonly"'
+				. ' value="' . esc_attr( $shortcode ) . '"'
+				. ' class="large-text code" /></span>';
 		}
 
 		return trim( $output );
 	}
 
 	function column_date( $item ) {
-		$post = get_post( $item->id );
+		$post = get_post( $item->id() );
 
 		if ( ! $post )
 			return;
 
-		$t_time = mysql2date( __( 'Y/m/d g:i:s A', 'wpcf7' ), $post->post_date, true );
+		$t_time = mysql2date( __( 'Y/m/d g:i:s A', 'contact-form-7' ), $post->post_date, true );
 		$m_time = $post->post_date;
 		$time = mysql2date( 'G', $post->post_date ) - get_option( 'gmt_offset' ) * 3600;
 
 		$time_diff = time() - $time;
 
 		if ( $time_diff > 0 && $time_diff < 24*60*60 )
-			$h_time = sprintf( __( '%s ago', 'wpcf7' ), human_time_diff( $time ) );
+			$h_time = sprintf( __( '%s ago', 'contact-form-7' ), human_time_diff( $time ) );
 		else
-			$h_time = mysql2date( __( 'Y/m/d', 'wpcf7' ), $m_time );
+			$h_time = mysql2date( __( 'Y/m/d', 'contact-form-7' ), $m_time );
 
 		return '<abbr title="' . $t_time . '">' . $h_time . '</abbr>';
-    }
+	}
 }
-
-?>

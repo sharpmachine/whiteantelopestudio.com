@@ -58,7 +58,7 @@ class blcModule {
 	function activated(){
 		//Should be overridden in a sub-class.
 	}
-	
+
 	/**
 	 * Called when the module is deactivated.
 	 * Should be overridden in a sub-class.
@@ -68,6 +68,13 @@ class blcModule {
 	function deactivated(){
 		//Should be overridden in a sub-class.
 	}
+
+	/**
+	 * Called when BLC itself is activated.
+	 * Usually this method just calls activated(), but subclasses could override it for special handling.
+	 */
+	function plugin_activated() {
+		$this->activated();
+	}
 }
 
-?>

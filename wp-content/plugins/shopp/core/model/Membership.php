@@ -13,6 +13,8 @@
  * @subpackage membership
  **/
 
+defined( 'WPINC' ) || header( 'HTTP/1.1 403' ) & exit; // Prevent direct access
+
 /**
  * Membership
  *
@@ -20,7 +22,7 @@
  * @since 1.2
  * @package membership
  **/
-class Membership extends DatabaseObject  {
+class Membership extends ShoppDatabaseObject  {
 	static $table = 'meta';
 
 	var $_table = false;	// Fully qualified table name
@@ -63,7 +65,7 @@ class Membership extends DatabaseObject  {
  * @since 1.2
  * @package membership
  **/
-class MemberPlan extends DatabaseObject  {
+class MemberPlan extends ShoppDatabaseObject  {
 	static $table = 'meta';
 
 	var $_table = false;	// Fully qualified table name
@@ -96,18 +98,16 @@ class MemberPlan extends DatabaseObject  {
 	}
 
 	function load_stages () {
-		$db = DB::get();
 		$StageLoader = new MemberStage();
 		$query = "SELECT * FROM $StageLoader->_table
 					WHERE parent='$this->id'
 						AND context='$StageLoader->context'
 						AND type='$StageLoader->type'
 					ORDER BY sortorder";
-		$this->stages = $db->query($query,'array', array($StageLoader,'loader'));
+		$this->stages = sDB::query($query,'array', array($StageLoader,'loader'));
 	}
 
 	function load_access ($stage=false) {
-		$db = DB::get();
 		$AccessLoader = new MemberAccess();
 		if (!$stage) {
 			if (empty($this->stages)) $this->load_stages();
@@ -119,11 +119,11 @@ class MemberPlan extends DatabaseObject  {
 					WHERE $parent
 						AND context='$AccessLoader->context'
 						AND type='$AccessLoader->type'";
-		$this->access = $db->query($query,'array', array($this,'map_stageaccess'));
+		$this->access = sDB::query($query,'array', array($this,'map_stageaccess'));
 	}
 
 	// function load_content ($access=false) {
-	// 	$db = DB::get();
+	// 	$db = sDB::get();
 	// 	$ContentLoader = new MemberContent();
 	// 	if (!$access) {
 	// 		if (empty($this->access)) $this->load_access();
@@ -132,7 +132,7 @@ class MemberPlan extends DatabaseObject  {
 	// 	} else $taxonomy = "taxonomy='$access'";
 	//
 	// 	$query = "SELECT * FROM $ContentLoader->_table WHERE $taxonomy";
-	// 	$this->content = $db->query($query,'array', array($this,'map_stageaccess'));
+	// 	$this->content = sDB::query($query,'array', array($this,'map_stageaccess'));
 	// }
 
 	/**
@@ -164,14 +164,13 @@ class MemberPlan extends DatabaseObject  {
 	 **/
 	function delete () {
 		if (empty($this->id)) return;
-		$db = DB::get();
 
 		// @todo Delete all catalog entries related to this
-		// $catalog = DatabaseObject::tablename(Catalog::$table);
-		// $db->query("DELETE FROM $this->_table WHERE parent='$id' AND context='membership'");
+		// $catalog = ShoppDatabaseObject::tablename(Catalog::$table);
+		// sDB::query("DELETE FROM $this->_table WHERE parent='$id' AND context='membership'");
 
 		// Delete all meta data related to this entry
-		$db->query("DELETE FROM $this->_table WHERE parent='$this->id' AND context='membership'");
+		sDB::query("DELETE FROM $this->_table WHERE parent='$this->id' AND context='membership'");
 
 		parent::delete();
 	}
@@ -256,7 +255,7 @@ class MemberStage extends MemberPlan  {
  * @since 1.2
  * @package membership
  **/
-class MemberAccess extends DatabaseObject  {
+class MemberAccess extends ShoppDatabaseObject  {
 	static $table = 'meta';
 
 	var $_table = false;	// Fully qualified table name
@@ -300,7 +299,7 @@ class MemberAccess extends DatabaseObject  {
  * @since 1.2
  * @package membership
  **/
-class MemberContent extends DatabaseObject  {
+class MemberContent extends ShoppDatabaseObject  {
 	static $table = 'catalog';
 
 	function __construct ($content=false,$access=false,$stage=false) {

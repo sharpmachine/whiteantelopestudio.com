@@ -1,6 +1,190 @@
-/*
+/*!
  * orders.js - Behaviors for the order manager
- * Copyright ?? 2011 by Ingenesis Limited. All rights reserved.
+ * Copyright © 2011 by Ingenesis Limited. All rights reserved.
  * Licensed under the GPLv3 {@see license.txt}
  */
-jQuery(document).ready(function(g){g.template("shipment-ui",g("#shipment-ui"));g.template("shipnotice-ui",g("#shipnotice-ui"));g.template("refund-ui",g("#refund-ui"));var d=g("#order-manage"),c=d.find("div.headline"),f="",e=g.each(carriers,function(i,j){f+='<option value="'+i+'">'+j[0]+"</option>"}),b=g("#shipnote-button").click(function(p){p.preventDefault();var o=g(this).hide(),n=[],m=g.tmpl("shipnotice-ui",{shipmentnum:2}),j=m.find("ol li"),l=function(){j.find("span.number").text(n.length+1+".")},i=m.find("#addship-button").click(function(u){u.preventDefault();var s=n.length,t=g.tmpl("shipment-ui",{id:s,num:s+1}),r=t.find("select").html(f),v=t.find(".tracking").change(function(){var w=g(this).val().toUpperCase().replace(/[^A-Z0-9]/,"");g.each(carriers,function(y,x){if(w.match(new RegExp(x[1].substr(1,x[1].length-2)))!=null){r.val(y);return false}})}),q=t.find("button.delete").click(function(w){w.preventDefault();t.remove();n.splice(s,1);l()}).hide();if(s>0){t.hover(function(){q.show()},function(){q.fadeOut("fast")})}n.push(t.insertBefore(j));l()}).click(),k=m.find("#cancel-ship").click(function(q){q.preventDefault();m.fadeRemove("fast",function(){o.show()})});m.appendTo(c)}),a=g("#cancel-order, #refund-button").click(function(m){m.preventDefault();var l=g(this).hide(),k=("refund-button"==l.attr("id")?{action:"refund",title:$om.ro,cancel:$om.cancel,send:$om.stg,process:$om.pr,reason:$om.rr}:{action:"cancel",title:$om.co,cancel:$om.dnc,send:$om.stg,process:$om.co,reason:$om.rc,disable_amount:' disabled="disabled"'}),j=g.tmpl("refund-ui",k),i=j.find("#cancel-refund").click(function(n){n.preventDefault();j.fadeRemove("fast",function(){l.show()})});j.appendTo(c)}),h=g("#print-button").click(function(k){k.preventDefault();var l=g("#print-receipt").get(0),i=l.contentWindow;if(g.browser.opera||g.browser.msie){var j=window.open(i.location.href+"&print=auto");g(j).load(function(){j.close()})}else{i.focus();i.print()}return false})});
+
+jQuery(document).ready( function($) {
+
+	$.template('shipment-ui',$('#shipment-ui'));
+	$.template('shipnotice-ui',$('#shipnotice-ui'));
+	$.template('refund-ui',$('#refund-ui'));
+	$.template('address-ui',$('#address-editor'));
+	$.template('customer-ui',$('#customer-editor'));
+	$.template('customer-select',$('#customer-selector'));
+	$.template('change-customer',$('#change-customer-ui'));
+
+	var manager = $('#order-manage'),
+		managerui = manager.find('div.manager-ui'),
+
+		cmo = '',
+		ctr = $.each(carriers,function (code,carrier) {
+			cmo += '<option value="'+code+'">'+carrier[0]+'</option>';
+		}),
+
+		shipbtn = $('#shipnote-button').click(function (e) {
+			e.preventDefault();
+			var $this = $(this).hide(),
+				shipments = [],
+				ui = $.tmpl('shipnotice-ui',{shipmentnum:2}),
+				addshipli = ui.find('ol li'),
+
+				upaddshipnum = function () {
+					addshipli.find('span.number').text(shipments.length+1+'.');
+				},
+
+				addbtn = ui.find('#addship-button').click(function (e) {
+					e.preventDefault();
+
+					var shipnum = shipments.length,
+						shipment = $.tmpl('shipment-ui',{id:shipnum,num:shipnum+1}),
+
+						carriermenu = shipment.find('select').html(cmo),
+
+						tracking = shipment.find('.tracking').change(function () {
+							var tracknum = $(this).val().toUpperCase().replace(/[^A-Z0-9]/,'');
+							$.each(carriers,function (c,r) {
+								if (tracknum.match( new RegExp(r[1].substr( 1,r[1].length-2 )) ) != null) {
+									carriermenu.val(c);
+									return false;
+								}
+							});
+						}),
+
+						deletebtn = shipment.find('button.delete').click(function (e) {
+							e.preventDefault();
+							shipment.remove();
+							shipments.splice(shipnum,1);
+							upaddshipnum();
+
+						}).hide();
+
+					if (shipnum > 0)
+						shipment.hover(function() {deletebtn.show();},function () {deletebtn.fadeOut('fast');});
+					shipments.push(shipment.insertBefore(addshipli));
+					upaddshipnum();
+
+				}).click(),
+
+				cancel = ui.find('#cancel-ship').click(function (e) {
+					e.preventDefault();
+					ui.fadeRemove('fast',function () {
+						$this.show();
+					});
+				});
+
+				managerui.empty().append(ui);
+		}),
+
+		refundbtn = $('#cancel-order, #refund-button').click(function (e) {
+			e.preventDefault();
+
+			var $this = $(this).attr('disabled',true),
+				data = ('refund-button' == $this.attr('id') ?
+					{ action:'refund',title:$om.ro,cancel:$om.cancel,send:$om.stg,process:$om.pr,reason: $om.rr } :
+					{ action:'cancel',title:$om.co,cancel:$om.dnc,send:$om.stg,process:$om.co,reason: $om.rc,disable_amount: ' disabled="disabled"' }),
+				ui = $.tmpl('refund-ui',data),
+
+				cancel = ui.find('#cancel-refund').click(function (e) {
+					e.preventDefault();
+					ui.fadeRemove('fast',function () {
+						$this.show();
+					});
+
+				});
+
+				managerui.empty().append(ui);
+		}),
+
+		printbtn = $( '#print-button' ).click( function (e) {
+			e.preventDefault();
+			var frame = $( '#print-receipt' ).get( 0 ), fw = frame.contentWindow;
+
+			// Which browser agent?
+			var trident = ( -1 !== navigator.userAgent.indexOf( "Trident" ) ); // IE
+			var presto = ( -1 !== navigator.userAgent.indexOf( "Presto" ) ); // Opera (pre-webkit)
+
+			if ( trident || presto ) {
+				var preview = window.open( fw.location.href+"&print=auto" );
+				$( preview ).load( function () {	preview.close(); } );
+			} else {
+				fw.focus();
+				fw.print();
+			}
+			return false;
+		} );
+
+		editaddress = function (type) {
+			var $this = $(this),
+				data = address[ type ],
+				ui = $.tmpl('address-ui',data),
+				editorui = $('#' + type + '-address-editor'),
+				display = $('#order-' + type + ' .display'),
+
+
+				cancel = ui.find('#cancel-edit-address').click(function (e) {
+					e.preventDefault();
+					ui.fadeRemove('fast',function () {
+						$this.show();
+						display.show();
+					});
+
+				});
+
+			ui.find('#' + type + '-state-menu').html(data.statemenu);
+			ui.find('#' + type + '-country').html(data.countrymenu).upstate();
+
+			display.hide();
+			editorui.hide().empty().append(ui).slideDown('fast');
+
+		},
+
+		billaddrctrls = $('#edit-billing-address, #order-billing address').click(function (e) {
+			e.preventDefault();
+			editaddress('billing');
+			return false;
+		}),
+
+		billaddrctrls = $('#edit-shipping-address, #order-shipto address').click(function (e) {
+			e.preventDefault();
+			editaddress('shipping');
+			return false;
+		}),
+
+		editcustomer = $('#edit-customer').click(function (e) {
+			e.preventDefault();
+			var $this = $(this),
+				ui = $.tmpl('customer-ui',customer),
+				editorui = $('#customer-editor-form'),
+				display = $('#order-contact .display'),
+				panel = $('#order-contact .inside'),
+				cancel = function (e) {
+					e.preventDefault();
+					ui.fadeRemove('fast',function () {
+						$this.show();
+						display.show();
+					});
+				},
+				change = ui.find('#change-customer').click(function (e) {
+					e.preventDefault();
+					editorui.hide();
+					ui = $.tmpl('change-customer');
+					var changeui = $('#change-customer-editor').empty().append(ui).slideDown('fast');
+
+					var results = changeui.find('#customer-search-results').hide(),
+						changebutton = changeui.find('.change-button').hide(),
+						cancelchange = $('#cancel-change-customer').hide(),
+						editcancel = ui.find('#cancel-edit-customer').click(cancel),
+						searching = $('#customer-search').submit(function (e) {
+							$('#change-customer').hide();
+							cancelchange.show().click(cancel);
+							results.show();
+						});
+				}),
+				caneledit = ui.find('#cancel-edit-customer').click(cancel);
+
+			display.hide();
+			editorui.hide().empty().append(ui).slideDown('fast');
+			return false;
+		});
+});

@@ -5,181 +5,21 @@ function wpcf7_plugin_path( $path = '' ) {
 }
 
 function wpcf7_plugin_url( $path = '' ) {
-	$url = untrailingslashit( WPCF7_PLUGIN_URL );
+	$url = plugins_url( $path, WPCF7_PLUGIN );
 
-	if ( ! empty( $path ) && is_string( $path ) && false === strpos( $path, '..' ) )
-		$url .= '/' . ltrim( $path, '/' );
+	if ( is_ssl() && 'http:' == substr( $url, 0, 5 ) ) {
+		$url = 'https:' . substr( $url, 5 );
+	}
 
 	return $url;
 }
 
-function wpcf7_deprecated_function( $function, $version, $replacement = null ) {
-	do_action( 'wpcf7_deprecated_function_run', $function, $replacement, $version );
-
-	if ( WP_DEBUG && apply_filters( 'wpcf7_deprecated_function_trigger_error', true ) ) {
-		if ( ! is_null( $replacement ) )
-			trigger_error( sprintf( __( '%1$s is <strong>deprecated</strong> since Contact Form 7 version %2$s! Use %3$s instead.', 'wpcf7' ), $function, $version, $replacement ) );
-		else
-			trigger_error( sprintf( __( '%1$s is <strong>deprecated</strong> since Contact Form 7 version %2$s with no alternative available.', 'wpcf7' ), $function, $version ) );
-	}
-}
-
-function wpcf7_messages() {
-	$messages = array(
-		'mail_sent_ok' => array(
-			'description' => __( "Sender's message was sent successfully", 'wpcf7' ),
-			'default' => __( 'Your message was sent successfully. Thanks.', 'wpcf7' )
-		),
-
-		'mail_sent_ng' => array(
-			'description' => __( "Sender's message was failed to send", 'wpcf7' ),
-			'default' => __( 'Failed to send your message. Please try later or contact the administrator by another method.', 'wpcf7' )
-		),
-
-		'validation_error' => array(
-			'description' => __( "Validation errors occurred", 'wpcf7' ),
-			'default' => __( 'Validation errors occurred. Please confirm the fields and submit it again.', 'wpcf7' )
-		),
-
-		'spam' => array(
-			'description' => __( "Submission was referred to as spam", 'wpcf7' ),
-			'default' => __( 'Failed to send your message. Please try later or contact the administrator by another method.', 'wpcf7' )
-		),
-
-		'accept_terms' => array(
-			'description' => __( "There are terms that the sender must accept", 'wpcf7' ),
-			'default' => __( 'Please accept the terms to proceed.', 'wpcf7' )
-		),
-
-		'invalid_email' => array(
-			'description' => __( "Email address that the sender entered is invalid", 'wpcf7' ),
-			'default' => __( 'Email address seems invalid.', 'wpcf7' )
-		),
-
-		'invalid_required' => array(
-			'description' => __( "There is a field that the sender must fill in", 'wpcf7' ),
-			'default' => __( 'Please fill the required field.', 'wpcf7' )
-		)
-	);
-
-	return apply_filters( 'wpcf7_messages', $messages );
-}
-
-function wpcf7_get_default_template( $prop = 'form' ) {
-	if ( 'form' == $prop )
-		$template = wpcf7_default_form_template();
-	elseif ( 'mail' == $prop )
-		$template = wpcf7_default_mail_template();
-	elseif ( 'mail_2' == $prop )
-		$template = wpcf7_default_mail_2_template();
-	elseif ( 'messages' == $prop )
-		$template = wpcf7_default_messages_template();
-	else
-		$template = null;
-
-	return apply_filters( 'wpcf7_default_template', $template, $prop );
-}
-
-function wpcf7_default_form_template() {
-	$template =
-		'<p>' . __( 'Your Name', 'wpcf7' ) . ' ' . __( '(required)', 'wpcf7' ) . '<br />' . "\n"
-		. '    [text* your-name] </p>' . "\n\n"
-		. '<p>' . __( 'Your Email', 'wpcf7' ) . ' ' . __( '(required)', 'wpcf7' ) . '<br />' . "\n"
-		. '    [email* your-email] </p>' . "\n\n"
-		. '<p>' . __( 'Subject', 'wpcf7' ) . '<br />' . "\n"
-		. '    [text your-subject] </p>' . "\n\n"
-		. '<p>' . __( 'Your Message', 'wpcf7' ) . '<br />' . "\n"
-		. '    [textarea your-message] </p>' . "\n\n"
-		. '<p>[submit "' . __( 'Send', 'wpcf7' ) . '"]</p>';
-
-	return $template;
-}
-
-function wpcf7_default_mail_template() {
-	$subject = '[your-subject]';
-	$sender = '[your-name] <[your-email]>';
-	$body = sprintf( __( 'From: %s', 'wpcf7' ), '[your-name] <[your-email]>' ) . "\n"
-		. sprintf( __( 'Subject: %s', 'wpcf7' ), '[your-subject]' ) . "\n\n"
-		. __( 'Message Body:', 'wpcf7' ) . "\n" . '[your-message]' . "\n\n" . '--' . "\n"
-		. sprintf( __( 'This mail is sent via contact form on %1$s %2$s', 'wpcf7' ),
-			get_bloginfo( 'name' ), get_bloginfo( 'url' ) );
-	$recipient = get_option( 'admin_email' );
-	$additional_headers = '';
-	$attachments = '';
-	$use_html = 0;
-	return compact( 'subject', 'sender', 'body', 'recipient', 'additional_headers', 'attachments', 'use_html' );
-}
-
-function wpcf7_default_mail_2_template() {
-	$active = false;
-	$subject = '[your-subject]';
-	$sender = '[your-name] <[your-email]>';
-	$body = __( 'Message body:', 'wpcf7' ) . "\n" . '[your-message]' . "\n\n" . '--' . "\n"
-		. sprintf( __( 'This mail is sent via contact form on %1$s %2$s', 'wpcf7' ),
-			get_bloginfo( 'name' ), get_bloginfo( 'url' ) );
-	$recipient = '[your-email]';
-	$additional_headers = '';
-	$attachments = '';
-	$use_html = 0;
-	return compact( 'active', 'subject', 'sender', 'body', 'recipient', 'additional_headers', 'attachments', 'use_html' );
-}
-
-function wpcf7_default_messages_template() {
-	$messages = array();
-
-	foreach ( wpcf7_messages() as $key => $arr ) {
-		$messages[$key] = $arr['default'];
-	}
-
-	return $messages;
-}
-
 function wpcf7_upload_dir( $type = false ) {
-	global $switched;
+	$uploads = wp_upload_dir();
 
-	$siteurl = get_option( 'siteurl' );
-	$upload_path = trim( get_option( 'upload_path' ) );
-
-	$main_override = is_multisite() && defined( 'MULTISITE' ) && is_main_site();
-
-	if ( empty( $upload_path ) ) {
-		$dir = WP_CONTENT_DIR . '/uploads';
-	} else {
-		$dir = $upload_path;
-
-		if ( 'wp-content/uploads' == $upload_path ) {
-			$dir = WP_CONTENT_DIR . '/uploads';
-		} elseif ( 0 !== strpos( $dir, ABSPATH ) ) {
-			// $dir is absolute, $upload_path is (maybe) relative to ABSPATH
-			$dir = path_join( ABSPATH, $dir );
-		}
-	}
-
-	if ( ! $url = get_option( 'upload_url_path' ) ) {
-		if ( empty( $upload_path )
-		|| ( 'wp-content/uploads' == $upload_path )
-		|| ( $upload_path == $dir ) )
-			$url = WP_CONTENT_URL . '/uploads';
-		else
-			$url = trailingslashit( $siteurl ) . $upload_path;
-	}
-
-	if ( defined( 'UPLOADS' ) && ! $main_override
-	&& ( ! isset( $switched ) || $switched === false ) ) {
-		$dir = ABSPATH . UPLOADS;
-		$url = trailingslashit( $siteurl ) . UPLOADS;
-	}
-
-	if ( is_multisite() && ! $main_override
-	&& ( ! isset( $switched ) || $switched === false ) ) {
-
-		if ( defined( 'BLOGUPLOADDIR' ) )
-			$dir = untrailingslashit( BLOGUPLOADDIR );
-
-		$url = str_replace( UPLOADS, 'files', $url );
-	}
-
-	$uploads = apply_filters( 'wpcf7_upload_dir', array( 'dir' => $dir, 'url' => $url ) );
+	$uploads = apply_filters( 'wpcf7_upload_dir', array(
+		'dir' => $uploads['basedir'],
+		'url' => $uploads['baseurl'] ) );
 
 	if ( 'dir' == $type )
 		return $uploads['dir'];
@@ -187,78 +27,6 @@ function wpcf7_upload_dir( $type = false ) {
 		return $uploads['url'];
 
 	return $uploads;
-}
-
-function wpcf7_l10n() {
-	$l10n = array(
-		'af' => __( 'Afrikaans', 'wpcf7' ),
-		'sq' => __( 'Albanian', 'wpcf7' ),
-		'ar' => __( 'Arabic', 'wpcf7' ),
-		'hy_AM' => __( 'Armenian', 'wpcf7' ),
-		'az_AZ' => __( 'Azerbaijani', 'wpcf7' ),
-		'bn_BD' => __( 'Bangla', 'wpcf7' ),
-		'eu' => __( 'Basque', 'wpcf7' ),
-		'be_BY' => __( 'Belarusian', 'wpcf7' ),
-		'bs' => __( 'Bosnian', 'wpcf7' ),
-		'pt_BR' => __( 'Brazilian Portuguese', 'wpcf7' ),
-		'bg_BG' => __( 'Bulgarian', 'wpcf7' ),
-		'ca' => __( 'Catalan', 'wpcf7' ),
-		'zh_CN' => __( 'Chinese (Simplified)', 'wpcf7' ),
-		'zh_TW' => __( 'Chinese (Traditional)', 'wpcf7' ),
-		'hr' => __( 'Croatian', 'wpcf7' ),
-		'cs_CZ' => __( 'Czech', 'wpcf7' ),
-		'da_DK' => __( 'Danish', 'wpcf7' ),
-		'nl_NL' => __( 'Dutch', 'wpcf7' ),
-		'en_US' => __( 'English', 'wpcf7' ),
-		'eo_EO' => __( 'Esperanto', 'wpcf7' ),
-		'et' => __( 'Estonian', 'wpcf7' ),
-		'fi' => __( 'Finnish', 'wpcf7' ),
-		'fr_FR' => __( 'French', 'wpcf7' ),
-		'gl_ES' => __( 'Galician', 'wpcf7' ),
-		'ka_GE' => __( 'Georgian', 'wpcf7' ),
-		'de_DE' => __( 'German', 'wpcf7' ),
-		'el' => __( 'Greek', 'wpcf7' ),
-		'he_IL' => __( 'Hebrew', 'wpcf7' ),
-		'hi_IN' => __( 'Hindi', 'wpcf7' ),
-		'hu_HU' => __( 'Hungarian', 'wpcf7' ),
-		'id_ID' => __( 'Indonesian', 'wpcf7' ),
-		'it_IT' => __( 'Italian', 'wpcf7' ),
-		'ja' => __( 'Japanese', 'wpcf7' ),
-		'ko_KR' => __( 'Korean', 'wpcf7' ),
-		'lv' => __( 'Latvian', 'wpcf7' ),
-		'lt_LT' => __( 'Lithuanian', 'wpcf7' ),
-		'mk_MK' => __( 'Macedonian', 'wpcf7' ),
-		'ms_MY' => __( 'Malay', 'wpcf7' ),
-		'ml_IN' => __( 'Malayalam', 'wpcf7' ),
-		'mt_MT' => __( 'Maltese', 'wpcf7' ),
-		'nb_NO' => __( 'Norwegian', 'wpcf7' ),
-		'fa_IR' => __( 'Persian', 'wpcf7' ),
-		'pl_PL' => __( 'Polish', 'wpcf7' ),
-		'pt_PT' => __( 'Portuguese', 'wpcf7' ),
-		'ru_RU' => __( 'Russian', 'wpcf7' ),
-		'ro_RO' => __( 'Romanian', 'wpcf7' ),
-		'sr_RS' => __( 'Serbian', 'wpcf7' ),
-		'si_LK' => __( 'Sinhala', 'wpcf7' ),
-		'sk_SK' => __( 'Slovak', 'wpcf7' ),
-		'sl_SI' => __( 'Slovene', 'wpcf7' ),
-		'es_ES' => __( 'Spanish', 'wpcf7' ),
-		'sv_SE' => __( 'Swedish', 'wpcf7' ),
-		'ta' => __( 'Tamil', 'wpcf7' ),
-		'th' => __( 'Thai', 'wpcf7' ),
-		'tl' => __( 'Tagalog', 'wpcf7' ),
-		'tr_TR' => __( 'Turkish', 'wpcf7' ),
-		'uk' => __( 'Ukrainian', 'wpcf7' ),
-		'vi' => __( 'Vietnamese', 'wpcf7' )
-	);
-
-	return $l10n;
-}
-
-function wpcf7_is_rtl() {
-	if ( function_exists( 'is_rtl' ) )
-		return is_rtl();
-
-	return false;
 }
 
 function wpcf7_ajax_loader() {
@@ -281,19 +49,24 @@ function wpcf7_create_nonce( $action = -1 ) {
 function wpcf7_blacklist_check( $target ) {
 	$mod_keys = trim( get_option( 'blacklist_keys' ) );
 
-	if ( empty( $mod_keys ) )
+	if ( empty( $mod_keys ) ) {
 		return false;
+	}
 
 	$words = explode( "\n", $mod_keys );
 
 	foreach ( (array) $words as $word ) {
 		$word = trim( $word );
 
-		if ( empty( $word ) )
+		if ( empty( $word ) || 256 < strlen( $word ) ) {
 			continue;
+		}
 
-		if ( preg_match( '#' . preg_quote( $word, '#' ) . '#', $target ) )
+		$pattern = sprintf( '#%s#i', preg_quote( $word, '#' ) );
+
+		if ( preg_match( $pattern, $target ) ) {
 			return true;
+		}
 	}
 
 	return false;
@@ -311,4 +84,252 @@ function wpcf7_array_flatten( $input ) {
 	return $output;
 }
 
-?>
+function wpcf7_flat_join( $input ) {
+	$input = wpcf7_array_flatten( $input );
+	$output = array();
+
+	foreach ( (array) $input as $value )
+		$output[] = trim( (string) $value );
+
+	return implode( ', ', $output );
+}
+
+function wpcf7_support_html5() {
+	return (bool) apply_filters( 'wpcf7_support_html5', true );
+}
+
+function wpcf7_support_html5_fallback() {
+	return (bool) apply_filters( 'wpcf7_support_html5_fallback', false );
+}
+
+function wpcf7_use_really_simple_captcha() {
+	return apply_filters( 'wpcf7_use_really_simple_captcha',
+		WPCF7_USE_REALLY_SIMPLE_CAPTCHA );
+}
+
+function wpcf7_load_js() {
+	return apply_filters( 'wpcf7_load_js', WPCF7_LOAD_JS );
+}
+
+function wpcf7_load_css() {
+	return apply_filters( 'wpcf7_load_css', WPCF7_LOAD_CSS );
+}
+
+function wpcf7_format_atts( $atts ) {
+	$html = '';
+
+	$prioritized_atts = array( 'type', 'name', 'value' );
+
+	foreach ( $prioritized_atts as $att ) {
+		if ( isset( $atts[$att] ) ) {
+			$value = trim( $atts[$att] );
+			$html .= sprintf( ' %s="%s"', $att, esc_attr( $value ) );
+			unset( $atts[$att] );
+		}
+	}
+
+	foreach ( $atts as $key => $value ) {
+		$key = strtolower( trim( $key ) );
+
+		if ( ! preg_match( '/^[a-z_:][a-z_:.0-9-]*$/', $key ) ) {
+			continue;
+		}
+
+		$value = trim( $value );
+
+		if ( '' !== $value ) {
+			$html .= sprintf( ' %s="%s"', $key, esc_attr( $value ) );
+		}
+	}
+
+	$html = trim( $html );
+
+	return $html;
+}
+
+function wpcf7_link( $url, $anchor_text, $args = '' ) {
+	$defaults = array(
+		'id' => '',
+		'class' => '' );
+
+	$args = wp_parse_args( $args, $defaults );
+	$args = array_intersect_key( $args, $defaults );
+	$atts = wpcf7_format_atts( $args );
+
+	$link = sprintf( '<a href="%1$s"%3$s>%2$s</a>',
+		esc_url( $url ),
+		esc_html( $anchor_text ),
+		$atts ? ( ' ' . $atts ) : '' );
+
+	return $link;
+}
+
+function wpcf7_get_request_uri() {
+	static $request_uri = '';
+
+	if ( empty( $request_uri ) ) {
+		$request_uri = add_query_arg( array() );
+	}
+
+	return esc_url_raw( $request_uri );
+}
+
+function wpcf7_register_post_types() {
+	if ( class_exists( 'WPCF7_ContactForm' ) ) {
+		WPCF7_ContactForm::register_post_type();
+		return true;
+	} else {
+		return false;
+	}
+}
+
+function wpcf7_version( $args = '' ) {
+	$defaults = array(
+		'limit' => -1,
+		'only_major' => false );
+
+	$args = wp_parse_args( $args, $defaults );
+
+	if ( $args['only_major'] ) {
+		$args['limit'] = 2;
+	}
+
+	$args['limit'] = (int) $args['limit'];
+
+	$ver = WPCF7_VERSION;
+	$ver = strtr( $ver, '_-+', '...' );
+	$ver = preg_replace( '/[^0-9.]+/', ".$0.", $ver );
+	$ver = preg_replace( '/[.]+/', ".", $ver );
+	$ver = trim( $ver, '.' );
+	$ver = explode( '.', $ver );
+
+	if ( -1 < $args['limit'] ) {
+		$ver = array_slice( $ver, 0, $args['limit'] );
+	}
+
+	$ver = implode( '.', $ver );
+
+	return $ver;
+}
+
+function wpcf7_version_grep( $version, array $input ) {
+	$pattern = '/^' . preg_quote( (string) $version, '/' ) . '(?:\.|$)/';
+
+	return preg_grep( $pattern, $input );
+}
+
+function wpcf7_enctype_value( $enctype ) {
+	$enctype = trim( $enctype );
+
+	if ( empty( $enctype ) ) {
+		return '';
+	}
+
+	$valid_enctypes = array(
+		'application/x-www-form-urlencoded',
+		'multipart/form-data',
+		'text/plain' );
+
+	if ( in_array( $enctype, $valid_enctypes ) ) {
+		return $enctype;
+	}
+
+	$pattern = '%^enctype="(' . implode( '|', $valid_enctypes ) . ')"$%';
+
+	if ( preg_match( $pattern, $enctype, $matches ) ) {
+		return $matches[1]; // for back-compat
+	}
+
+	return '';
+}
+
+function wpcf7_rmdir_p( $dir ) {
+	if ( is_file( $dir ) ) {
+		@unlink( $dir );
+		return true;
+	}
+
+	if ( ! is_dir( $dir ) ) {
+		return false;
+	}
+
+	if ( $handle = @opendir( $dir ) ) {
+		while ( false !== ( $file = readdir( $handle ) ) ) {
+			if ( $file == "." || $file == ".." ) {
+				continue;
+			}
+
+			wpcf7_rmdir_p( path_join( $dir, $file ) );
+		}
+
+		closedir( $handle );
+	}
+
+	return @rmdir( $dir );
+}
+
+/* From _http_build_query in wp-includes/functions.php */
+function wpcf7_build_query( $args, $key = '' ) {
+	$sep = '&';
+	$ret = array();
+
+	foreach ( (array) $args as $k => $v ) {
+		$k = urlencode( $k );
+
+		if ( ! empty( $key ) ) {
+			$k = $key . '%5B' . $k . '%5D';
+		}
+
+		if ( null === $v ) {
+			continue;
+		} elseif ( false === $v ) {
+			$v = '0';
+		}
+
+		if ( is_array( $v ) || is_object( $v ) ) {
+			array_push( $ret, wpcf7_build_query( $v, $k ) );
+		} else {
+			array_push( $ret, $k . '=' . urlencode( $v ) );
+		}
+	}
+
+	return implode( $sep, $ret );
+}
+
+/**
+ * Returns the number of code units in a string.
+ *
+ * @see http://www.w3.org/TR/html5/infrastructure.html#code-unit-length
+ *
+ * @return int|bool The number of code units, or false if mb_convert_encoding is not available.
+ */
+function wpcf7_count_code_units( $string ) {
+	static $use_mb = null;
+
+	if ( is_null( $use_mb ) ) {
+		$use_mb = function_exists( 'mb_convert_encoding' );
+	}
+
+	if ( ! $use_mb ) {
+		return false;
+	}
+
+	$string = (string) $string;
+
+	$encoding = mb_detect_encoding( $string, mb_detect_order(), true );
+
+	if ( $encoding ) {
+		$string = mb_convert_encoding( $string, 'UTF-16', $encoding );
+	} else {
+		$string = mb_convert_encoding( $string, 'UTF-16', 'UTF-8' );
+	}
+
+	$byte_count = mb_strlen( $string, '8bit' );
+
+	return floor( $byte_count / 2 );
+}
+
+function wpcf7_is_localhost() {
+	$server_name = strtolower( $_SERVER['SERVER_NAME'] );
+	return in_array( $server_name, array( 'localhost', '127.0.0.1' ) );
+}

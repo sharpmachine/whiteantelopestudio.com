@@ -65,7 +65,7 @@ function w3tc_referrer_groups_clear() {
 }
 
 function w3tc_minify_js_file_add(theme, template, location, file) {
-    var append = jQuery('<li><table><tr><th>&nbsp;</th><th>File URI:</th><th>Template:</th><th colspan="3">Embed Location:</th></tr><tr><td>' + (jQuery('#js_files li').size() + 1) + '.</td><td><input class="js_enabled" type="text" name="js_files[' + theme + '][' + template + '][' + location + '][]" value="" size="70" \/></td><td><select class="js_file_template js_enabled"></select></td><td><select class="js_file_location js_enabled"><optgroup label="Blocking:"><option value="include">Embed in &lt;head&gt;</option><option value="include-body">Embed after &lt;body&gt;</option><option value="include-footer">Embed before &lt;/body&gt;</option></optgroup><optgroup label="Non-Blocking:"><option value="include-nb">Embed in &lt;head&gt;</option><option value="include-body-nb">Embed after &lt;body&gt;</option><option value="include-footer-nb">Embed before &lt;/body&gt;</option></optgroup></select></td><td><input class="js_file_delete js_enabled button" type="button" value="Delete" /> <input class="js_file_verify js_enabled button" type="button" value="Verify URI" /></td></tr></table><\/li>');
+    var append = jQuery('<li><table><tr><th>&nbsp;</th><th>File URI:</th><th>Template:</th><th colspan="3">Embed Location:</th></tr><tr><td>' + (jQuery('#js_files li').size() + 1) + '.</td><td><input class="js_enabled" type="text" name="js_files[' + theme + '][' + template + '][' + location + '][]" value="" size="70" \/></td><td><select class="js_file_template js_enabled"></select></td><td><select class="js_file_location js_enabled"><option value="include">Embed in &lt;head&gt;</option><option value="include-body">Embed after &lt;body&gt;</option><option value="include-footer">Embed before &lt;/body&gt;</option></select></td><td><input class="js_file_delete js_enabled button" type="button" value="Delete" /> <input class="js_file_verify js_enabled button" type="button" value="Verify URI" /></td></tr></table><\/li>');
     append.find('input:text').val(file);
     var select = append.find('.js_file_template');
     for (var i in minify_templates[theme]) {
@@ -113,6 +113,129 @@ function w3tc_minify_css_theme(theme) {
         }
     });
     w3tc_minify_css_file_clear();
+}
+
+function w3tc_minify_filename_test(url, success, failure) {
+    var timestamp = new Date().getTime();
+    jQuery.get(url + '?t=' + timestamp, function (data) {
+        success(data, url);
+    })
+    .fail(function (data) {
+        failure(data, url);
+    });
+}
+function w3tc_minify_filename_test_once(url, filename) {
+    jQuery(function($) {
+        w3tc_minify_filename_test(url + filename + '.css',
+            function(data, url) {
+                if (data == 'retry') {
+                    $.get(url, function(data2) {
+                        if (data2 != 'content ok') {
+                            $('#minify_auto_error').show();
+                            w3tc_start_minify_try_solve();
+                        } else {
+                            $.get(ajaxurl, {action:'w3tc_minify_disable_filename_test'});
+                        }
+                    });
+                } else if (data != 'content ok') {
+                    $('#minify_auto_error').show();
+                    w3tc_start_minify_try_solve();
+                } else {
+                    $.get(ajaxurl, {action:'w3tc_minify_disable_filename_test'});
+                }
+            },
+            function (data, url) {
+                $('#minify_auto_error').show();
+                w3tc_start_minify_try_solve();
+            }
+        );
+    })
+}
+
+function w3tc_filename_auto_solve(testUrl) {
+    var minLength = 100, maxLength = 246;
+    jQuery('#minify_auto_test_loading').toggleClass('minify_auto_test');
+    w3tc_do_filename_auto_step(testUrl,minLength, maxLength, maxLength, false);
+}
+
+function w3tc_do_filename_auto_step(testUrl,minLength, maxLength, tryLength, minTestedAndSuccessful) {
+    tryLength = Math.floor(tryLength);
+    var testString = new Array(tryLength+1).join('X');
+    var timestamp = new Date().getTime();
+    var url = testUrl + testString + '.css' + '?t=' + timestamp;
+    jQuery.get(url, function (data) {
+        if (data == 'retry') {
+            jQuery.get(url, function (retryResult) {
+                if (retryResult == 'content ok') {
+                    w3tc_do_success(testUrl,minLength, maxLength, tryLength, minTestedAndSuccessful);
+                } else {
+                    jQuery.get(ajaxurl, {action:'w3tc_minify_disable_filename_test'});
+                    alert('Plugin could not solve the Minify Auto issue automatically.');
+                    jQuery('#minify_auto_test_loading').toggleClass('minify_auto_test');
+                    jQuery('#minify_auto_error').html('<p>Minify Auto does not work properly. Try using Minify Manual instead ' +
+                        'or try another  Minify cache method.</p>');
+                }
+            });
+        } else if (data == 'content ok') {
+            w3tc_do_success(testUrl,minLength, maxLength, tryLength, minTestedAndSuccessful);
+        } else {
+            w3tc_do_failure(testUrl,minLength, maxLength, tryLength, minTestedAndSuccessful);
+        }
+    }).fail(function (data) {
+            w3tc_do_failure(testUrl,minLength, maxLength, tryLength, minTestedAndSuccessful);
+    });
+}
+
+function w3tc_do_success(testUrl,minLength, maxLength, tryLength, minTestedAndSuccessful) {
+    if ((maxLength - tryLength) < 10) {
+        w3tc_finish_with(tryLength);
+        return;
+    }
+    w3tc_do_filename_auto_step(testUrl, tryLength, maxLength, (tryLength + maxLength) / 2, true);
+}
+
+function w3tc_do_failure(testUrl,minLength, maxLength, tryLength, minTestedAndSuccessful) {
+    if ((tryLength - minLength) < 10) {
+        if (minTestedAndSuccessful) {
+            w3tc_finish_with(minLength);
+            return;
+        } else    if (tryLength <= minLength) {
+            jQuery.get(ajaxurl, {action:'w3tc_minify_disable_filename_test'});
+            var url;
+            if (w3_use_network_link)
+                url = 'network/admin.php?page=w3tc_minify#advanced';
+            else
+                url = 'admin.php?page=w3tc_minify#advanced';
+
+            alert('Plugin could not solve the Minify Auto issue automatically.');
+            jQuery('#minify_auto_test_loading').toggleClass('minify_auto_test');
+            jQuery('#minify_auto_error').html('<p>Minify Auto does not work properly. Try using Minify Manual instead ' +
+                'or try another Minify cache method. You can also try a lower filename length value manually on ' +
+                '<a href="' + url + '">settings page</a> by checking "Disable the Minify Auto automatic filename test" </p>');
+            return;
+        }
+        else {
+            w3tc_do_filename_auto_step(testUrl,minLength, maxLength, minLength, false);
+            return;
+        }
+    }
+    w3tc_do_filename_auto_step(testUrl, minLength, maxLength, (tryLength + minLength) / 2, minTestedAndSuccessful);
+}
+
+function w3tc_finish_with(length) {
+    jQuery.get(ajaxurl, {action:'w3tc_minify_change_filename_length', maxlength: length}, function (changeResult) {
+        if (changeResult == 1) {
+            jQuery('#minify_auto_filename_length').val(length);
+            jQuery('#minify_auto_test_loading').toggleClass('minify_auto_test');
+            alert('Minify Auto filename length changed too ' + length);
+            jQuery('#minify_auto_error').hide();
+        } else {
+            jQuery('#minify_auto_test_loading').toggleClass('minify_auto_test');
+            alert('Tried to change Minify Auto filename length too ' + length + ' but failed.');
+            jQuery('#minify_auto_error').hide();
+        }
+    });
+
 }
 
 function w3tc_cdn_get_cnames() {
@@ -176,6 +299,7 @@ function w3tc_cdn_cnames_assign() {
 }
 
 function w3tc_cloudflare_api_request(action, value, nonce) {
+
     var email = jQuery('#cloudflare_email');
     var key = jQuery('#cloudflare_key');
     var zone = jQuery('#cloudflare_zone');
@@ -198,12 +322,12 @@ function w3tc_cloudflare_api_request(action, value, nonce) {
         return false;
     }
 
-    jQuery.post('admin.php?page=w3tc_general', {
-        w3tc_cloudflare_api_request: 1,
+    jQuery.post(ajaxurl, {
+        action:'w3tc_cloudflare_api_request',
         email: email.val(),
         key: key.val(),
         zone: zone.val(),
-        action: action,
+        command: action,
         value: value,
         _wpnonce: nonce
     }, function(data) {
@@ -252,6 +376,40 @@ function w3tc_toggle(name, check) {
     });
 }
 
+function w3tc_toggle2(name, dependent_ids) {
+    var id = '#' + name, dependants = '', n;
+    for (n = 0; n < dependent_ids.length; n++)
+        dependants += (n > 0 ? ',' : '') + '#' + dependent_ids[n];
+    
+    jQuery(dependants).click(function() {
+        var total_checked = true;
+
+        jQuery(dependants).each(function() {
+            var current_checked = jQuery(this).is(':checked');
+
+            if (!current_checked)
+                total_checked = false;
+        });
+
+        if (total_checked) {
+            jQuery(id).attr('checked', 'checked');
+        } else {
+            jQuery(id).removeAttr('checked');
+        }
+    });
+
+    jQuery(id).click(function() {
+        var checked = jQuery(this).is(':checked');
+        jQuery(dependants).each(function() {
+            if (checked) {
+                jQuery(this).attr('checked', 'checked');
+            } else {
+                jQuery(this).removeAttr('checked');
+            }
+        });
+    });
+}
+
 function w3tc_beforeupload_bind() {
     jQuery(window).bind('beforeunload', w3tc_beforeunload);
 }
@@ -261,46 +419,358 @@ function w3tc_beforeupload_unbind() {
 }
 
 function w3tc_beforeunload() {
-    return 'Are you sure you wish to navigate away from this page without saving your changes?';
+    return 'Navigate away from this page without saving your changes?';
+}
+
+var setting_changes = null;
+function w3tc_change_setting(key, state,network) {
+    var class_id = key.replace(/\./g, '_');
+    if (setting_changes == null)
+        setting_changes = jQuery('.setting_changes').length;
+    setting_changes--;
+    jQuery.post(ajaxurl,{action:'w3tc_change_setting', setting:key, state:state, network:network}, function(data) {
+        if (data == 'failure') {
+            alert('Could not change the configuration setting.')
+        } else {
+            if ('done' == data && 'all' == key) {
+                jQuery('#w3tc_new_settings').html('<p>All setting changes have been applied.</p>');
+            } else if ('done' == data) {
+                jQuery('li.'+class_id).html('<span>Action Applied</span>');
+                jQuery('li.'+class_id+' span').fadeOut(2000, function() {
+                    jQuery('li.'+class_id).remove();
+                    jQuery('#w3tc_new_settings').html('<p>All setting changes have been applied.</p>');
+                });
+            } else {
+                jQuery('li.'+class_id).html('<span>Action Applied</span>');
+                jQuery('li.'+class_id+' span').fadeOut(2000, function() {
+                    jQuery('li.'+class_id).remove();
+                });
+                if (setting_changes <= 0)
+                    jQuery('#w3tc_new_settings').html('<p>All setting changes have been applied.</p>');
+            }
+        }
+    });
+}
+
+/**
+ *
+ * @param type
+ * @param nonce
+ */
+function w3tc_validate_cdn_key_result(type, nonce) {
+  var key = jQuery('#cdn_' + type + '_authorization_key').val();
+  jQuery('#cdn_result_message').text('');
+  var result = jQuery('#validate_cdn_key_result');
+  if (key.length == 0) {
+    result.html('').removeClass('w3tc-error').removeClass('w3tc-success').removeClass('w3tc-checking');
+    return;
+  }
+  result.html('Validating ...').addClass('w3tc-checking');
+
+  if (key.split('+').length!=3) {
+    result.removeClass('w3tc-checking');
+    result.html('Key is invalid').addClass('w3tc-error');
+    return;
+  }
+  var params = {
+    w3tc_cdn_validate_authorization_key: 1,
+    type: type,
+    authorization_key: key,
+    _wpnonce: nonce
+  };
+  jQuery('#validate_cdn_key').prop('disabled', true);
+  jQuery.post('admin.php?page=w3tc_dashboard', params, function(data) {
+    result.html('').removeClass('w3tc-error').removeClass('w3tc-success').removeClass('w3tc-checking');
+    var element;
+    if (data.result == 'create') {
+      jQuery('#create_zone_area').show();
+      element = jQuery('#normal-sortables');
+      if (element.length)
+        element.masonry('reload');
+    } else if (data.result == 'single') {
+      var message = data.cnames.join('<br />');
+      jQuery('#cdn_result_message').html('Preexisting zone has been selected and saved for the CDN engine. Hostnames used: <br />' + message);
+      jQuery('#cdn_cnames > :first-child > :first-child').val(data.cnames.shift());
+      for (var i in data.cnames) {
+        jQuery('#cdn_cnames').append('<li><input type="text" name="cdn_cnames[]" value="' + data.cnames[i] + '" size="60" /> <input class="button cdn_cname_delete" type="button" value="Delete" /> <span></span></li>');
+        w3tc_cdn_cnames_assign();
+      }
+    } else if (data.result == 'many') {
+      jQuery('#select_pull_zone').show();
+      var mySelect = jQuery('#cdn_' + type +'_zone_id');
+      mySelect.empty();
+      jQuery.each(data.zones, function(val, zone) {
+        mySelect.append(
+          jQuery('<option></option>').val(zone.id).html(zone.name)
+        );
+      });
+      if (data.data.id) {
+        jQuery("#cdn_maxcdn_zone_id").val(data.data.id);
+        var message = data.data.cnames.join('<br />');
+        jQuery('#cdn_result_message').html('Preexisting zone has been selected and saved for the CDN engine. Hostnames used: <br />' + message);
+        jQuery('#cdn_cnames > :first-child > :first-child').val(data.data.cnames.shift());
+        for (var x in data.data.cnames) {
+          jQuery('#cdn_cnames').append('<li><input type="text" name="cdn_cnames[]" value="' + data.data.cnames[x] + '" size="60" /> <input class="button cdn_cname_delete" type="button" value="Delete" /> <span></span></li>');
+          w3tc_cdn_cnames_assign();
+        }
+      }
+      element = jQuery('#normal-sortables');
+        if (element.length)
+          element.masonry('reload');
+    }
+    result.removeClass('w3tc-checking');
+    if (data.result != 'error' && data.result != 'notsupported')
+      result.html('Key is valid').addClass('w3tc-success');
+    else
+      result.html(data.message).addClass('w3tc-error');
+    jQuery('#validate_cdn_key').prop('disabled', false);
+  }, 'json');
+}
+
+function w3tc_create_zone(type, nonce) {
+  var params = {
+    w3tc_cdn_auto_create_netdna_maxcdn_pull_zone: 1,
+    type: type,
+    authorization_key: jQuery('#cdn_' + type + '_authorization_key').val(),
+    _wpnonce: nonce
+  };
+  var result = jQuery('#create_pull_zone_result');
+  result.html('').removeClass('w3tc-error').removeClass('w3tc-success').removeClass('w3tc-checking');
+  jQuery("#create_default_zone").prop('disabled', true);
+  result.html('Creating ... ').addClass('w3tc-checking');
+
+  jQuery.post('admin.php?page=w3tc_dashboard', params, function(data) {
+    if (data.cnames && data.cnames.length) {
+      jQuery('#cdn_cnames > :first-child > :first-child').val(data.cnames.shift());
+      for (var i in data.cnames) {
+          jQuery('#cdn_cnames').append('<li><input type="text" name="cdn_cnames[]" value="' + data.cnames[i] + '" size="60" /> <input class="button cdn_cname_delete" type="button" value="Delete" /> <span></span></li>');
+        w3tc_cdn_cnames_assign();
+      }
+      result.text('Created ').removeClass('w3tc-checking').addClass('w3tc-success');
+    } else {
+      result.text(data.message).removeClass('w3tc-checking').addClass('w3tc-error');
+      jQuery("#create_default_zone").prop('disabled', false);
+
+    }
+  }, 'json');
+}
+
+function w3tc_use_poll_zone(type, nonce) {
+  var zone_id = jQuery("#cdn_" + type +"_zone_id").val();
+  var params = {
+    w3tc_cdn_use_netdna_maxcdn_pull_zone: 1,
+    type: type,
+    zone_id: zone_id,
+    authorization_key: jQuery('#cdn_' + type + '_authorization_key').val(),
+    _wpnonce: nonce
+  };
+  jQuery.post('admin.php?page=w3tc_dashboard', params, function(data) {
+    if (data.result == 'valid') {
+      var message = data.cnames.join('<br />');
+      jQuery('#cdn_result_message').html('Zone has been selected and saved for the CDN engine. Hostnames used: <br />' + message);
+      jQuery('#cdn_cnames > :first-child > :first-child').val(data.cnames.shift());
+      for (var i in data.cnames) {
+        jQuery('#cdn_cnames').append('<li><input type="text" name="cdn_cnames[]" value="' + data.cnames[i] + '" size="60" /> <input class="button cdn_cname_delete" type="button" value="Delete" /> <span></span></li>');
+        w3tc_cdn_cnames_assign();
+      }
+    } else {
+      alert(data.message);
+    }
+  }, 'json');
 }
 
 jQuery(function() {
     // general page
     w3tc_toggle('enabled');
 
+    jQuery('#w3tc_general').submit(function(event) {
+        var el = jQuery("[was_clicked=yes]").get(0);
+        if (el.id == 'flush_all' && jQuery('#cloudflare_enabled').is(':checked')) {
+            if (!confirm('Purging your site\'s CloudFlare cache will remove all CloudFlare cache files. It may take up to 48 hours for the CloudFlare cache to completely rebuild on CloudFlare\'s global network. Are you sure you want to purge CloudFlare the cache? Clicking cancel will cancel "empty all caches".')) {
+                event.preventDefault();
+            }
+        }
+        jQuery(el).removeAttr("was_clicked");
+    });
+
+    jQuery('#w3tc_general [type=submit]').bind('click', function(){
+        jQuery(this).attr('was_clicked','yes');
+    });
+
     jQuery('.button-tweet').live('click', function() {
-        window.open('http://twitter.com/?status=' + encodeURIComponent('YES! I optimized my #wordpress site\'s #performance using the W3 Total Cache #plugin by @w3edge. Check it out! http://j.mp/A69xX'), '_blank');
+        window.open('http://twitter.com/?status=' + encodeURIComponent('YES! I optimized my #wordpress site\'s #performance using the W3 Total Cache #WPO #plugin by @w3edge. Check it out! http://j.mp/A69xX'), '_blank');
+    });
+
+    jQuery('#common_support').change(function() {
+        var where= jQuery(this).val();
+        jQuery.post(ajaxurl,{action:'w3tc_link_support', w3tc_common_support_us:where}, function(data) {
+            alert(data);
+        });
     });
 
     jQuery('.button-rating').live('click', function() {
-        window.open('http://wordpress.org/extend/plugins/w3-total-cache/', '_blank');
+        window.open('http://wordpress.org/support/view/plugin-reviews/w3-total-cache?rate=5#postform', '_blank');
+    });
+    jQuery('.w3tc_read_technical_info').click(function() {
+        jQuery('.w3tc_technical_info').toggle();
+    });
+
+    jQuery('#newrelic_verify_api_key').click(function() {
+        var api_key = jQuery('#newrelic_api_key').val();
+
+        if (!api_key) {
+            alert('Please enter an API key and try again.');
+            return;
+        }
+        var params = {
+            action: 'w3tc_verify_newrelic_api_key',
+            api_key: api_key
+        };
+
+        jQuery.get(ajaxurl, params, function(data) {
+            if (data) {
+                jQuery('#newrelic_account_id').val(data);
+                alert('API Key verified');
+            }else {
+                alert('The API key could not be verified. Please check it and try again.');
+            }
+        });
+    });
+
+    jQuery('#newrelic_retrieve_applications').click(function() {
+        var api_key = jQuery('#newrelic_api_key').val();
+        var account_id = jQuery('#newrelic_account_id').val();
+        if (!api_key) {
+            alert('Please enter an API key.');
+            return;
+        }
+
+        var params = {
+            action: 'w3tc_get_newrelic_applications',
+            api_key: api_key,
+            account_id: account_id
+        };
+
+        jQuery.getJSON(ajaxurl, params, function(data) {
+            var app_id_select = jQuery('#newrelic_application_id_dropdown');
+            var count = 0;
+            app_id_select.empty();
+            app_id_select
+                .append(jQuery("<option></option>")
+                .attr("value",'')
+                .text('-- Select Application --'));
+            jQuery.each(data, function(key, value) {
+                app_id_select
+                    .append(jQuery("<option></option>")
+                    .attr("value",key)
+                    .text(value));
+                count++;
+            });
+            if (count == 0)
+                alert('Could not retrieve any applications. Verify your API key.');
+        });
+    });
+
+
+    jQuery('#plugin_license_key_verify').click(function() {
+        original_button_value = jQuery('#plugin_license_key_verify').val();
+        jQuery('#plugin_license_key_verify').val("Checking...");
+
+        var license_key = jQuery('#plugin_license_key').val();
+
+        if (!license_key) {
+            alert('Please enter an license key and try again.');
+            return;
+        }
+        var params = {
+            action: 'w3tc_verify_plugin_license_key',
+            license_key: license_key
+        };
+
+        jQuery.get(ajaxurl, params, function(data) {
+            jQuery('#plugin_license_key_verify').val(original_button_value);
+            if (data == 'expired') {
+                alert('The license key has expired. Please renew it.');
+            }else if(data == 'host_valid' || data == 'valid') {
+                alert('License key is correct.');
+            }else if (data == 'another_site_active') {
+                alert('License key is correct but already in use on another site. See the FAQ for how to enable Pro version in development mode.');
+            }else {
+                alert('The license key is not valid. Please check it and try again.');
+            }
+        });
+    });
+
+    jQuery("#manual").click(function () {
+        jQuery('#newrelic_application_name_textbox_div').show();
+        jQuery('#newrelic_application_id_dropdown_div').hide();
+    });
+
+    jQuery("#dropdown").click(function () {
+        jQuery('#newrelic_application_name_textbox_div').hide();
+        jQuery('#newrelic_application_id_dropdown_div').show();
+    });
+
+    jQuery("#newrelic_use_network_wide_id").change(function () {
+        var conf = jQuery('#newrelic_configuration_sealed');
+        if (this.checked)
+            conf.prop('checked', true).prop('disabled',true);
+        else if(!jQuery('#common_force_master').is(':checked'))
+            conf.prop('disabled', false);
+    });
+
+    // pagecache page
+    w3tc_input_enable('#pgcache_reject_roles input[type=checkbox]', jQuery('#pgcache_reject_logged_roles:checked').size());
+    jQuery('#pgcache_reject_logged_roles').live('click', function(){
+        w3tc_input_enable('#pgcache_reject_roles input[type=checkbox]', jQuery('#pgcache_reject_logged_roles:checked').size());
+    });
+
+    if(jQuery('#pgcache_cache_nginx_handle_xml').is('*'))
+        jQuery('#pgcache_cache_nginx_handle_xml').attr('checked',jQuery('#pgcache_cache_feed').is(':checked'));
+
+    jQuery('#pgcache_cache_feed').change(function(){
+        if(jQuery('#pgcache_cache_nginx_handle_xml').is('*'))
+            jQuery('#pgcache_cache_nginx_handle_xml').attr('checked',this.checked);
     });
 
     // browsercache page
-    w3tc_toggle('browsercache_expires');
-    w3tc_toggle('browsercache_cache_control');
-    w3tc_toggle('browsercache_etag');
-    w3tc_toggle('browsercache_w3tc');
-    w3tc_toggle('browsercache_compression');
-    w3tc_toggle('browsercache_replace');
+    w3tc_toggle2('browsercache_last_modified',
+        ['browsercache_cssjs_last_modified', 'browsercache_html_last_modified',
+            'browsercache_other_last_modified']);
+    w3tc_toggle2('browsercache_expires',
+        ['browsercache_cssjs_expires', 'browsercache_html_expires',
+            'browsercache_other_expires']);
+    w3tc_toggle2('browsercache_cache_control',
+        ['browsercache_cssjs_cache_control', 'browsercache_html_cache_control',
+            'browsercache_other_cache_control']);
+    w3tc_toggle2('browsercache_etag',
+        ['browsercache_cssjs_etag', 'browsercache_html_etag', 'browsercache_other_etag']);
+    w3tc_toggle2('browsercache_w3tc',
+        ['browsercache_cssjs_w3tc', 'browsercache_html_w3tc', 'browsercache_other_w3tc']);
+    w3tc_toggle2('browsercache_compression',
+        ['browsercache_cssjs_compression', 'browsercache_html_compression', 'browsercache_other_compression']);
+    w3tc_toggle2('browsercache_replace',
+        ['browsercache_cssjs_replace', 'browsercache_other_replace']);
+    w3tc_toggle2('browsercache_nocookies',
+        ['browsercache_cssjs_nocookies', 'browsercache_other_nocookies']);
 
     // minify page
-    w3tc_input_enable('.html_enabled', jQuery('#html_enabled:checked').size());
-    w3tc_input_enable('.js_enabled', jQuery('#js_enabled:checked').size());
-    w3tc_input_enable('.css_enabled', jQuery('#css_enabled:checked').size());
+    w3tc_input_enable('.html_enabled', jQuery('#minify_html_enable:checked').size());
+    w3tc_input_enable('.js_enabled', jQuery('#minify_js_enable:checked').size());
+    w3tc_input_enable('.css_enabled', jQuery('#minify_css_enable:checked').size());
 
     w3tc_minify_js_theme(jQuery('#js_themes').val());
     w3tc_minify_css_theme(jQuery('#css_themes').val());
 
-    jQuery('#html_enabled').click(function() {
+    jQuery('#minify_html_enable').click(function() {
         w3tc_input_enable('.html_enabled', this.checked);
     });
 
-    jQuery('#js_enabled').click(function() {
+    jQuery('#minify_js_enable').click(function() {
         w3tc_input_enable('.js_enabled', jQuery(this).is(':checked'));
     });
 
-    jQuery('#css_enabled').click(function() {
+    jQuery('#minify_css_enable').click(function() {
         w3tc_input_enable('.css_enabled', jQuery(this).is(':checked'));
     });
 
@@ -458,10 +928,22 @@ jQuery(function() {
         return true;
     });
 
+    jQuery('#minify_auto_disable_filename_length_test').live('click', function() {
+        if(jQuery(this).attr('checked'))
+            jQuery('#minify_auto_filename_length').removeAttr('disabled');
+        else
+            jQuery('#minify_auto_filename_length').attr('disabled','disabled');
+    });
+
     // CDN
     jQuery('.w3tc-tab').click(function() {
         jQuery('.w3tc-tab-content').hide();
         jQuery(this.rel).show();
+    });
+
+    w3tc_input_enable('#cdn_reject_roles input[type=checkbox]', jQuery('#cdn_reject_logged_roles:checked').size());
+    jQuery('#cdn_reject_logged_roles').live('click', function() {
+        w3tc_input_enable('#cdn_reject_roles input[type=checkbox]', jQuery('#cdn_reject_logged_roles:checked').size());
     });
 
     jQuery('#cdn_export_library').click(function() {
@@ -487,6 +969,18 @@ jQuery(function() {
     jQuery('.cdn_export').click(function() {
         var metadata = jQuery(this).metadata();
         w3tc_popup('admin.php?page=w3tc_cdn&w3tc_cdn_export&cdn_export_type=' + metadata.type + '&_wpnonce=' + metadata.nonce, 'cdn_export_' + metadata.type);
+    });
+
+    jQuery('#validate_cdn_key').click(function() {
+      var me = jQuery(this);
+      var metadata = me.metadata();
+      w3tc_validate_cdn_key_result(metadata.type, metadata.nonce);
+    });
+
+    jQuery('#use_poll_zone').click(function() {
+      var me = jQuery(this);
+      var metadata = me.metadata();
+      w3tc_use_poll_zone(metadata.type, metadata.nonce);
     });
 
     jQuery('#cdn_test').click(function() {
@@ -593,11 +1087,22 @@ jQuery(function() {
                 }
                 break;
 
+            case 'maxcdn':
+                jQuery.extend(params, {
+                    engine: 'maxcdn',
+                    'config[authorization_key]': jQuery('#cdn_maxcdn_authorization_key').val(),
+                    'config[zone_id]': jQuery('#cdn_maxcdn_zone_id').val()
+                });
+
+                if (cnames.length) {
+                    params['config[domain][]'] = cnames;
+                }
+                break;
             case 'netdna':
                 jQuery.extend(params, {
                     engine: 'netdna',
-                    'config[apiid]': jQuery('#cdn_netdna_apiid').val(),
-                    'config[apikey]': jQuery('#cdn_netdna_apikey').val()
+                    'config[authorization_key]': jQuery('#cdn_netdna_authorization_key').val(),
+                    'config[zone_id]': jQuery('#cdn_netdna_zone_id').val()
                 });
 
                 if (cnames.length) {
@@ -626,12 +1131,46 @@ jQuery(function() {
                     params['config[domain][]'] = cnames;
                 }
                 break;
+            case 'akamai':
+                var emails = [], emails_val = jQuery('#cdn_akamai_email_notification').val();
+
+                if (emails_val) {
+                    emails = emails_val.split(/[\r\n,;]+/);
+                }
+
+                jQuery.extend(params, {
+                    engine: 'akamai',
+                    'config[username]': jQuery('#cdn_akamai_username').val(),
+                    'config[password]': jQuery('#cdn_akamai_password').val(),
+                    'config[zone]': jQuery('#cdn_akamai_zone').val()
+                });
+
+                if (emails.length) {
+                    params['config[email_notification][]'] = emails;
+                }
+
+                if (cnames.length) {
+                    params['config[domain][]'] = cnames;
+                }
+                break;
 
             case 'edgecast':
                 jQuery.extend(params, {
                     engine: 'edgecast',
                     'config[account]': jQuery('#cdn_edgecast_account').val(),
                     'config[token]': jQuery('#cdn_edgecast_token').val()
+                });
+
+                if (cnames.length) {
+                    params['config[domain][]'] = cnames;
+                }
+                break;
+
+            case 'att':
+                jQuery.extend(params, {
+                    engine: 'att',
+                    'config[account]': jQuery('#cdn_att_account').val(),
+                    'config[token]': jQuery('#cdn_att_token').val()
                 });
 
                 if (cnames.length) {
@@ -646,7 +1185,7 @@ jQuery(function() {
         status.addClass('w3tc-process');
         status.html('Testing...');
 
-        jQuery.post('admin.php?page=w3tc_general', params, function(data) {
+        jQuery.post('admin.php?page=w3tc_dashboard', params, function(data) {
             status.addClass(data.result ? 'w3tc-success' : 'w3tc-error');
             status.html(data.error);
         }, 'json');
@@ -745,7 +1284,7 @@ jQuery(function() {
         status.addClass('w3tc-process');
         status.html('Creating...');
 
-        jQuery.post('admin.php?page=w3tc_general', params, function(data) {
+        jQuery.post('admin.php?page=w3tc_dashboard', params, function(data) {
             status.addClass(data.result ? 'w3tc-success' : 'w3tc-error');
             status.html(data.error);
 
@@ -768,7 +1307,7 @@ jQuery(function() {
         status.removeClass('w3tc-success');
         status.addClass('w3tc-process');
         status.html('Testing...');
-        jQuery.post('admin.php?page=w3tc_general', {
+        jQuery.post('admin.php?page=w3tc_dashboard', {
             w3tc_test_memcached: 1,
             servers: jQuery('#memcached_servers').val(),
             _wpnonce: jQuery(this).metadata().nonce
@@ -818,7 +1357,7 @@ jQuery(function() {
         status.addClass('w3tc-process');
         status.html('Testing...');
 
-        jQuery.post('admin.php?page=w3tc_general', params, function(data) {
+        jQuery.post('admin.php?page=w3tc_dashboard', params, function(data) {
             status.addClass(data.result ? 'w3tc-success' : 'w3tc-error');
             status.html(data.error);
         }, 'json');
@@ -858,6 +1397,12 @@ jQuery(function() {
         });
 
         return ret;
+    });
+
+    // New relic page
+    w3tc_input_enable('#newrelic_accept_roles input[type=checkbox]', jQuery('#newrelic_accept_logged_roles:checked').size());
+    jQuery('#newrelic_accept_logged_roles').live('click', function() {
+        w3tc_input_enable('#newrelic_accept_roles input[type=checkbox]', jQuery('#newrelic_accept_logged_roles:checked').size());
     });
 
     // support tabs
@@ -1212,7 +1757,7 @@ jQuery(function() {
         jQuery('#mobile_groups').sortable({
             axis: 'y',
             stop: function() {
-                jQuery('#mobile_groups .mobile_group_number').each(function(index) {
+                jQuery('#mobile_groups').find('.mobile_group_number').each(function(index) {
                     jQuery(this).html((index + 1) + '.');
                 });
             }
@@ -1221,7 +1766,7 @@ jQuery(function() {
         jQuery('#referrer_groups').sortable({
             axis: 'y',
             stop: function() {
-                jQuery('#referrer_groups .referrer_group_number').each(function(index) {
+                jQuery('#referrer_groups').find('.referrer_group_number').each(function(index) {
                     jQuery(this).html((index + 1) + '.');
                 });
             }
@@ -1239,6 +1784,51 @@ jQuery(function() {
             rules.css('display', 'block');
             btn.val('hide code');
         }
+    });
+
+
+    // show hide missing files
+    jQuery('.w3tc-show-required-changes').click(function() {
+        var btn = jQuery(this), rules = jQuery('.w3tc-required-changes');
+
+        if (rules.is(':visible')) {
+            rules.css('display', 'none');
+            btn.val('View required changes');
+        } else {
+            rules.css('display', 'block');
+            btn.val('Hide required changes');
+        }
+    });
+
+    // show hide missing files
+    jQuery('.w3tc-show-ftp-form').click(function() {
+        var btn = jQuery(this), rules = jQuery('.w3tc-ftp-form');
+
+        if (rules.is(':visible')) {
+            rules.css('display', 'none');
+            btn.val('Update via FTP');
+        } else {
+            rules.css('display', 'block');
+            btn.val('Cancel FTP Update');
+        }
+    });
+
+    // show hide missing files
+    jQuery('.w3tc-show-technical-info').click(function() {
+        var btn = jQuery(this), info = jQuery('.w3tc-technical-info');
+
+        if (info.is(':visible')) {
+            info.css('display', 'none');
+            btn.val('Technical Information');
+        } else {
+            info.css('display', 'block');
+            btn.val('Hide technical information');
+        }
+    });
+
+    // add ignore class to the ftp form elements
+    jQuery('#ftp_upload_form').find('input').each(function() {
+        jQuery(this).addClass('w3tc-ignore-change');
     });
 
     // check for unsaved changes

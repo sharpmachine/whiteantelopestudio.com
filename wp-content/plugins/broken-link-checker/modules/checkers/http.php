@@ -14,13 +14,25 @@ ModuleClassName: blcHttpChecker
 ModulePriority: -1
 */
 
+require_once BLC_DIRECTORY . '/includes/token-bucket.php';
+
 //TODO: Rewrite sub-classes as transports, not stand-alone checkers
 class blcHttpChecker extends blcChecker {
 	/* @var blcChecker */
 	var $implementation = null;
+
+	/** @var  blcTokenBucketList */
+	private $token_bucket_list;
 	
 	function init(){
 		parent::init();
+
+		$conf = blc_get_configuration();
+		$this->token_bucket_list = new blcTokenBucketList(
+			$conf->get('http_throttle_rate', 3),
+			$conf->get('http_throttle_period', 15),
+			$conf->get('http_throttle_min_interval', 2)
+		);
 		
 		if ( function_exists('curl_init') || is_callable('curl_init') ) {
 			$this->implementation = new blcCurlHttp(
@@ -59,6 +71,15 @@ class blcHttpChecker extends blcChecker {
 	}
 	
 	function check($url, $use_get = false){
+		global $blclog;
+
+		//Throttle requests based on the domain name.
+		$domain = @parse_url($url, PHP_URL_HOST);
+		if ( $domain ) {
+			$this->token_bucket_list->takeToken($domain);
+		}
+
+		$blclog->debug('HTTP module checking "' . $url . '"');
 		return $this->implementation->check($url, $use_get);
 	}
 }
@@ -74,14 +95,17 @@ class blcHttpCheckerBase extends blcChecker {
 	
 	function clean_url($url){
 		$url = html_entity_decode($url);
-	    $url = preg_replace(
+
+		$ltrm = preg_quote(json_decode('"\u200E"'), '/');
+		$url = preg_replace(
 	        array(
 				'/([\?&]PHPSESSID=\w+)$/i',	//remove session ID
 	            '/(#[^\/]*)$/',				//and anchors/fragments
 	            '/&amp;/',					//convert improper HTML entities
-	            '/([\?&]sid=\w+)$/i'		//remove another flavour of session ID
+	            '/([\?&]sid=\w+)$/i',		//remove another flavour of session ID
+				'/' . $ltrm . '/',			//remove Left-to-Right marks that can show up when copying from Word.
 	        ),
-	        array('','','&',''),
+	        array('', '', '&', '', ''),
 	        $url
 		);
 	    $url = trim($url);
@@ -132,12 +156,18 @@ class blcCurlHttp extends blcHttpCheckerBase {
 	var $last_headers = '';
 	
 	function check($url, $use_get = false){
+		global $blclog;
+		$blclog->info(__CLASS__ . ' Checking link', $url);
+
 		$this->last_headers = '';
-		
+
 		$url = $this->clean_url($url);
-		
+		$blclog->debug(__CLASS__ . ' Clean URL:', $url);
+
 		$result = array(
 			'broken' => false,
+			'timeout' => false,
+			'warning' => false,
 		);
 		$log = '';
 		
@@ -146,14 +176,20 @@ class blcCurlHttp extends blcHttpCheckerBase {
 		
 		//Init curl.
 	 	$ch = curl_init();
+		$request_headers = array();
         curl_setopt($ch, CURLOPT_URL, $this->urlencodefix($url));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         
-        //Masquerade as Internet explorer
-        //$ua = 'Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)';
-        $ua = 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .NET CLR 3.0.04506.30)';
+        //Masquerade as Internet Explorer
+		$ua = 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)';
+		//$ua = 'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko';
         curl_setopt($ch, CURLOPT_USERAGENT, $ua);
-        
+
+		//Close the connection after the request (disables keep-alive). The plugin rate-limits requests,
+		//so it's likely we'd overrun the keep-alive timeout anyway.
+		curl_setopt($ch, CURLOPT_FORBID_REUSE, true);
+		$request_headers[] = 'Connection: close';
+
         //Add a semi-plausible referer header to avoid tripping up some bot traps 
         curl_setopt($ch, CURLOPT_REFERER, home_url());
         
@@ -201,17 +237,28 @@ class blcCurlHttp extends blcHttpCheckerBase {
 			curl_setopt($ch, CURLOPT_NOBODY, true);  
 		} else {
 			//If we must use GET at least limit the amount of downloaded data.
-			curl_setopt($ch, CURLOPT_HTTPHEADER, array('Range: bytes=0-2048')); //2 KB
+			$request_headers[] = 'Range: bytes=0-2048'; //2 KB
 		}
-        
+
+		//Set request headers.
+		if ( !empty($request_headers) ) {
+			curl_setopt($ch, CURLOPT_HTTPHEADER, $request_headers);
+		}
+
         //Register a callback function which will process the HTTP header(s).
 		//It can be called multiple times if the remote server performs a redirect. 
-		curl_setopt($ch, CURLOPT_HEADERFUNCTION, array(&$this,'read_header'));
+		curl_setopt($ch, CURLOPT_HEADERFUNCTION, array($this,'read_header'));
+
+		//Record request headers.
+		if ( defined('CURLINFO_HEADER_OUT') ) {
+			curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+		}
 
 		//Execute the request
 		$start_time = microtime_float();
-        curl_exec($ch);
+        $content = curl_exec($ch);
         $measured_request_duration = microtime_float() - $start_time;
+		$blclog->debug(sprintf('HTTP request took %.3f seconds', $measured_request_duration));
         
 		$info = curl_getinfo($ch);
 		
@@ -220,7 +267,7 @@ class blcCurlHttp extends blcHttpCheckerBase {
         $result['final_url'] = $info['url'];
         $result['request_duration'] = $info['total_time'];
         $result['redirect_count'] = $info['redirect_count'];
-        
+
         //CURL doesn't return a request duration when a timeout happens, so we measure it ourselves.
         //It is useful to see how long the plugin waited for the server to respond before assuming it timed out.        
         if( empty($result['request_duration']) ){
@@ -241,6 +288,7 @@ class blcCurlHttp extends blcHttpCheckerBase {
         		case 6: //CURLE_COULDNT_RESOLVE_HOST
 		        	$result['status_code'] = BLC_LINK_STATUS_WARNING;
 		        	$result['status_text'] = __('Server Not Found', 'broken-link-checker');
+					$result['error_code'] = 'couldnt_resolve_host';
 		        	break;
 		        	
 		        case 28: //CURLE_OPERATION_TIMEDOUT
@@ -256,6 +304,7 @@ class blcCurlHttp extends blcHttpCheckerBase {
 	        		} else {
 	        			$result['status_code'] = BLC_LINK_STATUS_WARNING;
 	        			$result['status_text'] = __('Connection Failed', 'broken-link-checker');
+						$result['error_code'] = 'connection_failed';
 	        		}
 	        		break;
 	        		
@@ -268,6 +317,13 @@ class blcCurlHttp extends blcHttpCheckerBase {
         	$result['broken'] = $this->is_error_code($result['http_code']);
         }
         curl_close($ch);
+
+		$blclog->info(sprintf(
+			'HTTP response: %d, duration: %.2f seconds, status text: "%s"',
+			$result['http_code'],
+			$result['request_duration'],
+			isset($result['status_text']) ? $result['status_text'] : 'N/A'
+		));
         
         if ( $nobody && $result['broken'] ){
 			//The site in question might be expecting GET instead of HEAD, so lets retry the request 
@@ -295,12 +351,24 @@ class blcCurlHttp extends blcHttpCheckerBase {
 			$log .= __('(No response)', 'broken-link-checker');
 		}
 		$log .= " ===\n\n";
-        $log .= $this->last_headers;
-        
+
+		$log .= "Response headers\n" . str_repeat('=', 16) . "\n";
+        $log .= htmlentities($this->last_headers);
+
+		if ( isset($info['request_header']) ) {
+			$log .= "Request headers\n" . str_repeat('=', 16) . "\n";
+			$log .= htmlentities($info['request_header']);
+		}
+
+		if ( !$nobody && ($content !== false) && $result['broken'] ) {
+			$log .= "Response HTML\n" . str_repeat('=', 16) . "\n";
+			$log .= htmlentities(substr($content, 0, 2048));
+		}
+
         if ( !empty($result['broken']) && !empty($result['timeout']) ) {
 			$log .= "\n(" . __("Most likely the connection timed out or the domain doesn't exist.", 'broken-link-checker') . ')';
 		}
-        
+
         $result['log'] = $log;
         
         //The hash should contain info about all pieces of data that pertain to determining if the 
@@ -309,13 +377,13 @@ class blcCurlHttp extends blcHttpCheckerBase {
 			$result['http_code'],
 			!empty($result['broken'])?'broken':'0',
 			!empty($result['timeout'])?'timeout':'0',
-			md5($result['final_url']),
+			blcLink::remove_query_string($result['final_url']),
 		));
         
         return $result;
 	}
 	
-	function read_header($ch, $header){
+	function read_header(/** @noinspection PhpUnusedParameterInspection */ $ch, $header){
 		$this->last_headers .= $header;
 		return strlen($header);
 	}
@@ -396,12 +464,10 @@ class blcSnoopyHttp extends blcHttpCheckerBase {
 			$result['http_code'],
 			$result['broken']?'broken':'0', 
 			$result['timeout']?'timeout':'0',
-			md5($result['final_url']),
+			blcLink::remove_query_string($result['final_url']),
 		));
 		
 		return $result;
 	}
 	
 }
-
-?>

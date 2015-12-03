@@ -1,6 +1,14 @@
 <div class="wrap shopp">
+
 	<div class="icon32"></div>
-	<h2><?php _e('Image Settings','Shopp'); ?> <a href="<?php echo esc_url( add_query_arg(array('page'=>$this->Admin->pagename('settings-images'),'id'=>'new'),admin_url('admin.php'))); ?>" class="button add-new"><?php _e('Add New','Shopp'); ?></a></h2>
+	<?php
+
+		shopp_admin_screen_tabs();
+		do_action('shopp_admin_notices');
+
+	?>
+
+	<!-- <h2><?php _e('Image Settings','Shopp'); ?> <a href="<?php echo esc_url( add_query_arg(array('page'=>$this->Admin->pagename('settings-images'),'id'=>'new'),admin_url('admin.php'))); ?>" class="button add-new"><?php _e('Add New','Shopp'); ?></a></h2> -->
 
 	<form action="<?php echo esc_url(wp_nonce_url($this->url,'shopp-settings-images')); ?>" id="images" method="post">
 	<div>
@@ -57,6 +65,10 @@
 		<input type="submit" value="<?php esc_attr_e('Apply','Shopp'); ?>" name="apply" id="apply" class="button-secondary action" />
 		</div>
 
+		<div class="alignleft actions">
+			<a href="<?php echo esc_url(add_query_arg('id', 'new', $this->url)); ?>" class="button"><?php _e('Add New','Shopp'); ?></a>
+		</div>
+
 		<?php $ListTable->pagination('top'); ?>
 
 		<br class="clear" />
@@ -95,7 +107,7 @@
 					$quality = ImageSetting::$qualities[ $setting->quality ];
 				} else $quality = $setting->quality;
 
-				$quality = percentage($quality,0);
+				$quality = percentage($quality,array('precision' => 0));
 
 				if ($edit == $setting->id) {
 					$template_data = array(

@@ -24,20 +24,22 @@ class blcLinkInstance {
 	var $link_text = '';
 	var $link_context = '';
 	var $raw_url = '';
-	
+
+	/** @var blcContainer */
 	var $_container = null;
 	var $_parser = null;
+	/** @var blcLink|null */
 	var $_link = null;
 	
   /**
    * blcLinkInstance::__construct()
    * Class constructor
    *
-   * @param int|array $arg Either the instance ID or an associate array repreenting the instance's DB record. Should be NULL for new instances.
-   * @return void
+   * @param int|array $arg Either the instance ID or an associate array representing the instance's DB record. Should be NULL for new instances.
    */
 	function __construct($arg = null){
-		
+		global $wpdb; /** @var wpdb $wpdb */
+
 		if (is_int($arg)){
 			//Load an instance with ID = $arg from the DB.
 			$q = $wpdb->prepare("SELECT * FROM {$wpdb->prefix}blc_instances WHERE instance_id=%d LIMIT 1", $arg);
@@ -83,16 +85,17 @@ class blcLinkInstance {
 			$this->$key = $value;
 		}
 	}
-	
-  /**
-   * Replace this instance's URL with a new one.
-   * Warning : this shouldn't be called directly. Use blcLink->edit() instead.  
-   *
-   * @param string $new_url
-   * @param string $old_url
-   * @return bool|WP_Error True on success, or an instance of WP_Error if something went wrong.
-   */
-	function edit($new_url, $old_url = ''){
+
+	/**
+	 * Replace this instance's URL with a new one.
+	 * Warning : this shouldn't be called directly. Use blcLink->edit() instead.
+	 *
+	 * @param string $new_url
+	 * @param string $old_url
+	 * @param string $new_text
+	 * @return bool|WP_Error True on success, or an instance of WP_Error if something went wrong.
+	 */
+	function edit($new_url, $old_url = '', $new_text = null){
 		
 		//Get the container that contains this link
 		$container = $this->get_container();
@@ -118,7 +121,7 @@ class blcLinkInstance {
 		}
 		
 		//Attempt to modify the link(s)
-		$result = $container->edit_link($this->container_field, $parser, $new_url, $old_url, $this->raw_url);
+		$result = $container->edit_link($this->container_field, $parser, $new_url, $old_url, $this->raw_url, $new_text);
 		if ( is_string($result) ){
 			//If the modification was successful, the container will return 
 			//the new raw_url for the instance. Save the URL and return true,
@@ -183,7 +186,7 @@ class blcLinkInstance {
    * @return mixed 1 on success, 0 if the instance wasn't found, false on error
    */
 	function forget(){
-		global $wpdb;
+		global $wpdb; /** @var wpdb $wpdb */
 		
 		if ( !empty($this->instance_id) ) {
 			$rez = $wpdb->query( $wpdb->prepare("DELETE FROM {$wpdb->prefix}blc_instances WHERE instance_id=%d", $this->instance_id) );
@@ -200,7 +203,7 @@ class blcLinkInstance {
    * @return bool TRUE on success, FALSE on error
    */
 	function save(){
-		global $wpdb;
+		global $wpdb; /** @var wpdb $wpdb */
 		
 		//Refresh the locally cached link & container properties, in case 
 		//the objects have changed since they were set.
@@ -466,7 +469,34 @@ class blcLinkInstance {
 			//No valid container = generate some bare-bones debug output.
 			return sprintf('%s[%d] : %s', $this->container_type, $this->container_id, $this->container_field);
 		}
-	}	
+	}
+
+	/**
+	 * Check if the link text associated with this instance can be edited.
+	 *
+	 * @return bool
+	 */
+	public function is_link_text_editable() {
+		$parser = $this->get_parser();
+		if ( $parser === null ) {
+			return false;
+		}
+		return $parser->is_link_text_editable();
+	}
+
+	/**
+	 * Check if the URL of this instance can be edited.
+	 *
+	 * @return bool
+	 */
+	public function is_url_editable() {
+		$parser = $this->get_parser();
+		if ( $parser === null ) {
+			return false;
+		}
+		return $parser->is_url_editable();
+	}
+
 }
 
 /**
@@ -477,10 +507,10 @@ class blcLinkInstance {
  * @param bool $load_containers Preload containers regardless of purpose. Defaults to false.
  * @param bool $load_wrapped_objects Preload wrapped objects regardless of purpose. Defaults to false.
  * @param bool $include_invalid Include instances that refer to not-loaded containers or parsers. Defaults to false.
- * @return array An array indexed by link ID. Each item of the array will be an array of blcLinkInstance objects.
+ * @return blcLinkInstance[] An array indexed by link ID. Each item of the array will be an array of blcLinkInstance objects.
  */ 
 function blc_get_instances( $link_ids, $purpose = '', $load_containers = false, $load_wrapped_objects = false, $include_invalid = false ){
-	global $wpdb;
+	global $wpdb; /** @var wpdb $wpdb */
 	
 	if ( empty($link_ids) ){
 		return array();
@@ -550,7 +580,7 @@ function blc_get_instances( $link_ids, $purpose = '', $load_containers = false, 
  * @return int
  */
 function blc_get_usable_instance_count(){
-	global $wpdb;
+	global $wpdb; /** @var wpdb $wpdb */
 	
 	$q = "SELECT COUNT(instance_id) FROM {$wpdb->prefix}blc_instances WHERE 1";
 	
@@ -571,10 +601,11 @@ function blc_get_usable_instance_count(){
  * @return bool
  */
 function blc_cleanup_instances(){
-	global $wpdb;
+	global $wpdb; /** @var wpdb $wpdb */
 	global $blclog;
 	
 	//Delete all instances that reference non-existent containers
+	$start = microtime(true);
 	$q = "DELETE instances.*
 		  FROM 
   			{$wpdb->prefix}blc_instances AS instances LEFT JOIN {$wpdb->prefix}blc_synch AS synch
@@ -582,9 +613,11 @@ function blc_cleanup_instances(){
 		  WHERE
  			synch.container_id IS NULL";
 	$rez = $wpdb->query($q);
-	$blclog->log(sprintf('... %d instances deleted', $wpdb->rows_affected));
+	$elapsed = microtime(true) - $start;
+	$blclog->log(sprintf('... %d instances deleted in %.3f seconds', $wpdb->rows_affected, $elapsed));
 	
 	//Delete instances that reference containers and parsers that are no longer active
+	$start = microtime(true);
 	$manager = blcModuleManager::getInstance();
 	$active_containers = $manager->get_escaped_ids('container');
 	$active_parsers = $manager->get_escaped_ids('parser');
@@ -595,7 +628,8 @@ function blc_cleanup_instances(){
 	        instances.container_type NOT IN ({$active_containers}) OR
 	        instances.parser_type NOT IN ({$active_parsers})";
 	$rez2 = $wpdb->query($q);
-	$blclog->log(sprintf('... %d more instances deleted', $wpdb->rows_affected));
+	$elapsed = microtime(true) - $start;
+	$blclog->log(sprintf('... %d more instances deleted in %.3f seconds', $wpdb->rows_affected, $elapsed));
 	
 	return ($rez !== false) && ($rez2 !== false);
 }
@@ -603,4 +637,3 @@ function blc_cleanup_instances(){
 
 }//class_exists
 
-?>

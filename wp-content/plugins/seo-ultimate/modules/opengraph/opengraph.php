@@ -12,8 +12,8 @@ class SU_OpenGraph extends SU_Module {
 	var $namespaces_declared = false;
 	var $jlsuggest_box_post_id = false;
 	
-	function get_module_title() { return __('Open Graph Integrator', 'seo-ultimate'); }
-	function get_menu_title() { return __('Open Graph', 'seo-ultimate'); }
+	static function get_module_title() { return __('Open Graph Integrator', 'seo-ultimate'); }
+	static function get_menu_title() { return __('Open Graph', 'seo-ultimate'); }
 	
 	function get_default_settings() {
 		return array(
@@ -22,29 +22,58 @@ class SU_OpenGraph extends SU_Module {
 			, 'default_post_twitter_card' => 'summary'
 			, 'default_page_twitter_card' => 'summary'
 			, 'default_attachment_twitter_card' => 'photo'
+			, 'enable_og_article_author' => true
 		);
 	}
 	
 	function init() {
-		add_filter('language_attributes', array(&$this, 'html_tag_xmlns_attrs'), 1000);
+		add_filter('language_attributes', array(&$this, 'html_tag_attrs'), 1000);
 		add_action('su_head', array(&$this, 'head_tag_output'));
 		add_filter('su_get_setting-opengraph-twitter_site_handle', array(&$this, 'sanitize_twitter_handle'));
 		add_filter('user_contactmethods', array(&$this, 'add_twitter_field'));
+		add_filter('su_get_setting-opengraph-twitter_creator_handle', array(&$this, 'sanitize_twitter_handle'));
 	}
 	
-	function html_tag_xmlns_attrs($attrs) {
+	function html_tag_attrs($attrs) {
 		$this->namespaces_declared = true;
-		return $attrs . ' ' . implode(' ', $this->get_xmlns_attrs());
+		$namespace_urls = $this->get_namespace_urls();
+		
+		$doctype = $this->get_setting('doctype', '');
+		switch ($doctype) {
+			case 'xhtml':
+				foreach ($namespace_urls as $namespace => $url) {
+					$namespace = su_esc_attr($namespace);
+					$url = su_esc_attr($url);
+					$attrs .= " xmlns:$namespace=\"$url\"";
+				}
+				break;
+			case 'html5':
+			default:
+				$attrs .= ' prefix="';
+				$whitespace = '';
+				foreach ($namespace_urls as $namespace => $url) {
+					$namespace = su_esc_attr($namespace);
+					$url = su_esc_attr($url);
+					$attrs .= "$whitespace$namespace: $url";
+					$whitespace = ' ';
+				}
+				$attrs .= '"';
+				break;
+		}
+		
+		return $attrs;
 	}
 	
-	function get_xmlns_attrs() {
+	function get_namespace_urls() {
 		return array(
-			  'og' => 'xmlns:og="http://ogp.me/ns#"'
-			, 'fb' => 'xmlns:fb="http://ogp.me/ns/fb#"'
+			  'og' => 'http://ogp.me/ns#'
+			, 'fb' => 'http://ogp.me/ns/fb#'
+			, 'article' => 'http://ogp.me/ns/article#'
 		);
 	}
 	
 	function head_tag_output() {
+		global $wp_query;
 		
 		$tags = $twitter_tags = array();
 		
@@ -65,14 +94,13 @@ class SU_OpenGraph extends SU_Module {
 				$tags['og:description'] = get_bloginfo('description');
 			
 			//URL
-			$tags['og:url'] = get_bloginfo('url');
+			$tags['og:url'] = suwp::get_blog_home_url();
 			
 			//Image
 			$tags['og:image'] = $this->get_setting('home_og_image');
 			
 		} elseif (is_singular()) {
 			
-			global $wp_query;
 			$post = $wp_query->get_queried_object();
 			
 			if (is_object($post)) {
@@ -86,7 +114,7 @@ class SU_OpenGraph extends SU_Module {
 				
 				//Title
 				if (!($tags['og:title'] = $this->get_postmeta('og_title')))
-					$tags['og:title'] = strip_tags( apply_filters( 'single_post_title', $post->post_title ) );
+					$tags['og:title'] = strip_tags( apply_filters( 'single_post_title', $post->post_title, $post ) );
 				
 				//Description
 				if (!($tags['og:description'] = $this->get_postmeta('og_description')))
@@ -99,10 +127,11 @@ class SU_OpenGraph extends SU_Module {
 				//Image
 				$tags['og:image'] = $this->jlsuggest_value_to_url($this->get_postmeta('og_image'), true);
 				if (!$tags['og:image']) {
-					if ('attachment' == $post->post_type)
+					if ('attachment' == $post->post_type) {
 						$tags['og:image'] = wp_get_attachment_url();
-					elseif ($thumbnail_id = get_post_thumbnail_id($post->ID))
+					} elseif (current_theme_supports('post-thumbnails') && $thumbnail_id = get_post_thumbnail_id($post->ID)) {
 						$tags['og:image'] = wp_get_attachment_url($thumbnail_id);
+					}
 				}
 				
 				//Additional fields
@@ -111,7 +140,10 @@ class SU_OpenGraph extends SU_Module {
 						
 						$tags['article:published_time'] = get_the_date('Y-m-d');
 						$tags['article:modified_time'] = get_the_modified_date('Y-m-d');
-						$tags['article:author'] = get_author_posts_url($post->post_author);
+						
+						//Authorship generally doesn't apply to pages
+						if (!is_page() && $this->get_setting('enable_og_article_author', true))
+							$tags['article:author'] = get_author_posts_url($post->post_author);
 						
 						$single_category = (count(get_the_category()) == 1);
 						
@@ -140,7 +172,6 @@ class SU_OpenGraph extends SU_Module {
 			}
 		} elseif (is_author()) {
 			
-			global $wp_query;
 			$author = $wp_query->get_queried_object();
 			
 			if (is_object($author)) {
@@ -191,24 +222,82 @@ class SU_OpenGraph extends SU_Module {
 		
 		//Twitter Site Handle
 		$twitter_tags['twitter:site'] = $this->get_setting('twitter_site_handle');
+		$twitter_tags['twitter:site:id'] = $this->get_setting('twitter_site_id_handle');
+		$twitter_tags['twitter:creator'] = $this->get_setting('twitter_creator_handle');
+		$twitter_tags['twitter:creator:id'] = $this->get_setting('twitter_creator_id_handle');
+		$twitter_tags['twitter:description'] = $this->get_setting('twitter_description_handle');
+		$twitter_tags['twitter:title'] = $this->get_setting('twitter_title_handle');
+		$twitter_tags['twitter:image:src'] = $this->get_setting('twitter_image_src_handle');
+		$twitter_tags['twitter:image:width'] = $this->get_setting('twitter_image_width_handle');
+		$twitter_tags['twitter:image:height'] = $this->get_setting('twitter_image_height_handle');
+		$twitter_tags['twitter:data1'] = $this->get_setting('twitter_data1_handle');
+		$twitter_tags['twitter:label1'] = $this->get_setting('twitter_label1_handle');
+		$twitter_tags['twitter:data2'] = $this->get_setting('twitter_data2_handle');
+		$twitter_tags['twitter:label2'] = $this->get_setting('twitter_label2_handle');
+		$twitter_tags['twitter:image0:src'] = $this->get_setting('twitter_image0_src_handle');
+		$twitter_tags['twitter:image1:src'] = $this->get_setting('twitter_image1_src_handle');
+		$twitter_tags['twitter:image2:src'] = $this->get_setting('twitter_image2_src_handle');
+		$twitter_tags['twitter:image3:src'] = $this->get_setting('twitter_image3_src_handle');
+		$twitter_tags['twitter:player'] = $this->get_setting('twitter_player_handle');
+		$twitter_tags['twitter:player:width'] = $this->get_setting('twitter_player_width_handle');
+		$twitter_tags['twitter:player:height'] = $this->get_setting('twitter_player_height_handle');
+		$twitter_tags['twitter:player:stream'] = $this->get_setting('twitter_player_stream_handle');
+		$twitter_tags['twitter:app:name:iphone'] = $this->get_setting('twitter_app_name_iphone_handle');
+		$twitter_tags['twitter:app:id:iphone'] = $this->get_setting('twitter_app_id_iphone_handle');
+		$twitter_tags['twitter:app:url:iphone'] = $this->get_setting('twitter_app_url_iphone_handle');
+		$twitter_tags['twitter:app:name:iphone'] = $this->get_setting('twitter_app_name_ipad_handle');
+		$twitter_tags['twitter:app:id:iphone'] = $this->get_setting('twitter_app_id_ipad_handle');
+		$twitter_tags['twitter:app:url:iphone'] = $this->get_setting('twitter_app_url_ipad_handle');
+		$twitter_tags['twitter:app:name:googleplay'] = $this->get_setting('twitter_app_name_googleplay_handle');
+		$twitter_tags['twitter:app:id:googleplay'] = $this->get_setting('twitter_app_id_googleplay_handle');
+		$twitter_tags['twitter:app:url:googleplay'] = $this->get_setting('twitter_app_url_googleplay_handle');
+		
 		
 		//Output meta tags
-		$xmlns_attrs = $this->namespaces_declared ? array() : $this->get_xmlns_attrs();
+		$namespace_urls = $this->namespaces_declared ? array() : $this->get_namespace_urls();
+		$doctype = $this->get_setting('doctype', '');
 		
-		$output_formats = array(
-			  '<meta property="%1$s" content="%2$s" %3$s/>' => $tags
-			, '<meta name="%1$s" content="%2$s" />' => $twitter_tags
-		);
+		switch ($doctype) {
+			case 'xhtml':
+				$output_formats = array('<meta%3$s name="%1$s" content="%2$s" />' => array_merge($tags, $twitter_tags));
+				break;
+			case 'html5':
+				$output_formats = array('<meta%3$s property="%1$s" content="%2$s">' => array_merge($tags, $twitter_tags));
+				break;
+			default:
+				$output_formats = array(
+					  '<meta%3$s property="%1$s" content="%2$s" />' => $tags
+					, '<meta%3$s name="%1$s" content="%2$s" />' => $twitter_tags
+				);
+				break;
+		}
+		
 		foreach ($output_formats as $html_format => $format_tags) {
 			foreach ($format_tags as $property => $values) {
 				foreach ((array)$values as $value) {
 					$property = su_esc_attr($property);
 					$value  = su_esc_attr($value);
 					if (strlen(trim($property)) && strlen(trim($value))) {
-						$xmlns = sustr::upto($property, ':');
-						$xmlns_attr = empty($xmlns_attrs[$xmlns]) ? '' : $xmlns_attrs[$xmlns] . ' ';
+						
+						$namespace_attr = '';
+						$namespace = sustr::upto($property, ':');
+						if (!empty($namespace_urls[$namespace])) {
+							$a_namespace = su_esc_attr($namespace);
+							$a_namespace_url = su_esc_attr($namespace_urls[$namespace]);
+						
+							switch ($doctype) {
+								case 'xhtml':
+									$namespace_attr = " xmlns:$a_namespace=\"$a_namespace_url\"";
+									break;
+								case 'html5':
+								default:
+									$namespace_attr = " prefix=\"$a_namespace: $a_namespace_url\"";
+									break;
+							}
+						}
+						
 						echo "\t";
-						printf($html_format, $property, $value, $xmlns_attr);
+						printf($html_format, $property, $value, $namespace_attr);
 						echo "\n";
 					}
 				}
@@ -260,6 +349,7 @@ class SU_OpenGraph extends SU_Module {
 			  array(
 				  array('title' => __('Sitewide Values', 'seo-ultimate'), 'id' => 'su-sitewide-values', 'callback' => 'global_tab')
 				, array('title' => __('Default Values', 'seo-ultimate'), 'id' => 'su-default-values', 'callback' => 'defaults_tab')
+				, array('title' => __('Settings', 'seo-ultimate'), 'id' => 'su-settings', 'callback' => 'settings_tab')
 				, array('title' => __('Blog Homepage', 'seo-ultimate'), 'id' => 'su-homepage', 'callback' => 'home_tab')
 				)
 			, $postmeta_edit_tabs
@@ -270,12 +360,41 @@ class SU_OpenGraph extends SU_Module {
 		$this->admin_form_table_start();
 		$this->textbox('og_site_name', __('Site Name', 'seo-ultimate'), false, false, array(), array('placeholder' => get_bloginfo('name')));
 		$this->textbox('default_fb_app_id', __('Facebook App ID', 'seo-ultimate'));
-		$this->textbox('twitter_site_handle', __('This Site&#8217;s Twitter Handle', 'seo-ultimate'));
+		$this->textbox('twitter_site_handle', __('@username of website', 'seo-ultimate'), false, false, array('help_text' => 'twitter:site', 'callout' => 'Twitter Card Tags'));
+		$this->textbox('twitter_site_id_handle', __('Same as twitter:site, but the user&#8217;s Twitter ID', 'seo-ultimate'), false, false, array('help_text' => 'twitter:site:id'));
+		$this->textbox('twitter_creator_handle', __('@username of content creator', 'seo-ultimate'), false, false, array('help_text' => 'twitter:creator'));
+		$this->textbox('twitter_creator_id_handle', __('Twitter user ID of content creator', 'seo-ultimate'), false, false, array('help_text' => 'twitter:creator:id'));
+		$this->textbox('twitter_description_handle', __('Description of content (maximum 200 characters)', 'seo-ultimate'), false, false, array('help_text' => 'twitter:description'));
+		$this->textbox('twitter_title_handle', __('Title of content (maximum 70 characters)', 'seo-ultimate'), false, false, array('help_text' => 'twitter:title'));
+		$this->textbox('twitter_image_src_handle', __('URL of image to use in the card. Image must be less than 1MB in size.', 'seo-ultimate'), false, false, array('help_text' => 'twitter:image:src'));
+		$this->textbox('twitter_image_width_handle', __('Width of image in pixels', 'seo-ultimate'), false, false, array('help_text' => 'twitter:image:width'));
+		$this->textbox('twitter_image_height_handle', __('Height of image in pixels', 'seo-ultimate'), false, false, array('help_text' => 'twitter:image:height'));
+		$this->textbox('twitter_data1_handle', __('Top customizable data field, can be a relatively short string (ie "$3.99")', 'seo-ultimate'), false, false, array('help_text' => 'twitter:data1'));
+		$this->textbox('twitter_label1_handle', __('Customizable label or units for the information in twitter:data1 (best practice: use all caps)', 'seo-ultimate'), false, false, array('help_text' => 'twitter:label1'));
+		$this->textbox('twitter_data2_handle', __('Bottom customizable data field, can be a relatively short string (ie "Seattle, WA")', 'seo-ultimate'), false, false, array('help_text' => 'twitter:data2'));
+		$this->textbox('twitter_label2_handle', __('Customizable label or units for the information in twitter:data1 (best practice: use all caps)', 'seo-ultimate'), false, false, array('help_text' => 'twitter:label2'));
+		$this->textbox('twitter_image0_src_handle', __('1st image in the gallery. Images must be less than 1MB in size.', 'seo-ultimate'), false, false, array('help_text' => 'twitter:image0:src'));
+		$this->textbox('twitter_image1_src_handle', __('2nd image in the gallery. Images must be less than 1MB in size.', 'seo-ultimate'), false, false, array('help_text' => 'twitter:image1:src'));
+		$this->textbox('twitter_image2_src_handle', __('3rd image in the gallery. Images must be less than 1MB in size.', 'seo-ultimate'), false, false, array('help_text' => 'twitter:image2:src'));
+		$this->textbox('twitter_image3_src_handle', __('4th image in the gallery. Images must be less than 1MB in size.', 'seo-ultimate'), false, false, array('help_text' => 'twitter:image3:src'));
+		$this->textbox('twitter_player_handle', __(' 	HTTPS URL of player iframe', 'seo-ultimate'), false, false, array('help_text' => 'twitter:player'));
+		$this->textbox('twitter_player_width_handle', __('Width of iframe in pixels', 'seo-ultimate'), false, false, array('help_text' => 'twitter:player:width'));
+		$this->textbox('twitter_player_height_handle', __('Height of iframe in pixels', 'seo-ultimate'), false, false, array('help_text' => 'twitter:player:height'));
+		$this->textbox('twitter_player_stream_handle', __('URL to raw video or audio stream', 'seo-ultimate'), false, false, array('help_text' => 'twitter:player:stream'));
+		$this->textbox('twitter_app_name_iphone_handle', __('Name of your iPhone app', 'seo-ultimate'), false, false, array('help_text' => 'twitter:app:name:iphone'));
+		$this->textbox('twitter_app_id_iphone_handle', __('Your app ID in the iTunes App Store (Note: NOT your bundle ID)', 'seo-ultimate'), false, false, array('help_text' => 'twitter:app:id:iphone'));
+		$this->textbox('twitter_app_url_iphone_handle', __('Your app&#8217;s custom URL scheme (you must include "://" after your scheme name)', 'seo-ultimate'), false, false, array('help_text' => 'twitter:app:url:iphone'));
+		$this->textbox('twitter_app_name_ipad_handle', __('Name of your iPad optimized app', 'seo-ultimate'), false, false, array('help_text' => 'twitter:app:name:ipad'));
+		$this->textbox('twitter_app_id_ipad_handle', __('Your app ID in the iTunes App Store', 'seo-ultimate'), false, false, array('help_text' => 'twitter:app:id:ipad'));
+		$this->textbox('twitter_app_url_ipad_handle', __('Your app&#8217;s custom URL scheme', 'seo-ultimate'), false, false, array('help_text' => 'twitter:app:url:ipad'));
+		$this->textbox('twitter_app_name_googleplay_handle', __('Name of your Android app', 'seo-ultimate'), false, false, array('help_text' => 'twitter:app:name:googleplay'));
+		$this->textbox('twitter_app_id_googleplay_handle', __('Your app ID in the Google Play Store', 'seo-ultimate'), false, false, array('help_text' => 'twitter:app:id:googleplay'));
+		$this->textbox('twitter_app_url_googleplay_handle', __('Your app#8217;s custom URL scheme', 'seo-ultimate'), false, false, array('help_text' => 'twitter:app:url:googleplay'));
 		$this->admin_form_table_end();
 	}
 	
 	function defaults_tab() {
-		$posttypes = suwp::get_post_type_objects();
+		$posttypes = get_post_types(array('public' => true), 'objects');
 		
 		$this->admin_subheader(__('Default Types', 'seo-ultimate'));
 		$this->admin_wftable_start(array(
@@ -301,8 +420,19 @@ class SU_OpenGraph extends SU_Module {
 		
 		$this->textblock(__('In the box below, you can specify an image URL or an image from your media library to use as a default image in the event that there is no image otherwise specified for a given webpage on your site.', 'seo-ultimate'));
 		
-		$this->jlsuggest_box('default_og_image', __('Default Image', 'seo-ultimate'), 'types=posttype_attachment&post_mime_type=image/*');
+		$this->medialib_box('default_og_image', __('Default Image', 'seo-ultimate'), 'types=posttype_attachment&post_mime_type=image/*');
 		
+		$this->admin_form_table_end();
+	}
+	
+	function settings_tab() {
+		$this->admin_form_table_start();
+		$this->checkbox('enable_og_article_author', __('Include author data for posts', 'seo-ultimate'), __('Open Graph Data', 'seo-ultimate'));
+		$this->radiobuttons('doctype', array(
+			  '' => __('Use the non-validating code prescribed by Open Graph and Twitter', 'seo-ultimate')
+			, 'xhtml' => __('Alter the code to validate as XHTML', 'seo-ultimate')
+			, 'html5' => __('Alter the code to validate as HTML5', 'seo-ultimate')
+		), __('HTML Validation', 'seo-ultimate'));
 		$this->admin_form_table_end();
 	}
 	
@@ -310,15 +440,15 @@ class SU_OpenGraph extends SU_Module {
 		$this->admin_form_table_start();
 		$this->textbox('home_og_title', __('Blog Homepage Title', 'seo-ultimate'), false, false, array(), array('placeholder' => get_bloginfo('name')));
 		$this->textbox('home_og_description', __('Blog Homepage Description', 'seo-ultimate'), false, false, array(), array('placeholder' => get_bloginfo('description')));
-		$this->jlsuggest_box('home_og_image', __('Blog Homepage Image', 'seo-ultimate'), 'types=posttype_attachment&post_mime_type=image/*');
+		$this->medialib_box('home_og_image', __('Blog Homepage Image', 'seo-ultimate'), 'types=posttype_attachment&post_mime_type=image/*');
 		$this->admin_form_table_end();
 	}
 	
-	function postmeta_fields($fields) {
+	function postmeta_fields($fields, $screen) {
 		
 		$fields['opengraph'][10]['og_title'] = $this->get_postmeta_textbox('og_title', __('Title:', 'seo-ultimate'));
 		$fields['opengraph'][20]['og_description'] = $this->get_postmeta_textarea('og_description', __('Description:', 'seo-ultimate'));
-		$fields['opengraph'][30]['og_image'] = $this->get_postmeta_jlsuggest_box('og_image', __('Image:', 'seo-ultimate'), 'types=posttype_attachment&post_mime_type=image/*');
+		$fields['opengraph'][30]['og_image'] = $this->get_postmeta_medialib_box('og_image', __('Image:', 'seo-ultimate'));
 		$fields['opengraph'][40]['og_type'] = $this->get_postmeta_dropdown('og_type', array_merge(array('' => __('Use default', 'seo-ultimate')), $this->get_type_options()), __('Open Graph Type:', 'seo-ultimate'));
 		$fields['opengraph'][50]['twitter_card'] = $this->get_postmeta_dropdown('twitter_card', array_merge(array('' => __('Use default', 'seo-ultimate')), $this->get_twitter_type_options()), __('Twitter Type:', 'seo-ultimate'));
 		
@@ -343,7 +473,7 @@ class SU_OpenGraph extends SU_Module {
 	
 	function get_jlsuggest_box($name, $value, $params='', $placeholder='') {
 		
-		if (empty($value) && $this->jlsuggest_box_post_id && $thumbnail_id = get_post_thumbnail_id($this->jlsuggest_box_post_id)) {
+		if (empty($value) && $this->jlsuggest_box_post_id && current_theme_supports('post-thumbnails') && $thumbnail_id = get_post_thumbnail_id($this->jlsuggest_box_post_id)) {
 			$selected_post = get_post($thumbnail_id);
 			$placeholder = sprintf(__('Featured Image: %s', 'seo-ultimate'), $selected_post->post_title);
 		}
@@ -377,8 +507,13 @@ class SU_OpenGraph extends SU_Module {
 	
 	function get_twitter_type_options() {
 		return array(
-			  'summary' => __('Regular', 'seo-ultimate')
+			  'summary' => __('Summary', 'seo-ultimate')
+			, 'product' => __('Product', 'seo-ultimate')
 			, 'photo' => __('Photo', 'seo-ultimate')
+			, 'summary_large_image' => __('Summary Large Image', 'seo-ultimate')
+			, 'gallery' => __('Gallery', 'seo-ultimate')
+			, 'player' => __('Player', 'seo-ultimate')
+			, 'app' => __('App', 'seo-ultimate')
 		);
 	}
 	
@@ -402,6 +537,21 @@ class SU_OpenGraph extends SU_Module {
 	function add_twitter_field( $contactmethods ) {
 		$contactmethods['twitter'] = __('Twitter Handle', 'seo-ultimate');
 		return $contactmethods;
+	}
+	
+	function add_help_tabs($screen) {
+		
+		$screen->add_help_tab(array(
+			  'id' => 'su-opengraph-overview'
+			, 'title' => __('Overview', 'seo-ultimate')
+			, 'content' => __("
+<ul>
+	<li><strong>What it does:</strong> Open Graph Integrator makes it easy for you to convey information about your site to social networks like Facebook, Twitter, and Google+.</li>
+	<li><strong>Why it helps:</strong> By providing this Open Graph data, you can customize how these social networks will present your site when people share it with their followers.</li>
+	<li><strong>How to use it:</strong> The &#8220;Sitewide Values&#8221; tab lets you specify data that applies to your entire site. The &#8220;Default Values&#8221; tab lets you specify default data for your posts, pages, etc. The bulk editor tabs let you override those defaults on individual posts and pages. If the authors on your site fill in the &#8220;Twitter Handle&#8221; field which Open Graph Integrator adds to the <a href='profile.php'>profile editor</a>, Open Graph Integrator will communicate that information to Twitter as well.</li>
+</ul>
+", 'seo-ultimate')));
+		
 	}
 }
 

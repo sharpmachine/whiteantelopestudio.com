@@ -16,7 +16,7 @@ ModuleHidden: true
 
 class blcMetadataParser extends blcParser {
 	var $supported_formats = array('metadata');
-	var $supported_containers = array('custom_field');
+	var $supported_containers = array();
 	
   /**
    * Parse a metadata value.
@@ -39,8 +39,9 @@ class blcMetadataParser extends blcParser {
 			//distinguish between multiple fields with the same name. 
 			$raw_url = $value; 
 			
-			//If this is a multiline metadata field take only the first line (workaround for the 'enclosure' field). 
-			$url = trim( array_shift( explode("\n", $value) ) );
+			//If this is a multiline metadata field take only the first line (workaround for the 'enclosure' field).
+			$lines = explode("\n", $value);
+			$url = trim(reset($lines));
 			
 			//Attempt to parse the URL
 			$parts = @parse_url($url);
@@ -49,7 +50,7 @@ class blcMetadataParser extends blcParser {
 			};
 					
 			if ( !isset($parts['scheme']) ){
-				//No sheme - likely a relative URL. Turn it into an absolute one.
+				//No scheme - likely a relative URL. Turn it into an absolute one.
 				$url = $this->relative2absolute($url, $base_url);
 				
 				//Skip invalid URLs (again)
@@ -108,12 +109,13 @@ class blcMetadataParser extends blcParser {
    * Get the link text for printing in the "Broken Links" table.
    *
    * @param blcLinkInstance $instance
+   * @param string $context
    * @return string HTML 
    */
 	function ui_get_link_text($instance, $context = 'display'){
 		$image_html = sprintf(
 			'<img src="%s" class="blc-small-image" title="%2$s" alt="%2$s"> ',
-			esc_attr( plugins_url('/images/script_code.png', BLC_PLUGIN_FILE) ),
+			esc_attr( plugins_url('/images/font-awesome/font-awesome-code.png', BLC_PLUGIN_FILE) ),
 			__('Custom field', 'broken-link-checker')
 		);
 		
@@ -129,5 +131,3 @@ class blcMetadataParser extends blcParser {
 		return $field_html;
 	}
 }
-
-?>

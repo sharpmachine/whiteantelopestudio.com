@@ -11,7 +11,7 @@ do_action('em_booking_form_ticket_header', $EM_Ticket); //do not delete
  * This variable can be overriden, by hooking into the em_booking_form_tickets_cols filter and adding your collumns into this array.
  * Then, you should create a em_booking_form_ticket_field_arraykey action for your collumn data, which will pass a ticket and event object.
  */
-$collumns = EM_Tickets::get_ticket_collumns($EM_Event); //array of collumn type => title
+$collumns = $EM_Event->get_tickets()->get_ticket_collumns(); //array of collumn type => title
 foreach( $collumns as $type => $name ): ?>
 	<?php
 	//output collumn by type, or call a custom action 
@@ -22,7 +22,7 @@ foreach( $collumns as $type => $name ): ?>
 			}
 			break;
 		case 'price':
-			?><p><label><?php echo $name; ?></label><strong><?php echo $EM_Ticket->get_price(true); ?></strong></p><?php
+			?><p class="ticket-price"><label><?php echo $name; ?></label><strong><?php echo $EM_Ticket->get_price(true); ?></strong></p><?php
 			break;
 		case 'spaces':
 			if( $EM_Ticket->get_available_spaces() > 1 && ( empty($EM_Ticket->ticket_max) || $EM_Ticket->ticket_max > 1 ) ): //more than one space available ?>				
@@ -41,6 +41,7 @@ foreach( $collumns as $type => $name ): ?>
 				<?php do_action('em_booking_form_ticket_spaces', $EM_Ticket); //do not delete ?>
 			<?php else: //if only one space or ticket max spaces per booking is 1 ?>
 				<input type="hidden" name="em_tickets[<?php echo $EM_Ticket->ticket_id ?>][spaces]" value="1" class="em-ticket-select" />
+				<?php do_action('em_booking_form_ticket_spaces', $EM_Ticket); //do not delete ?>
 			<?php endif;
 			break;
 		default:

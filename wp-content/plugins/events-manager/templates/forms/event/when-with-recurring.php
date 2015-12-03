@@ -7,7 +7,7 @@ $admin_recurring = is_admin() && $EM_Event->is_recurring();
 ?>
 <?php if( is_admin() ): ?><input type="hidden" name="_emnonce" value="<?php echo wp_create_nonce('edit_event'); ?>" /><?php endif; ?>
 <!-- START recurrence postbox -->
-<div id="em-form-recurrence" class="event-form-recurrence event-form-when">
+<div id="em-form-with-recurrence" class="event-form-with-recurrence event-form-when">
 	<p><?php _e('This is a recurring event.', 'dbem'); ?> <input type="checkbox" id="em-recurrence-checkbox" name="recurring" value="1" <?php if($EM_Event->is_recurring()) echo 'checked' ?> /></p>
 	<p class="em-date-range">
 		<span class="em-recurring-text"><?php _e ( 'Recurrences span from ', 'dbem' ); ?></span>
@@ -37,7 +37,7 @@ $admin_recurring = is_admin() && $EM_Event->is_recurring();
 				?>
 			</select>
 			<?php _e ( 'every', 'dbem' )?>
-			<input id="recurrence-interval" name='recurrence_interval' size='2' value='<?php echo $EM_Event->interval ; ?>' />
+			<input id="recurrence-interval" name='recurrence_interval' size='2' value='<?php echo $EM_Event->recurrence_interval ; ?>' />
 			<span class='interval-desc' id="interval-daily-singular"><?php _e ( 'day', 'dbem' )?></span>
 			<span class='interval-desc' id="interval-daily-plural"><?php _e ( 'days', 'dbem' ) ?></span>
 			<span class='interval-desc' id="interval-weekly-singular"><?php _e ( 'week on', 'dbem'); ?></span>
@@ -65,12 +65,10 @@ $admin_recurring = is_admin() && $EM_Event->is_recurring();
 			</select>
 			<?php _e('of each month','dbem'); ?>
 		</p>
-		<p>
-			<?php _e('Each event lasts','dbem'); ?>
-			<input id="end-days" type="text" size="8" maxlength="8" name="recurrence_days" value="<?php echo $EM_Event->recurrence_days; ?>" />
-			<?php _e('day(s)','dbem'); ?>
+		<p class="em-duration-range">
+			<?php echo sprintf(__('Each event spans %s day(s)','dbem'), '<input id="end-days" type="text" size="8" maxlength="8" name="recurrence_days" value="'. $EM_Event->recurrence_days .'" />'); ?>
 		</p>
-		<em><?php _e( 'For a recurring event, a one day event will be created on each recurring date within this date range.', 'dbem' ); ?></em><br/>
+		<p class="em-range-description"><em><?php _e( 'For a recurring event, a one day event will be created on each recurring date within this date range.', 'dbem' ); ?></em></p>
 	</div>
 	<script type="text/javascript">
 	//<![CDATA[

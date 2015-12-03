@@ -5,18 +5,25 @@ class EM_People extends EM_Object {
 	 * Handles the action of someone being deleted on WordPress
 	 * @param int $id
 	 */
-	function delete_user( $id ){
+	public static function delete_user( $id ){
 		global $wpdb;
-		if( current_user_can('delete_users') ){
-			if( $_REQUEST['delete_option'] == 'reassign' && is_numeric($_REQUEST['reassign_user']) ){
-				$wpdb->update(EM_EVENTS_TABLE, array('event_owner'=>$_REQUEST['reassign_user']), array('event_owner'=>$id));
-			}else{
-				//User is being deleted, so we delete their events and cancel their bookings.
-				$wpdb->query("DELETE FROM ".EM_EVENTS_TABLE." WHERE event_owner=$id");
-			}
+		if( $_REQUEST['delete_option'] == 'reassign' && is_numeric($_REQUEST['reassign_user']) ){
+			$wpdb->update(EM_EVENTS_TABLE, array('event_owner'=>$_REQUEST['reassign_user']), array('event_owner'=>$id));
+		}else{
+			//User is being deleted, so we delete their events and cancel their bookings.
+			$wpdb->query("DELETE FROM ".EM_EVENTS_TABLE." WHERE event_owner=$id");
 		}
-		//set bookings to cancelled
-		$wpdb->update(EM_BOOKINGS_TABLE, array('booking_status'=>3, 'person_id'=>0, 'booking_comment'=>__('User deleted by administrators','dbem')), array('person_id'=>$id));
+		//delete the booking completely
+		if( !get_option('dbem_bookings_registration_disable') || $id != get_option('dbem_bookings_registration_user') ){
+		    $EM_Person = new EM_Person();
+		    $EM_Person->ID = $EM_Person->person_id = $id;
+		    foreach( $EM_Person->get_bookings() as $EM_Booking){
+		        $EM_Booking->manage_override = true;
+		        $EM_Booking->delete();
+		    }		    
+		}else{ //user is the no-user mode assigned user, so don't delete all the guest bookings, in case of mistake.
+			$wpdb->update(EM_BOOKINGS_TABLE, array('booking_status'=>3, 'person_id'=>0, 'booking_comment'=>__('User deleted by administrators','dbem')), array('person_id'=>$id));
+		}
 	}
 	
 	/**
@@ -24,7 +31,7 @@ class EM_People extends EM_Object {
 	 * @param $array
 	 * @return array
 	 */
-	function user_contactmethods($array){
+	public static function user_contactmethods($array){
 		$array['dbem_phone'] = __('Phone','dbem') . ' <span class="description">('. __('Events Manager','dbem') .')</span>';
 		return $array;
 	}	

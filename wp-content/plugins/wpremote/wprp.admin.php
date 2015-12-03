@@ -20,17 +20,23 @@ add_action( 'admin_menu', 'wprp_setup_admin' );
  */
 function wprp_add_api_key_admin_notice() { ?>
 
-	<div id="wprp-message" class="updated">
+	<div id="wprp-message" class="updated" style="display:block !important;">
 
 		<form method="post" action="options.php">
 
 			<p>
 
-				<strong>WP Remote is almost ready</strong>, <label style="vertical-align: baseline;" for="wpr_api_key">enter your API Key to continue</label>
+				<strong><?php _e( 'WP Remote is almost ready', 'wpremote' ); ?></strong>, <label style="vertical-align: baseline;" for="wpr_api_key"><?php _e( 'enter your API key to continue', 'wpremote' ); ?></label>
 
-				<input style="margin: -4px 5px; vertical-align: text-bottom; line-height: 13px; font-size: 12px;" type="text" class="code regular-text" id="wpr_api_key" name="wpr_api_key" />
+				<input type="text" style="margin-left: 5px; margin-right: 5px; " class="code regular-text" id="wpr_api_key" name="wpr_api_key" />
 
-				<input style="vertical-align: text-bottom; margin: -3px 0; line-height: 12px;" type="submit" value="Save API Key" class="button-primary" />
+				<input type="submit" value="<?php _e( 'Save API Key','wpremote' ); ?>" class="button-primary" />
+
+			</p>
+
+			<p>
+
+				<strong><?php _e( 'Don\'t have a WP Remote account yet?','wpremote' ); ?></strong> <a href="<?php echo esc_url( wprp_get_wpr_url( '/register/' ) ); ?>" target="_blank"><?php _e( 'Sign up','wpremote' ); ?></a>, <?php _e( 'register your site, and report back once you\'ve grabbed your API key.','wpremote' ); ?>
 
 			</p>
 
@@ -48,7 +54,7 @@ function wprp_add_api_key_admin_notice() { ?>
 
 <?php }
 
-if ( ! get_option( 'wpr_api_key' ) )
+if ( ! wprp_get_api_keys() )
 	add_action( 'admin_notices', 'wprp_add_api_key_admin_notice' );
 
 /**
@@ -58,11 +64,11 @@ if ( ! get_option( 'wpr_api_key' ) )
  */
 function wprp_api_key_added_admin_notice() {
 
-	if ( function_exists( 'get_current_screen' ) && get_current_screen()->base != 'plugins' || empty( $_GET['settings-updated'] ) || ! get_option( 'wpr_api_key' ) )
+	if ( function_exists( 'get_current_screen' ) && get_current_screen()->base != 'plugins' || empty( $_GET['settings-updated'] ) || ! wprp_get_api_keys() )
 		return; ?>
 
 	<div id="wprp-message" class="updated">
-		<p><strong>WP Remote API Key successfully added</strong>, close this page to go back to <a href="https://wpremote.com/app/">WP Remote</a>.</p>
+		<p><strong><?php _e( 'WP Remote API Key successfully added' ); ?></strong>, close this window to go back to <a href="<?php echo esc_url( wprp_get_wpr_url( '/app/' ) ); ?>"><?php _e( 'WP Remote','wpremote' ); ?></a>.</p>
 	</div>
 
 <?php }

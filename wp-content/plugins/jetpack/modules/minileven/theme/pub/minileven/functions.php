@@ -40,12 +40,19 @@ function minileven_setup() {
 	 */
 	require( get_template_directory() . '/inc/tweaks.php' );
 
+	/**
+	 * Implement the Custom Header functions
+	 */
+	require( get_template_directory() . '/inc/custom-header.php' );
+
 	/* Make Minileven available for translation.
 	 * Translations can be added to the /languages/ directory.
 	 * If you're building a theme based on Minileven, use a find and replace
 	 * to change 'minileven' to the name of your theme in all the template files.
 	 */
-	load_theme_textdomain( 'minileven', TEMPLATEPATH . '/languages' );
+/*	Don't load a minileven textdomain, as it uses the Jetpack textdomain.
+	load_theme_textdomain( 'minileven', get_template_directory() . '/languages' );
+*/
 
 	// Add default posts and comments RSS feed links to <head>.
 	add_theme_support( 'automatic-feed-links' );
@@ -57,10 +64,7 @@ function minileven_setup() {
 	add_theme_support( 'post-formats', array( 'gallery' ) );
 
 	// Add support for custom backgrounds
-	if ( version_compare( $wp_version, '3.4', '>=' ) )
-		add_theme_support( 'custom-background' );
-	else
-		add_custom_background();
+	add_theme_support( 'custom-background' );
 
 	// Add support for post thumbnails
 	add_theme_support( 'post-thumbnails' );
@@ -83,6 +87,35 @@ function minileven_scripts() {
 }
 add_action( 'wp_enqueue_scripts', 'minileven_scripts' );
 
+function minileven_fonts() {
+
+	/*	translators: If there are characters in your language that are not supported
+		by Open Sans, translate this to 'off'. Do not translate into your own language. */
+
+	if ( 'off' !== _x( 'on', 'Open Sans font: on or off', 'jetpack' ) ) {
+
+		$opensans_subsets = 'latin,latin-ext';
+
+		/* translators: To add an additional Open Sans character subset specific to your language, translate
+		this to 'greek', 'cyrillic' or 'vietnamese'. Do not translate into your own language. */
+		$opensans_subset = _x( 'no-subset', 'Open Sans font: add new subset (greek, cyrillic, vietnamese)', 'jetpack' );
+
+		if ( 'cyrillic' == $opensans_subset )
+			$opensans_subsets .= ',cyrillic,cyrillic-ext';
+		elseif ( 'greek' == $opensans_subset )
+			$opensans_subsets .= ',greek,greek-ext';
+		elseif ( 'vietnamese' == $opensans_subset )
+			$opensans_subsets .= ',vietnamese';
+
+		$opensans_query_args = array(
+			'family' => 'Open+Sans:200,200italic,300,300italic,400,400italic,600,600italic,700,700italic',
+			'subset' => $opensans_subsets,
+		);
+		wp_register_style( 'minileven-open-sans', add_query_arg( $opensans_query_args, "//fonts.googleapis.com/css" ), array(), null );
+	}
+}
+add_action( 'init', 'minileven_fonts' );
+
 /**
  * Register our sidebars and widgetized areas.
  * @since Minileven 1.0
@@ -104,17 +137,16 @@ function minileven_posts_per_page() {
 }
 add_filter('pre_option_posts_per_page', 'minileven_posts_per_page');
 
-/* This function determines the actual theme the user is using. */
+/**
+ * Determine the currently active theme.
+ */
 function minileven_actual_current_theme() {
-	if ( function_exists( 'jetpack_mobile_template' ) )
-		remove_action( 'option_template', 'jetpack_mobile_template' );
+	$removed = remove_action( 'option_stylesheet', 'jetpack_mobile_stylesheet' );
+	$stylesheet = get_option( 'stylesheet' );
+	if ( $removed )
+		add_action( 'option_stylesheet', 'jetpack_mobile_stylesheet' );
 
-	$template = get_option( 'template' );
-
-	if ( function_exists( 'jetpack_mobile_template' ) )
-		add_action( 'option_template', 'jetpack_mobile_template' );
-
-	return $template;
+	return $stylesheet;
 }
 
 /* This function grabs the location of the custom menus from the current theme. If no menu is set in a location
@@ -122,6 +154,20 @@ function minileven_actual_current_theme() {
 function minileven_get_menu_location() {
 	$theme_slug = minileven_actual_current_theme();
 	$mods = get_option( "theme_mods_{$theme_slug}" );
+
+	if ( has_filter( 'jetpack_mobile_theme_menu' ) ) {
+
+		/**
+		 * Filter the menu displayed in the Mobile Theme.
+		 *
+		 * @module minileven
+		 *
+		 * @since 3.4.0
+		 *
+		 * @param int $menu_id ID of the menu to display.
+		 */
+		return array( 'primary' => apply_filters( 'jetpack_mobile_theme_menu', $menu_id ) );
+	}
 
 	if ( isset( $mods['nav_menu_locations'] ) && ! empty( $mods['nav_menu_locations'] ) )
 		return $mods['nav_menu_locations'];
@@ -147,6 +193,71 @@ function minileven_get_background() {
 }
 
 /**
- * Implement the Custom Header functions
+ * If the user has set a static front page, show all posts on the front page, instead of a static page.
  */
-require( get_template_directory() . '/inc/custom-header.php' );
+if ( '1' == get_option( 'wp_mobile_static_front_page' ) )
+	add_filter( 'pre_option_page_on_front', '__return_zero' );
+
+/**
+ * Retrieves the IDs for images in a gallery.
+ *
+ * @uses get_post_galleries() first, if available. Falls back to shortcode parsing,
+ * then as last option uses a get_posts() call.
+ *
+ * @return array List of image IDs from the post gallery.
+ */
+function minileven_get_gallery_images() {
+	$images = array();
+
+	if ( function_exists( 'get_post_galleries' ) ) {
+		$galleries = get_post_galleries( get_the_ID(), false );
+		if ( isset( $galleries[0]['ids'] ) )
+		 	$images = explode( ',', $galleries[0]['ids'] );
+	} else {
+		$pattern = get_shortcode_regex();
+		preg_match( "/$pattern/s", get_the_content(), $match );
+		$atts = shortcode_parse_atts( $match[3] );
+		if ( isset( $atts['ids'] ) )
+			$images = explode( ',', $atts['ids'] );
+	}
+
+	if ( ! $images ) {
+		$images = get_posts( array(
+			'fields'         => 'ids',
+			'numberposts'    => 999,
+			'order'          => 'ASC',
+			'orderby'        => 'menu_order',
+			'post_mime_type' => 'image',
+			'post_parent'    => get_the_ID(),
+			'post_type'      => 'attachment',
+		) );
+	}
+
+	return $images;
+}
+
+/**
+ * Allow plugins to filter where Featured Images are displayed.
+ * Default has Featured Images disabled on single view and pages.
+ *
+ * @uses is_search()
+ * @uses apply_filters()
+ * @return bool
+ */
+function minileven_show_featured_images() {
+	$enabled = ( is_home() || is_search() || is_archive() ) ? true : false;
+
+	/**
+	 * Filter where featured images are displayed in the Mobile Theme.
+	 *
+	 * By setting $enabled to true or false using functions like is_home() or
+	 * is_archive(), you can control where featured images are be displayed.
+	 *
+	 * @module minileven
+	 *
+	 * @since 3.2.0
+	 *
+	 * @param bool $enabled True if featured images should be displayed, false if not.
+	 */
+	return (bool) apply_filters( 'minileven_show_featured_images', $enabled );
+}

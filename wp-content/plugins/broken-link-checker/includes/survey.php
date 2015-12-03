@@ -36,9 +36,9 @@ function blc_display_survey_notice(){
 	
 	$msg = sprintf(
 		'<strong>Help improve Broken Link Checker - <a href="%s" target="_blank" title="This link will open in a new window" id="blc-take-survey-link">take a user feedback survey!</a></strong>
-		 <br><a href="%s">Hide this notice</a>',
+		 <br><a href="%s" id="blc-dismiss-survey-notice">Hide this notice</a>',
 		$survey_url,
-		add_query_arg('dismiss-blc-survey', 1)
+		esc_attr(add_query_arg('dismiss-blc-survey', 1))
 	);
 	
 	echo '<div id="update-nag" class="blc-survey-notice" style="text-align: left; padding-left: 10px;">'.$msg.'</div>';
@@ -49,7 +49,7 @@ function blc_display_survey_notice(){
 	jQuery(function($){
 		$('#blc-take-survey-link').click(function(){
 			$('.blc-survey-notice').hide('fast');
-			$.get('<?php echo esc_js(add_query_arg('dismiss-blc-survey', 1, admin_url())); ?>');
+			$.get($('#blc-dismiss-survey-notice').attr('href'));
 		});
 	});
 	</script>

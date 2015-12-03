@@ -1056,6 +1056,7 @@ class W3_Db_Driver extends SQL_Translations {
 
                 $dbhname = "dbh" . $action;
                 $this->$dbhname = @mssql_connect( $details[ 'db_host' ], $details[ 'db_user' ], $details[ 'db_password' ] );
+                $this->is_mysql = false;
 
                 if (!$this->$dbhname ) {
                         $this->bail( sprintf( /*WP_I18N_DB_CONN_ERROR*/"
@@ -1169,6 +1170,9 @@ class W3_Db_Driver extends SQL_Translations {
                         }
                         $this->following_query = false;
                 }
+
+                if ( function_exists( 'apply_filters' ) )
+                    apply_filters( 'after_query', $query );
 
                 return $return_val;
         }
@@ -1731,16 +1735,6 @@ class Fields_map
     var $filepath = '';
 
     /**
-     * php4 style call to constructor.
-     *
-     * @since 2.7.1
-     *
-     */
-    function Fields_map() {
-        return $this->__construct();
-    }
-
-    /**
      * Set filepath
      *
      * PHP5 style constructor for compatibility with PHP5.
@@ -1748,7 +1742,8 @@ class Fields_map
      * @since 2.7.1
      */
     function __construct() {
-        $this->filepath = trim(str_replace('mu-plugins/wp-db-abstraction/translations/sqlsrv', '', strtr(dirname(__FILE__), '\\', '/')), '/') . '/fields_map.parsed_types.php';
+        $folder = basename(WPMU_PLUGIN_DIR);
+        $this->filepath = trim(str_replace($folder . '/wp-db-abstraction/translations/sqlsrv', '', strtr(dirname(__FILE__), '\\', '/')), '/') . '/fields_map.parsed_types.php';
     }
 
     /**
@@ -2093,17 +2088,6 @@ class SQL_Translations
      * @var string
      */
     var $prefix = '';
-
-    /**
-     * php4 style call to constructor.
-     *
-     * @since 2.7.1
-     *
-     */
-    function SQL_Translations()
-    {
-        return $this->__construct();
-    }
 
     /**
      * Assign fields_map as a new Fields_map object

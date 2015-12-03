@@ -1,22 +1,4 @@
 <?php
-/*
-+----------------------------------------------------------------+
-|																							|
-|	WordPress 2.8 Plugin: WP-DBManager 2.63								|
-|	Copyright (c) 2009 Lester "GaMerZ" Chan									|
-|																							|
-|	File Written By:																	|
-|	- Lester "GaMerZ" Chan															|
-|	- http://lesterchan.net															|
-|																							|
-|	File Information:																	|
-|	- Database Empty																|
-|	- wp-content/plugins/wp-dbmanager/database-empty.php			|
-|																							|
-+----------------------------------------------------------------+
-*/
-
-
 ### Check Whether User Can Manage Database
 if(!current_user_can('manage_database')) {
 	die('Access Denied');
@@ -34,16 +16,18 @@ $backup['mysqlpath'] = $backup_options['mysqlpath'];
 $backup['path'] = $backup_options['path'];
 
 
-### Form Processing 
-if($_POST['do']) {
+### Form Processing
+if(!empty($_POST['do'])) {
 	// Lets Prepare The Variables
-	$emptydrop = $_POST['emptydrop'];
+	$emptydrop = (!empty($_POST['emptydrop']) ? $_POST['emptydrop'] : array());
+	$text = '';
 
 	// Decide What To Do
 	switch($_POST['do']) {
 		case __('Empty/Drop', 'wp-dbmanager'):
 			check_admin_referer('wp-dbmanager_empty');
 			$empty_tables = array();
+			$drop_tables = '';
 			if(!empty($emptydrop)) {
 				foreach($emptydrop as $key => $value) {
 					if($value == 'empty') {
@@ -53,18 +37,18 @@ if($_POST['do']) {
 					}
 				}
 			} else {
-				$text = '<font color="red">'.__('No Tables Selected.', 'wp-dbmanager').'</font>';
+				$text = '<p style="color: red;">'.__('No Tables Selected.', 'wp-dbmanager').'</p>';
 			}
 			$drop_tables = substr($drop_tables, 2);
 			if(!empty($empty_tables)) {
 				foreach($empty_tables as $empty_table) {
 					$empty_query = $wpdb->query("TRUNCATE $empty_table");
-					$text .= '<font color="green">'.sprintf(__('Table \'%s\' Emptied', 'wp-dbmanager'), $empty_table).'</font><br />';
+					$text .= '<p style="color: green;">'.sprintf(__('Table \'%s\' Emptied', 'wp-dbmanager'), $empty_table).'</p>';
 				}
 			}
 			if(!empty($drop_tables)) {
 				$drop_query = $wpdb->query("DROP TABLE $drop_tables");
-				$text = '<font color="green">'.sprintf(__('Table(s) \'%s\' Dropped', 'wp-dbmanager'), $drop_tables).'</font>';
+				$text = '<p style="color: green;">'.sprintf(__('Table(s) \'%s\' Dropped', 'wp-dbmanager'), $drop_tables).'</p>';
 			}
 			break;
 	}
@@ -79,8 +63,7 @@ $tables = $wpdb->get_col("SHOW TABLES");
 <form method="post" action="<?php echo admin_url('admin.php?page='.plugin_basename(__FILE__)); ?>">
 	<?php wp_nonce_field('wp-dbmanager_empty'); ?>
 	<div class="wrap">
-		<div id="icon-wp-dbmanager" class="icon32"><br /></div>
-		<h2><?php _e('Empty/Drop Tables', 'wp-dbmanager'); ?></h2>	
+		<h2><?php _e('Empty/Drop Tables', 'wp-dbmanager'); ?></h2>
 		<br style="clear" />
 		<table class="widefat">
 			<thead>
@@ -91,9 +74,10 @@ $tables = $wpdb->get_col("SHOW TABLES");
 				</tr>
 			</thead>
 				<?php
+					$no = 0;
 					foreach($tables as $table_name) {
 						if($no%2 == 0) {
-							$style = '';							
+							$style = '';
 						} else {
 							$style = ' class="alternate"';
 						}
@@ -107,7 +91,7 @@ $tables = $wpdb->get_col("SHOW TABLES");
 				<td colspan="3">
 					<?php _e('1. EMPTYING a table means all the rows in the table will be deleted. This action is not REVERSIBLE.', 'wp-dbmanager'); ?>
 					<br />
-					<?php _e('2. DROPPING a table means deleting the table. This action is not REVERSIBLE.', 'wp-dbmanager'); ?>				
+					<?php _e('2. DROPPING a table means deleting the table. This action is not REVERSIBLE.', 'wp-dbmanager'); ?>
 				</td>
 			</tr>
 			<tr>

@@ -11,7 +11,8 @@ class SU_Files extends SU_Module {
 
 	var $htaccess_recovery = null;
 	
-	function get_module_title() { return __('File Editor', 'seo-ultimate'); }
+	static function get_module_title() { return __('File Editor', 'seo-ultimate'); }
+	static function get_menu_title() { return __('File Editor', 'seo-ultimate'); }
 	
 	function init() {
 		
@@ -34,6 +35,11 @@ class SU_Files extends SU_Module {
 	function admin_page_contents() {
 		
 		global $is_apache;
+		
+		if ($this->should_show_sdf_theme_promo()) {
+			echo "\n\n<div class='row'>\n";
+			echo "\n\n<div class='col-sm-8 col-md-9'>\n";
+		}
 		
 		//Initialize variables
 		$exists = $writable = false;
@@ -86,6 +92,14 @@ class SU_Files extends SU_Module {
 		
 		//Print the caution message(s) at the end
 		$this->print_messages();
+		
+		if ($this->should_show_sdf_theme_promo()) {
+			echo "\n\n</div>\n";
+			echo "\n\n<div class='col-sm-4 col-md-3'>\n";
+			$this->promo_sdf_banners();
+			echo "\n\n</div>\n";
+			echo "\n\n</div>\n";
+		}
 	}
 	
 	function do_robots() {
@@ -129,9 +143,9 @@ class SU_Files extends SU_Module {
 	
 	function privacy_options_notice() {
 		global $pagenow;
-		if ($pagenow == 'options-privacy.php') { //Shows on the "Settings > Privacy" page
+		if ($pagenow == 'options-reading.php') { //Shows on the "Settings > Reading" page
 			$this->print_message('info', sprintf(
-				__('Please note that your privacy settings won&#8217;t have any effect on your robots.txt file, since you&#8217;re using <a href="%s">a custom one</a>.', 'seo-ultimate'),
+				__('Please note that the &#8220;discourage search engines&#8221; setting won&#8217;t have any effect on your robots.txt file, since you&#8217;re using <a href="%s">a custom one</a>.', 'seo-ultimate'),
 				admin_url('admin.php?page='.$this->plugin->key_to_hook($this->get_module_key()))
 			));
 		}

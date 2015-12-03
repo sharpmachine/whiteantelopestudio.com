@@ -1,6 +1,6 @@
 <?php
 function save_meta_box ($Category) {
-	global $Shopp;
+	$Shopp = Shopp::object();
 
 	$workflows = array(
 		"continue" => __('Continue Editing','Shopp'),
@@ -14,32 +14,31 @@ function save_meta_box ($Category) {
 	<div id="major-publishing-actions">
 		<input type="hidden" name="id" value="<?php echo $Category->id; ?>" />
 		<select name="settings[workflow]" id="workflow">
-		<?php echo menuoptions($workflows,shopp_setting('workflow'),true); ?>
+		<?php echo Shopp::menuoptions($workflows,shopp_setting('workflow'),true); ?>
 		</select>
 		<input type="submit" class="button-primary" name="save" value="<?php _e('Update','Shopp'); ?>" />
 	</div>
 <?php
 }
-add_meta_box('save-category', __('Save','Shopp').$Admin->boxhelp('category-editor-save'), 'save_meta_box', 'shopp_page_shopp-category', 'side', 'core');
+ShoppUI::addmetabox('save-category', __('Save','Shopp').$Admin->boxhelp('category-editor-save'), 'save_meta_box', 'shopp_page_shopp-category', 'side', 'core');
 
 function settings_meta_box ($Category) {
-	global $Shopp;
+	$Shopp = Shopp::object();
 	$tax = get_taxonomy($Category->taxonomy);
-
 ?>
-	<p><?php wp_dropdown_categories( array( 'taxonomy' => $Category->taxonomy, 'selected'=> $Category->parent,'hide_empty' => 0, 'name' => 'parent', 'orderby' => 'name', 'hierarchical' => 1, 'show_option_none' => $tax->labels->parent_item.'&hellip;', 'tab_index' => 3 ) );?>
+	<p><?php wp_dropdown_categories( array( 'taxonomy' => $Category->taxonomy, 'selected' => $Category->parent, 'hide_empty' => 0, 'name' => 'parent', 'orderby' => 'name', 'hierarchical' => 1, 'show_option_none' => $tax->labels->parent_item.'&hellip;', 'tab_index' => 3 ) );?>
 <label><span><?php _e('Categories, unlike tags, can be or have nested sub-categories.','Shopp'); ?></span></label></p>
 
 	<p class="toggle"><input type="hidden" name="spectemplate" value="off" /><input type="checkbox" name="spectemplate" value="on" id="spectemplates-setting" tabindex="11" <?php if (isset($Category->spectemplate) && $Category->spectemplate == "on") echo ' checked="checked"'?> /><label for="spectemplates-setting"> <?php _e('Product Details Template','Shopp'); ?><br /><span><?php _e('Predefined details for products created in this category','Shopp'); ?></span></label></p>
 	<p id="facetedmenus-setting" class="toggle"><input type="hidden" name="facetedmenus" value="off" /><input type="checkbox" name="facetedmenus" value="on" id="faceted-setting" tabindex="12" <?php if (isset($Category->facetedmenus) && $Category->facetedmenus == "on") echo ' checked="checked"'?> /><label for="faceted-setting"><?php _e('Faceted Menus','Shopp'); ?><br /><span><?php _e('Build drill-down filter menus based on the details template of this category','Shopp'); ?></span></label></p>
 	<p class="toggle"><input type="hidden" name="variations" value="off" /><input type="checkbox" name="variations" value="on" id="variations-setting" tabindex="13"<?php if (isset($Category->variations) && $Category->variations == "on") echo ' checked="checked"'?> /><label for="variations-setting"> <?php _e('Variations','Shopp'); ?><br /><span><?php _e('Predefined selectable product options for products created in this category','Shopp'); ?></span></label></p>
-	<?php if ($Category->count > 1): ?>
+	<?php if (isset($Category->count) && $Category->count > 1): ?>
 	<p class="toggle"><a href="<?php echo add_query_arg(array('page'=>'shopp-categories','id'=>$Category->id,'a'=>'products'),admin_url('admin.php')); ?>" class="button-secondary"><?php _e('Arrange Products','Shopp'); ?></a></p>
 	<?php endif; ?>
 
 	<?php
 }
-add_meta_box('category-settings', __('Settings','Shopp').$Admin->boxhelp('category-editor-settings'), 'settings_meta_box', 'shopp_page_shopp-category', 'side', 'core');
+ShoppUI::addmetabox('category-settings', __('Settings','Shopp').$Admin->boxhelp('category-editor-settings'), 'settings_meta_box', 'shopp_page_shopp-category', 'side', 'core');
 
 function images_meta_box ($Category) {
 ?>
@@ -60,7 +59,8 @@ function images_meta_box ($Category) {
 					<input type="hidden" name="imagedetails[<?php echo $i; ?>][cropping][<?php echo $cache->id; ?>]" alt="<?php echo $c; ?>" value="<?php echo $cropping; ?>" class="imagecropped" />
 				<?php endforeach; endif;?>
 			</div>
-				<button type="button" name="deleteImage" value="<?php echo $Image->id; ?>" title="Delete category image&hellip;" class="deleteButton"><input type="hidden" name="ieisstupid" value="<?php echo $Image->id; ?>" /><img src="<?php echo SHOPP_PLUGINURI; ?>/core/ui/icons/delete.png" alt="-" width="16" height="16" /></button></li>
+			<?php echo ShoppUI::button('delete', 'deleteImage', array('type' => 'button', 'class' => 'delete deleteButton', 'value' => $Image->id, 'title' => Shopp::__('Remove image&hellip;')) ); ?>
+			</li>
 		<?php endforeach; endif; ?>
 	</ul>
 	<div class="clear"></div>
@@ -73,10 +73,10 @@ function images_meta_box ($Category) {
 		<button type="button" name="image_upload" id="image-upload" class="button-secondary"><small><?php _e('Add New Image','Shopp'); ?></small></button><br class="clear"/>
 	</div>
 
-	<?php _e('Double-click images to edit their details. Save the product to confirm deleted images.','Shopp'); ?>
+	<p><?php _e('Double-click images to edit their details. Save the product to confirm deleted images.','Shopp'); ?></p>
 <?php
 }
-add_meta_box('category-images', __('Category Images','Shopp').$Admin->boxhelp('category-editor-images'), 'images_meta_box', 'shopp_page_shopp-category', 'normal', 'core');
+ShoppUI::addmetabox('category-images', __('Category Images','Shopp').$Admin->boxhelp('category-editor-images'), 'images_meta_box', 'shopp_page_shopp-category', 'normal', 'core');
 
 function templates_meta_box ($Category) {
 	$pricerange_menu = array(
@@ -174,6 +174,6 @@ function templates_meta_box ($Category) {
 
 <?php
 }
-add_meta_box('templates_menus', __('Product Templates &amp; Menus','Shopp').$Admin->boxhelp('category-editor-templates'), 'templates_meta_box', 'shopp_page_shopp-category', 'advanced', 'core');
+ShoppUI::addmetabox('templates_menus', __('Product Templates &amp; Menus','Shopp').$Admin->boxhelp('category-editor-templates'), 'templates_meta_box', 'shopp_page_shopp-category', 'advanced', 'core');
 
 ?>

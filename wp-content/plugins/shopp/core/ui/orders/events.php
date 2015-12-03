@@ -276,14 +276,21 @@ class CaptureOrderEventRenderer extends OrderEventRenderer {
 	}
 
 	function details () {
-		$user = get_user_by('id',$this->user);
+		if ( (int)$this->user > 0 ) {
 
-		return sprintf(__('by <a href="%s">%s</a> (<a href="%s">%s</a>)','Shopp'),
-			"mailto:$user->user_email?subject=RE: Order #{$this->Event->order}",
-			"$user->user_firstname $user->user_lastname",
-			add_query_arg(array('user_id'=>$this->user),
-			admin_url('user-edit.php')),$user->user_login
-		);
+			$user = get_user_by('id', $this->user);
+
+			return Shopp::__('by %s', sprintf(' <a href="%s">%s</a> (<a href="%s">%s</a>)',
+				"mailto:$user->user_email?subject=RE: Order #{$this->Event->order}",
+				"$user->user_firstname $user->user_lastname",
+				add_query_arg(array('user_id'=>$this->user),
+				admin_url('user-edit.php')),$user->user_login
+			));
+
+		}
+
+		return Shopp::__('by %s', $this->user);
+
 	}
 
 }
@@ -319,14 +326,21 @@ class RefundOrderEventRenderer extends OrderEventRenderer {
 	}
 
 	function details () {
-		$user = get_user_by('id',$this->user);
+		if ( (int)$this->user > 0 ) {
 
-		return sprintf('by <a href="%s">%s</a> (<a href="%s">%s</a>)',
-			"mailto:$user->user_email?subject=RE: Order #{$this->Event->order}",
-			"$user->user_firstname $user->user_lastname",
-			add_query_arg(array('user_id'=>$this->user),
-			admin_url('user-edit.php')),$user->user_login
-		);
+			$user = get_user_by('id', $this->user);
+
+			return sprintf('by <a href="%s">%s</a> (<a href="%s">%s</a>)',
+				"mailto:$user->user_email?subject=RE: Order #{$this->Event->order}",
+				"$user->user_firstname $user->user_lastname",
+				add_query_arg(array('user_id'=>$this->user),
+				admin_url('user-edit.php')),$user->user_login
+			);
+
+		}
+
+		return sprintf('by %s', $this->user);
+
 	}
 
 
@@ -409,6 +423,8 @@ class ShippedOrderEventRenderer extends OrderEventRenderer {
 	}
 
 	function details () {
+		if ( 'NOTRACKING' == $this->carrier_name() )
+			return Shopp::__('No Tracking');
 		return sprintf('%s: %s',$this->carrier_name(),$this->tracklink());
 	}
 
@@ -427,8 +443,10 @@ class ShippedOrderEventRenderer extends OrderEventRenderer {
 
 	function trackurl () {
 		$this->carrier();
-		if (isset($this->Carrier->trackurl))
-			return sprintf($this->Carrier->trackurl,$this->tracking);
+		if (isset($this->Carrier->trackurl)) {
+			$params = explode(',',$this->tracking);
+			return vsprintf($this->Carrier->trackurl,$params);
+		}
 	}
 
 	function tracklink () {
@@ -478,13 +496,13 @@ class DecryptOrderEventRenderer extends OrderEventRenderer {
 class DownloadOrderEventRenderer extends OrderEventRenderer {
 
 	function name () {
-		$Purchased = new Purchased($this->purchased);
+		$Purchased = new ShoppPurchased($this->purchased);
 		$Download = new ProductDownload($this->download);
 		return sprintf(__('%s downloaded','Shopp'),'<strong>'.$Purchased->name.' ('.$Download->name.')</strong>');
 	}
 
 	function details () {
-		$Customer = new Customer($this->customer);
+		$Customer = new ShoppCustomer($this->customer);
 
 		return sprintf('by <a href="%2$s">%1$s</a> from %3$s',
 			"$Customer->firstname $Customer->lastname",

@@ -1,0 +1,566 @@
+msgid ""
+msgstr "MIME-Version: 1.0\n"
+
+#. Name.
+msgid "WP-DBManager"
+msgstr ""
+
+#. Short description.
+msgid "Manages your WordPress database."
+msgstr ""
+
+#. Screenshot description.
+msgid "Admin - Backup DB"
+msgstr ""
+
+#. Screenshot description.
+msgid "Admin - Empty/Drop Tables In DB"
+msgstr ""
+
+#. Screenshot description.
+msgid "Admin - DB Information"
+msgstr ""
+
+#. Screenshot description.
+msgid "Admin - Manage DB"
+msgstr ""
+
+#. Screenshot description.
+msgid "Admin - Optimize DB"
+msgstr ""
+
+#. Screenshot description.
+msgid "Admin - DB Options"
+msgstr ""
+
+#. Screenshot description.
+msgid "Admin - Repair DB"
+msgstr ""
+
+#. Screenshot description.
+msgid "Admin - Run Query in DB"
+msgstr ""
+
+#. Found in description header.
+msgid "Build Status"
+msgstr ""
+
+#. Found in description header.
+msgid "Development"
+msgstr ""
+
+#. Found in description header.
+msgid "Translations"
+msgstr ""
+
+#. Found in description header.
+msgid "Credits"
+msgstr ""
+
+#. Found in description header.
+msgid "Donations"
+msgstr ""
+
+#. Found in description header.
+msgid "Disclaimer"
+msgstr ""
+
+#. Found in description list item.
+msgid "<a href=\"https://github.com/lesterchan/wp-dbmanager\" title=\"https://github.com/lesterchan/wp-dbmanager\">https://github.com/lesterchan/wp-dbmanager</a>"
+msgstr ""
+
+#. Found in description list item.
+msgid "<a href=\"http://dev.wp-plugins.org/browser/wp-dbmanager/i18n/\" title=\"http://dev.wp-plugins.org/browser/wp-dbmanager/i18n/\">http://dev.wp-plugins.org/browser/wp-dbmanager/i18n/</a>"
+msgstr ""
+
+#. Found in description list item.
+msgid "Plugin icon by <a href=\"http://www.freepik.com\">Freepik</a> from <a href=\"http://www.flaticon.com\">Flaticon</a>"
+msgstr ""
+
+#. Found in description list item.
+msgid "I spent most of my free time creating, updating, maintaining and supporting these plugins, if you really love my plugins and could spare me a couple of bucks, I will really appreciate it. If not feel free to use it without any obligations."
+msgstr ""
+
+#. Found in description list item.
+msgid "Note that this plugin passes your datababase password via --password in the command line of mysqldump. This is convenient but as a trade off, it is insecure."
+msgstr ""
+
+#. Found in description list item.
+msgid "On some systems, your password becomes visible to system status programs such as ps that may be invoked by other users to display command lines. MySQL clients typically overwrite the command-line password argument with zeros during their initialization sequence. However, there is still a brief interval during which the value is visible. Also, on some systems this overwriting strategy is ineffective and the password remains visible to ps. Source: <a href=\"http://dev.mysql.com/doc/refman/5.5/en/password-security-user.html\">End-User Guidelines for Password Security</a>"
+msgstr ""
+
+#. Found in description list item.
+msgid "If this is a concern to you, I recommend another database backup plugin called <a href=\"https://wordpress.org/plugins/wp-db-backup/\">WP-DB-Backup</a>"
+msgstr ""
+
+#. Found in description list item.
+msgid "To know about the difference between WP-DBManager and WP-DB-backup, checkout <strong>What is the difference between WP-DBManager and WP-DB-Backup?</strong> in the <a href=\"https://wordpress.org/plugins/wp-dbmanager/faq/\">FAQ section</a>."
+msgstr ""
+
+#. Found in description paragraph.
+msgid "Allows you to optimize database, repair database, backup database, restore database, delete backup database , drop/empty tables and run selected queries. Supports automatic scheduling of backing up, optimizing and repairing of database."
+msgstr ""
+
+#. Found in description paragraph.
+msgid "<a href=\"https://travis-ci.org/lesterchan/wp-dbmanager\"></a>"
+msgstr ""
+
+#. Found in installation list item, remaining content list item.
+msgid "Open <code>wp-content/plugins</code> Folder"
+msgstr ""
+
+#. Found in installation list item.
+msgid "Put: <code>Folder: wp-dbmanager</code>"
+msgstr ""
+
+#. Found in installation list item, remaining content list item.
+msgid "Activate <code>WP-DBManager</code> Plugin"
+msgstr ""
+
+#. Found in installation list item.
+msgid "The script will automatically create a folder called <code>backup-db</code> in the wp-content folder if that folder is writable. If it is not created, please create the folder and ensure that the folder is writable"
+msgstr ""
+
+#. Found in installation list item.
+msgid "Open <code>Folder: wp-content/backup-db</code>"
+msgstr ""
+
+#. Found in installation list item.
+msgid "If you are on Apache, move the <code>htaccess.txt</code> file from <code>Folder: wp-content/plugins/wp-dbmanager</code> to <code>Folder: wp-content/backup-db/.htaccess</code> if it is not there already"
+msgstr ""
+
+#. Found in installation list item.
+msgid "If you are on IIS, move the <code>Web.config.txt</code> file from <code>Folder: wp-content/plugins/wp-dbmanager</code> to <code>Folder: wp-content/backup-db/Web.config</code> if it is not there already"
+msgstr ""
+
+#. Found in installation list item.
+msgid "Move <code>index.php</code> file from <code>Folder: wp-content/plugins/wp-dbmanager</code> to <code>Folder: wp-content/backup-db/index.php</code> if it is not there already"
+msgstr ""
+
+#. Found in installation list item.
+msgid "Go to <code>WP-Admin -&gt; Database -&gt; DB Options</code> to configure the database options"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: escapeshellcmd on Windows. Props Gregory Karpinsky. "
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Move wp_mkdir_p() up before if check. Props Scott Allen."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Blank screen downloading backup"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Remove MySQL Version check to display tables stats"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Add wp_dbmanager_before_escapeshellcmd action just before escapeshellcmd()"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Missing / for Windows"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: When activating the plugin, copy index.php to the backup folder"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: If you are on Apache, .htaccess will be copied to the backup folder, if you are on IIS, Web.config will be copied to the backup folder"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: When choosing 1 Month(s) for Backup/Optimize/Repair, the next date calculation is wrong"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: escapeshellarg() already escape $, no need to double escape it"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Unable to backup/restore database if user database password has certain special characters in them"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Use escapeshellcmd() to escape shell commands. Props Larry W. Cashdollari."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Do not allow LOAD_FILE to be run. Props Larry W. Cashdollari."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Uses dbmanager_is_valid_path() to check for mysql and mysqldump path. Fixes arbitrary command injection using backup path. Props Larry W. Cashdollari."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Uses realpath() to check for backup path. Fixes arbitrary command injection using backup path. Props Larry W. Cashdollari."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Bump to 4.0"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "New: Uses WordPress 3.9 Dashicons"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Allow you to hide admin notices in the DB Options page"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Allow Multisite Network Activate"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Uses WordPress uninstall.php file to uninstall the plugin"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Uses wp_mail() to send email instead of PHP mail()"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: New From E-mail, From Name &amp; Subject template"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Issues with email from field if site title contains , (comma)"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Notices"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Set default character set to UTF-8. Props Karsonito"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Use intval() instead of is_int() when checking for port number. Props <a href=\"http://webbyscots.com/\" title=\"Webby Scots\">Webby Scots</a>"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Added Auto Repair Functionality"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Added nonce To All Forms For Added Security"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Checks File Extension And Sanitise File Name That Is Pass Through The URL When Downloading Database File. Props to <a href=\"http://jardenberg.se\" title=\"Joakim Jardenberg\">Joakim Jardenberg</a>, <a href=\"http://jonasnordstrom.se\" title=\"Jonas Nordstram\">Jonas Nordstram</a>, <a href=\"http://andreasviklund.com/\" title=\"Andreas Viklund\">Andreas Viklund</a>"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Bug In Cron Backup On Windows Server"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Works For WordPress 2.8 Only"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Uses jQuery Framework"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Ensure That .htaccess Is In Backup Folder By Informing The User If It Is NOT There"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Use _n() Instead Of __ngettext() And _n_noop() Instead Of __ngettext_noop()"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Uses $_SERVER['PHP_SELF'] With plugin_basename(<strong>FILE</strong>) Instead Of Just $_SERVER['REQUEST_URI']"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Works For WordPress 2.7 Only"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Load Admin JS And CSS Only In WP-DBManager Admin Pages"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Added database-admin-css.css For WP-DBManager Admin CSS Styles"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Uses admin_url(), plugins_url() And site_url()"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Better Translation Using __ngetext() by Anna Ozeritskaya"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Right To Left Language Support by Kambiz R. Khojasteh"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: SSL Support"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Bug In Downloading Backups In Other Languages by Kambiz R. Khojasteh"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Bug In Backup/Restore On Windows Server When Path To mysqldump/mysql Or Backup File Contains Space Kambiz R. Khojasteh"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: In database-manage.php, $nice_file_date Was Calculated More Than Once by Kambiz R. Khojasteh"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Returning Only DBManager Cron Schedules"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Works For WordPress 2.6"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Unable To Optimize Or Repair Tables If Table Name Contains - (dash)"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Uses /wp-dbmanager/ Folder Instead Of /dbmanager/"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Uses wp-dbmanager.php Instead Of dbmanager.php"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Added Minute(s) Option To Backup And Optimize Cron Jobs"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Uses GiB, MiB, KiB Instead Of GB, MB, KB"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Added --skip-lock-tables Argument When Backing Up Database"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Limit The Maximum Number Of Backup Files In The Backup Folder"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Ability To Uninstall WP-DBManager"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Sort Database Backup Files By Date In Descending Order"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Added Repair Database Feature"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Automatic Scheduling Of Backing Up And Optimizing Of Database"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Works For WordPress 2.1 Only"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Removed database-config.php"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Localize WP-DBManager"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Added The Ability To Auto Detect MYSQL And MYSQL Dump Path"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Database Table Names Not Appearing Correctly"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: DBManager Administration Panel Is XHTML 1.0 Transitional"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Unable To Download Backup DB Due To Header Sent Error"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Some XHTML Code Fixes"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Run Query Box Too Big"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Header Sent Error"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Extra Slashes For Mysql/Mysql Dump Path"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Mismatch Date Due To GMT"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Improved On 'manage_database' Capabilities"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Added GigaBytes To File Size"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Added ALTER Statement To Allowed Queries"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Able To Empty/Drop Tables"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Able To EMail Database Backup File"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Splitted database-manager.php Into Individual Files"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Merge Restore And Delete Backup Database"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Included .htaccess File To Protect Backup Folder"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Checking Of Backup Status"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Using Old Method To Add Submenu"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: PHP Short Tags"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Redirect Back To The Same Page Instead Of Manage Database Page After Submitting Form"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Added 'manage_database' Capabilities To Administrator Role"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: Compatible With WordPress 2.0 Only"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "NEW: GPL License Added"
+msgstr ""
+
+#. Found in faq header.
+msgid "My database is not backed up / My backup file is 0Kb"
+msgstr ""
+
+#. Found in faq header.
+msgid "What is the difference between WP-DBManager and WP-DB-Backup?"
+msgstr ""
+
+#. Found in faq header.
+msgid "Why do I get the message \"Warning: Your backup folder MIGHT be visible to the public!\"?"
+msgstr ""
+
+#. Found in faq list item.
+msgid "Ensure that your host allows you to access mysqldump. You can try to narrow the problem by Debugging via SSH:"
+msgstr ""
+
+#. Found in faq list item.
+msgid "In <code>wp-dbmanager.php</code>"
+msgstr ""
+
+#. Found in faq list item.
+msgid "Find <code>check_backup_files();</code> on line 230"
+msgstr ""
+
+#. Found in faq list item.
+msgid "Add below it <code>echo $command;</code>"
+msgstr ""
+
+#. Found in faq list item.
+msgid "Go to <code>WP-Admin -&gt; Database -&gt; Backup</code>"
+msgstr ""
+
+#. Found in faq list item.
+msgid "Click <code>Backup</code>"
+msgstr ""
+
+#. Found in faq list item.
+msgid "It should print some debugging statements"
+msgstr ""
+
+#. Found in faq list item.
+msgid "Copy that line than run it in SSH"
+msgstr ""
+
+#. Found in faq list item.
+msgid "If you need help on SSH contact your host or google for more info"
+msgstr ""
+
+#. Found in faq list item.
+msgid "WP-DBManager uses <code>mysqldump</code> application to generate the backup and <code>mysql</code> application to restore them via shell."
+msgstr ""
+
+#. Found in faq list item.
+msgid "WP-DB-Backup uses PHP to generate the backup. In some cases WP-DB-Backup will work better for you because it requires less permissions. Not all host allows you to access mysqldump/mysql directly via shell."
+msgstr ""
+
+#. Found in faq list item.
+msgid "WP-DBManager allows you to have automatic optimizing and repairing of database on top of backing up of database."
+msgstr ""
+
+#. Found in faq list item.
+msgid "Ensure that you have renamed <code>htaccess.txt</code> to <code>.htaccess</code> and placed it in your backup folder (defaults to <code>wp-content/backup-db/</code>)"
+msgstr ""
+
+#. Found in faq list item.
+msgid "If you are 100% sure you have did that and have verfied that the folder no longer is accessible to the public by visiting the URL <code>http://yousite.com/wp-content/backup-db/</code>, you can safely disable the notice by going to <code>WP-Admin -&gt; Database -&gt; DB Options</code> and set <code>Hide Admin Notices</code> to <code>Yes</code>."
+msgstr ""
+
+#. Found in remaining content header.
+msgid "Upgrading"
+msgstr ""
+
+#. Found in remaining content list item.
+msgid "Deactivate <code>WP-DBManager</code> Plugin"
+msgstr ""
+
+#. Found in remaining content list item.
+msgid "Put/Overwrite: <code>Folder: wp-dbmanager</code>"
+msgstr ""
+
+#. Found in remaining content list item.
+msgid "Go to <code>WP-Admin -&gt; Database -&gt; DB Options</code> to re-configure the database options."
+msgstr ""

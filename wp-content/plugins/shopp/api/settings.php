@@ -1,32 +1,32 @@
 <?php
 /**
- * settings
+ * Settings API
  *
- * plugin API for getting, setting/creating, and deleting Shopp settings.
+ * API for getting, setting/creating, and deleting Shopp settings.
  *
- * @author Jonathan Davis, John Dillick
- * @version 1.0
  * @copyright Ingenesis Limited, June 23, 2011
- * @license GNU GPL version 3 (or later) {@see license.txt}
- * @package shopp
- * @since 1.2
- * @subpackage shopp
+ * @license   GNU GPL version 3 (or later) {@see license.txt}
+ * @package   Shopp/API/Settings
+ * @version   1.0
+ * @since     1.2
  **/
 
+defined( 'WPINC' ) || header( 'HTTP/1.1 403' ) & exit; // Prevent direct access
+
 /**
- * shopp_setting - returns a named Shopp setting
+ * Returns a named Shopp setting
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param string $name The name of the setting
- * @return mixed the value saved to the named setting, or false if not set.  returns null if empty name is provided
+ * @return mixed The value saved to the named setting, or false if not set.  returns null if empty name is provided
  **/
 function shopp_setting ( $name ) {
 	$setting = null;
 
 	if ( empty($name) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: Setting name parameter required.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: Setting name parameter required.");
 		return false;
 	}
 
@@ -38,7 +38,7 @@ function shopp_setting ( $name ) {
 /**
  * Returns true or false if the setting is toggled on or off
  *
- * @author Jonathan Davis
+ * @api
  * @since 1.2
  *
  * @param string $name The name of the setting
@@ -46,22 +46,22 @@ function shopp_setting ( $name ) {
  **/
 function shopp_setting_enabled ( $name ) {
 	$setting = shopp_setting($name);
-	return str_true($setting);
+	return Shopp::str_true($setting);
 }
 
 /**
- * shopp_set_setting - saves a name value pair as a Shopp setting
+ * Saves a name value pair as a Shopp setting
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
- * @param string $name The name of the setting that is to be stored.
- * @param mixed $value The value saved to the named setting.
+ * @param string $name  The name of the setting that is to be stored.
+ * @param mixed  $value The value saved to the named setting.
  * @return bool true on success, false on failure.
  **/
 function shopp_set_setting ( $name, $value ) {
 	if ( empty($name) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: Setting name parameter required.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: Setting name parameter required.");
 		return false;
 	}
 
@@ -70,35 +70,35 @@ function shopp_set_setting ( $name, $value ) {
 }
 
 /**
- * shopp_rmv_setting - deletes a named setting
+ * Deletes a named setting
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param string $name Name of the Shopp setting to be deleted
  * @return bool true on success, false on failure
  **/
-function shopp_rmv_setting ($name) {
+function shopp_rmv_setting ( $name ) {
 	if ( empty($name) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: Setting name parameter required.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: Setting name parameter required.");
 		return false;
 	}
 	return ShoppSettings()->delete($name);
 }
 
 /**
- * shopp_set_formsettings - saves a name value pair as a Shopp setting
+ * Saves all form POST submitted data to Shopp settings entries
  *
- * @author Jonathan Davis
+ * @api
  * @since 1.2
  *
- * @param string $name The name of the setting that is to be stored.
- * @param mixed $value The value saved to the named setting.
+ * @param string $name  The name of the setting that is to be stored.
+ * @param mixed  $value The value saved to the named setting.
  * @return bool true on success, false on failure.
  **/
 function shopp_set_formsettings () {
 	if (empty($_POST['settings']) || !is_array($_POST['settings'])) {
-		if (SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: Setting name parameter required.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: Setting name parameter required.");
 		return false;
 	}
 	ShoppSettings()->saveform();
@@ -108,7 +108,7 @@ function shopp_set_formsettings () {
 /**
  * shopp_set_image_setting - saves an image setting
  *
- * The settings accept:
+ * The settings parameter accepts:
  * 		width => (pixel width)
  * 		height => (pixel height)
  * 		size => (pixels, sets width and height)
@@ -117,16 +117,16 @@ function shopp_set_formsettings () {
  * 		sharpen => (0-100 sharpen percentage)
  * 		bg => (hex color, such as red: #ff0000)
  *
- * @author Jonathan Davis
+ * @api
  * @since 1.2
  *
- * @param string $name The name of the setting that is to be stored.
- * @param array $settings A named array of settings and values, accepts: width, height, size, fit, quality, sharpen, bg
+ * @param string $name     The name of the setting that is to be stored.
+ * @param array  $settings A named array of settings and values, accepts: width, height, size, fit, quality, sharpen, bg
  * @return bool true on success, false on failure.
  **/
-function shopp_set_image_setting ($name,$settings = array()) {
+function shopp_set_image_setting ( $name, array $settings = array() ) {
 	if ( empty($name) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: Setting name parameter required.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: Setting name parameter required.");
 		return false;
 	}
 
@@ -156,5 +156,3 @@ function shopp_set_image_setting ($name,$settings = array()) {
 	$ImageSetting->save();
 	return true;
 }
-
-?>

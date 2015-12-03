@@ -8,7 +8,7 @@
  */
 
 /** Load WordPress Administration Bootstrap */
-require_once( './admin.php' );
+require_once( dirname( __FILE__ ) . '/admin.php' );
 
 if ( ! is_multisite() )
 	wp_die( __( 'Multisite support is not enabled.' ) );
@@ -29,8 +29,8 @@ get_current_screen()->add_help_tab( array(
 
 get_current_screen()->set_help_sidebar(
 	'<p><strong>' . __('For more information:') . '</strong></p>' .
-	'<p>' . __('<a href="http://codex.wordpress.org/Network_Admin_Sites_Screen" target="_blank">Documentation on Site Management</a>') . '</p>' .
-	'<p>' . __('<a href="http://wordpress.org/support/forum/multisite/" target="_blank">Support Forums</a>') . '</p>'
+	'<p>' . __('<a href="https://codex.wordpress.org/Network_Admin_Sites_Screen" target="_blank">Documentation on Site Management</a>') . '</p>' .
+	'<p>' . __('<a href="https://wordpress.org/support/forum/multisite/" target="_blank">Support Forums</a>') . '</p>'
 );
 
 $id = isset( $_REQUEST['id'] ) ? intval( $_REQUEST['id'] ) : 0;
@@ -39,8 +39,12 @@ if ( ! $id )
 	wp_die( __('Invalid site ID.') );
 
 $details = get_blog_details( $id );
+if ( ! $details ) {
+	wp_die( __( 'The requested site does not exist.' ) );
+}
+
 if ( !can_edit_network( $details->site_id ) )
-	wp_die( __( 'You do not have permission to access this page.' ) );
+	wp_die( __( 'You do not have permission to access this page.' ), 403 );
 
 $is_main_site = is_main_site( $id );
 
@@ -49,19 +53,20 @@ if ( isset($_REQUEST['action']) && 'update-site' == $_REQUEST['action'] && is_ar
 
 	switch_to_blog( $id );
 
-	$c = 1;
-	$count = count( $_POST['option'] );
 	$skip_options = array( 'allowedthemes' ); // Don't update these options since they are handled elsewhere in the form.
 	foreach ( (array) $_POST['option'] as $key => $val ) {
+		$key = wp_unslash( $key );
+		$val = wp_unslash( $val );
 		if ( $key === 0 || is_array( $val ) || in_array($key, $skip_options) )
 			continue; // Avoids "0 is a protected WP option and may not be modified" error when edit blog options
-		if ( $c == $count )
-			update_option( $key, stripslashes( $val ) );
-		else
-			update_option( $key, stripslashes( $val ), false ); // no need to refresh blog details yet
-		$c++;
+		update_option( $key, $val );
 	}
 
+/**
+ * Fires after the site options are updated.
+ *
+ * @since 3.0.0
+ */
 	do_action( 'wpmu_update_blog_options' );
 	restore_current_blog();
 	wp_redirect( add_query_arg( array( 'update' => 'updated', 'id' => $id ), 'site-settings.php') );
@@ -74,20 +79,18 @@ if ( isset($_GET['update']) ) {
 		$messages[] = __('Site options updated.');
 }
 
-$site_url_no_http = preg_replace( '#^http(s)?://#', '', get_blogaddress_by_id( $id ) );
-$title_site_url_linked = sprintf( __('Edit Site: <a href="%1$s">%2$s</a>'), get_blogaddress_by_id( $id ), $site_url_no_http );
-$title = sprintf( __('Edit Site: %s'), $site_url_no_http );
+$title = sprintf( __( 'Edit Site: %s' ), esc_html( $details->blogname ) );
 
 $parent_file = 'sites.php';
 $submenu_file = 'sites.php';
 
-require('../admin-header.php');
+require( ABSPATH . 'wp-admin/admin-header.php' );
 
 ?>
 
 <div class="wrap">
-<?php screen_icon('ms-admin'); ?>
-<h2 id="edit-site"><?php echo $title_site_url_linked ?></h2>
+<h1 id="edit-site"><?php echo $title; ?></h1>
+<p class="edit-site-actions"><a href="<?php echo esc_url( get_home_url( $id, '/' ) ); ?>"><?php _e( 'Visit' ); ?></a> | <a href="<?php echo esc_url( get_admin_url( $id ) ); ?>"><?php _e( 'Dashboard' ); ?></a></p>
 <h3 class="nav-tab-wrapper">
 <?php
 $tabs = array(
@@ -105,7 +108,7 @@ foreach ( $tabs as $tab_id => $tab ) {
 <?php
 if ( ! empty( $messages ) ) {
 	foreach ( $messages as $msg )
-		echo '<div id="message" class="updated"><p>' . $msg . '</p></div>';
+		echo '<div id="message" class="updated notice is-dismissible"><p>' . $msg . '</p></div>';
 } ?>
 <form method="post" action="site-settings.php?action=update-site">
 	<?php wp_nonce_field( 'edit-site' ); ?>
@@ -113,7 +116,14 @@ if ( ! empty( $messages ) ) {
 	<table class="form-table">
 		<?php
 		$blog_prefix = $wpdb->get_blog_prefix( $id );
-		$options = $wpdb->get_results( "SELECT * FROM {$blog_prefix}options WHERE option_name NOT LIKE '\_%' AND option_name NOT LIKE '%user_roles'" );
+		$sql = "SELECT * FROM {$blog_prefix}options
+			WHERE option_name NOT LIKE %s
+			AND option_name NOT LIKE %s";
+		$query = $wpdb->prepare( $sql,
+			$wpdb->esc_like( '_' ) . '%',
+			'%' . $wpdb->esc_like( 'user_roles' )
+		);
+		$options = $wpdb->get_results( $query );
 		foreach ( $options as $option ) {
 			if ( $option->option_name == 'default_role' )
 				$editblog_default_role = $option->option_value;
@@ -121,7 +131,7 @@ if ( ! empty( $messages ) ) {
 			$class = 'all-options';
 			if ( is_serialized( $option->option_value ) ) {
 				if ( is_serialized_string( $option->option_value ) ) {
-					$option->option_value = esc_html( maybe_unserialize( $option->option_value ), 'single' );
+					$option->option_value = esc_html( maybe_unserialize( $option->option_value ) );
 				} else {
 					$option->option_value = 'SERIALIZED DATA';
 					$disabled = true;
@@ -131,14 +141,14 @@ if ( ! empty( $messages ) ) {
 			if ( strpos( $option->option_value, "\n" ) !== false ) {
 			?>
 				<tr class="form-field">
-					<th scope="row"><?php echo ucwords( str_replace( "_", " ", $option->option_name ) ) ?></th>
+					<th scope="row"><label for="<?php echo esc_attr( $option->option_name ) ?>"><?php echo ucwords( str_replace( "_", " ", $option->option_name ) ) ?></label></th>
 					<td><textarea class="<?php echo $class; ?>" rows="5" cols="40" name="option[<?php echo esc_attr( $option->option_name ) ?>]" id="<?php echo esc_attr( $option->option_name ) ?>"<?php disabled( $disabled ) ?>><?php echo esc_textarea( $option->option_value ) ?></textarea></td>
 				</tr>
 			<?php
 			} else {
 			?>
 				<tr class="form-field">
-					<th scope="row"><?php echo esc_html( ucwords( str_replace( "_", " ", $option->option_name ) ) ); ?></th>
+					<th scope="row"><label for="<?php echo esc_attr( $option->option_name ) ?>"><?php echo esc_html( ucwords( str_replace( "_", " ", $option->option_name ) ) ); ?></label></th>
 					<?php if ( $is_main_site && in_array( $option->option_name, array( 'siteurl', 'home' ) ) ) { ?>
 					<td><code><?php echo esc_html( $option->option_value ) ?></code></td>
 					<?php } else { ?>
@@ -148,6 +158,13 @@ if ( ! empty( $messages ) ) {
 			<?php
 			}
 		} // End foreach
+		/**
+		 * Fires at the end of the Edit Site form, before the submit button.
+		 *
+		 * @since 3.0.0
+		 *
+		 * @param int $id Site ID.
+		 */
 		do_action( 'wpmueditblogaction', $id );
 		?>
 	</table>
@@ -156,4 +173,4 @@ if ( ! empty( $messages ) ) {
 
 </div>
 <?php
-require('../admin-footer.php');
+require( ABSPATH . 'wp-admin/admin-footer.php' );

@@ -1,8 +1,12 @@
 <div class="wrap shopp">
-	<?php if (!empty($updated)): ?><div id="message" class="updated fade"><p><?php echo $updated; ?></p></div><?php endif; ?>
 
 	<div class="icon32"></div>
-	<h2><?php _e('Payment Settings','Shopp'); ?></h2>
+	<?php
+
+		shopp_admin_screen_tabs();
+		do_action('shopp_admin_notices');
+
+	?>
 
 <form action="<?php echo $this->url; ?>" id="payments" method="post">
 <div>
@@ -12,7 +16,7 @@
 <div class="tablenav"><div class=" actions">
 	<select name="id" id="payment-option-menu">
 	<option><?php _e('Add a payment system&hellip;','Shopp'); ?></option>
-	<?php echo menuoptions($installed,false,true); ?>
+	<?php echo Shopp::menuoptions($installed,false,true); ?>
 	</select>
 	<button type="submit" name="add-payment-option" id="add-payment-option" class="button-secondary hide-if-js" tabindex="9999"><?php _e('Add Payment Option','Shopp'); ?></button>
 	</div>
@@ -33,14 +37,11 @@
 				'${cancel_href}' => $this->url,
 				'${instance}' => $id
 			);
-			$editor = str_replace(array_keys($template_data),$template_data,$editor);
-			$editor = preg_replace('/\${\w+}/','',$editor);
-
-			echo $editor;
+			echo ShoppUI::template($editor,$template_data);
 		}
 
 		if (count($gateways) == 0 && !$edit): ?>
-			<tr id="no-payment-settings"><td colspan="6"><?php _e('No payment methods, yet.','Shopp'); ?></td></tr>
+			<tr id="no-payment-settings"><td colspan="7"><?php _e('No payment methods, yet.','Shopp'); ?></td></tr>
 		<?php
 		endif;
 
@@ -85,10 +86,9 @@
 				// Handle payment data value substitution for multi-instance payment systems
 				foreach ($payment as $name => $value)
 					$template_data['${'.$name.'}'] = $value;
-				$editor = str_replace(array_keys($template_data),$template_data,$editor);
-				$editor = preg_replace('/\${\w+}/','',$editor);
 
-				echo $editor;
+				echo ShoppUI::template($editor,$template_data);
+
 				if ( $edit == $slug ) continue;
 			}
 
@@ -104,17 +104,17 @@
 		<?php // @todo Add title hover labels for accessibility/instructions ?>
 		<td class="processor column-processor"><?php echo esc_html($Gateway->name); ?></td>
 		<td class="supported column-supported"><?php echo join(', ',$cards); ?></td>
-		<td class="ssl column-ssl">
-			<div class="checkbox"><?php if ($Gateway->secure): ?><div class="checked">&nbsp;</div><?php else: ?>&nbsp;<?php endif; ?></div>
+		<td class="ssl column-ssl"><?php $title = $Gateway->secure ? Shopp::__('SSL/TLS Required'): Shopp::__('No SSL/TLS Required'); ?>
+			<div class="checkbox<?php echo $Gateway->secure ? ' checked' : '';  ?>" title="<?php echo $title; ?>"><span class="hidden"><?php echo $title; ?></div>
 		</td>
-		<td class="captures column-captures">
-			<div class="checkbox"><?php if ($Gateway->captures): ?><div class="checked">&nbsp;</div><?php else: ?>&nbsp;<?php endif; ?></div>
+		<td class="captures column-captures"><?php $title = $Gateway->captures ? Shopp::__('Supports delayed payment capture') : Shopp::__('No delayed payment capture support'); ?>
+			<div class="checkbox<?php echo $Gateway->captures ? ' checked' : '';  ?>" title="<?php echo $title; ?>"><span class="hidden"><?php echo $title; ?></div>
 		</td>
-		<td class="recurring column-recurring">
-			<div class="checkbox"><?php if ($Gateway->recurring): ?><div class="checked">&nbsp;</div><?php else: ?>&nbsp;<?php endif; ?></div>
+		<td class="recurring column-recurring"><?php $title = $Gateway->captures ? Shopp::__('Supports recurring payments') : Shopp::__('No recurring payment support'); ?>
+			<div class="checkbox<?php echo $Gateway->recurring ? ' checked' : '';  ?>" title="<?php echo $title; ?>"><span class="hidden"><?php echo $title; ?></div>
 		</td>
-		<td class="refunds column-refunds">
-			<div class="checkbox"><?php if ($Gateway->refunds): ?><div class="checked">&nbsp;</div><?php else: ?>&nbsp;<?php endif; ?></div>
+		<td class="refunds column-refunds"><?php $title = $Gateway->captures ? Shopp::__('Supports refund and void processing') : Shopp::__('No refund or void support'); ?>
+			<div class="checkbox<?php echo $Gateway->refunds ? ' checked' : '';  ?>" title="<?php echo $title; ?>"><span class="hidden"><?php echo $title; ?></div>
 		</td>
 	</tr>
 	<?php endforeach; ?>

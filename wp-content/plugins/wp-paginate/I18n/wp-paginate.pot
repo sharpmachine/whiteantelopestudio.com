@@ -1,7 +1,7 @@
-# Translation of the WordPress plugin WP-Paginate 1.1.2 by Eric Martin.
-# Copyright (C) 2010 Eric Martin
+# Translation of the WordPress plugin WP-Paginate 1.1.2 by Noah Cinquini.
+# Copyright 2014 Studio Fuel (http://www.studiofuel.com)
 # This file is distributed under the same license as the WP-Paginate package.
-# Eric Martin <eric@ericmmartin.com>, 2010.
+# Noah Cinquini <noah@studiofuel.com>, 2014.
 #
 #, fuzzy
 msgid ""
@@ -134,7 +134,7 @@ msgid ""
 msgstr ""
 
 #: wp-paginate.php:382
-msgid "Like To Contribute?"
+msgid "Want To Contribute?"
 msgstr ""
 
 #: wp-paginate.php:383
@@ -172,7 +172,7 @@ msgid "WP-Paginate"
 msgstr ""
 
 #. Plugin URI of the plugin/theme
-msgid "http://www.ericmmartin.com/projects/wp-paginate/"
+msgid "http://www.studiofuel.com/wp-paginate/"
 msgstr ""
 
 #. Description of the plugin/theme
@@ -181,9 +181,9 @@ msgid ""
 msgstr ""
 
 #. Author of the plugin/theme
-msgid "Eric Martin"
+msgid "Noah Cinquini"
 msgstr ""
 
 #. Author URI of the plugin/theme
-msgid "http://www.ericmmartin.com"
+msgid "http://www.studiofuel.com"
 msgstr ""

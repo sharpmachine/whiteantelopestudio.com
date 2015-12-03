@@ -45,7 +45,7 @@
 <li class="panel subpanel ${type}">
 	<div class="label">
 		<label>${label}</label>
-		<button type="button" name="delete" class="delete"><img src="<?php echo SHOPP_PLUGINURI; ?>/core/ui/icons/delete.png" alt="-" width="16" height="16" /></button>
+		<php echo ShoppUI::button('delete','delete'); ?>
 	</div>
 	<div class="ui"></div>
 </li>
@@ -100,7 +100,7 @@ var sugg_url = '<?php echo wp_nonce_url(admin_url("admin-ajax.php"), "wp_ajax_sh
 	pluginuri = <?php echo json_encode(SHOPP_PLUGINURI); ?>,
 	rule_groups = <?php echo json_encode($rulegroups); ?>,
 	rule_types = <?php echo json_encode($ruletypes); ?>,
-	bill_periods = <?php echo json_encode(Price::periods()); ?>,
+	bill_periods = <?php echo json_encode(ShoppPrice::periods()); ?>,
 	rules = <?php echo json_encode($MemberPlan->stages); ?>,
 	STAGE_LABEL = <?php _jse('Content Access Rules','Shopp'); ?>,
 	STAGES_LABEL = <?php _jse('Step','Shopp'); ?>,

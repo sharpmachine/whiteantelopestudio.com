@@ -7,7 +7,7 @@ if (!defined('W3TC')) {
     die();
 }
 
-require_once W3TC_LIB_W3_DIR . '/Plugin.php';
+w3_require_once(W3TC_LIB_W3_DIR . '/Plugin.php');
 
 /**
  * Class W3_Plugin_BrowserCache
@@ -24,35 +24,22 @@ class W3_Plugin_BrowserCache extends W3_Plugin {
             ));
         }
 
-        if ($this->can_ob()) {
-            ob_start(array(
+        if (!$this->_config->get_boolean('browsercache.html.etag')) {
+            add_filter('wp_headers', array(
                 &$this,
-                'ob_callback'
-            ));
+                'filter_wp_headers')
+                ,0,2);
         }
-    }
 
-    /**
-     * Instantiates worker with admin functionality on demand
-     *
-     * @return W3_Plugin_BrowserCacheAdmin
-     */
-    function &get_admin() {
-        return w3_instance('W3_Plugin_BrowserCacheAdmin');
-    }
+        if ($this->can_ob()) {
+            w3tc_add_ob_callback('browsercache', array($this,'ob_callback'));
 
-    /**
-     * Activate plugin action (called by W3_PluginProxy)
-     */
-    function activate() {
-        $this->get_admin()->activate();
-    }
-
-    /**
-     * Deactivate plugin action (called by W3_PluginProxy)
-     */
-    function deactivate() {
-        $this->get_admin()->deactivate();
+            // modify CDN urls too
+            add_filter('w3tc_cdn_url', array(
+                &$this,
+                'w3tc_cdn_url')
+                ,0, 2);
+        }
     }
 
     /**
@@ -130,7 +117,7 @@ class W3_Plugin_BrowserCache extends W3_Plugin {
         if ($buffer != '' && w3_is_xml($buffer)) {
             $domain_url_regexp = w3_get_domain_url_regexp();
 
-            $buffer = preg_replace_callback('~(href|src|action)=[\'"]((' . $domain_url_regexp . ')?(/[^\'"]*\.([a-z-_]+)(\?[^\'"]*)?))[\'"]~Ui', array(
+            $buffer = preg_replace_callback('~(href|src|action|extsrc|asyncsrc|w3tc_load_js\()=?[\'"]((' . $domain_url_regexp . ')?(/[^\'"]*\.([a-z-_]+)(\?[^\'"]*)?))[\'"]~Ui', array(
                 &$this,
                 'link_replace_callback'
             ), $buffer);
@@ -146,26 +133,66 @@ class W3_Plugin_BrowserCache extends W3_Plugin {
      * @return string
      */
     function link_replace_callback($matches) {
-        static $id = null, $extensions = null;
-
-        if ($id === null) {
-            $id = $this->get_replace_id();
-        }
-
-        if ($extensions === null) {
-            $extensions = $this->get_replace_extensions();
-        }
-
         list ($match, $attr, $url, , , , , $extension) = $matches;
 
-        if (in_array($extension, $extensions)) {
-            $url = w3_remove_query($url);
-            $url .= (strstr($url, '?') !== false ? '&amp;' : '?') . $id;
+        if (!$this->_url_has_to_be_replaced($url, $extension))
+            return $match;
 
+        static $id = null;
+        if ($id === null)
+            $id = $this->get_replace_id();
+
+        $url = w3_remove_query($url);
+        $url .= (strstr($url, '?') !== false ? '&amp;' : '?') . $id;
+
+        if ($attr != 'w3tc_load_js(')
             return sprintf('%s="%s"', $attr, $url);
+        return sprintf('%s\'%s\'', $attr, $url);
+    }
+
+    /**
+     * Link replace for CDN url
+     *
+     * @param string $matches
+     * @return string
+     */
+    function w3tc_cdn_url($url, $original_url) {
+        // decouple extension
+        $matches = array();
+        if (!preg_match('/\.([a-zA-Z0-9]+)$/', $original_url, $matches))
+            return $url;
+        $extension = $matches[1];
+
+        if (!$this->_url_has_to_be_replaced($original_url, $extension))
+            return $url;
+
+        static $id = null;
+        if ($id === null)
+            $id = $this->get_replace_id();
+
+        $url .= (strstr($url, '?') !== false ? '&amp;' : '?') . $id;
+        return $url;
+    }
+
+    function _url_has_to_be_replaced($url, $extension) {
+        static $extensions = null;
+        if ($extensions === null)
+            $extensions = $this->get_replace_extensions();
+
+        static $exceptions = null;
+        if ($exceptions === null)
+            $exceptions = $this->_config->get_array('browsercache.replace.exceptions');
+
+        if (!in_array($extension, $extensions))
+            return false;
+
+        $test_url = w3_remove_query($url);
+        foreach ($exceptions as $exception) {
+            if (trim($exception) && preg_match('/' . $exception . '/',$test_url))
+                return false;
         }
 
-        return $match;
+        return true;
     }
 
     /**
@@ -198,7 +225,8 @@ class W3_Plugin_BrowserCache extends W3_Plugin {
                 'browsercache.other.cache.control',
                 'browsercache.other.cache.policy',
                 'browsercache.other.etag',
-                'browsercache.other.w3tc'
+                'browsercache.other.w3tc',
+                'browsercache.timestamp'
             );
 
             $values = array();
@@ -293,13 +321,11 @@ class W3_Plugin_BrowserCache extends W3_Plugin {
     function get_cache_config() {
         $config = array();
 
-        $cssjs_types = $this->_get_cssjs_types();
-        $html_types = $this->_get_html_types();
-        $other_types = $this->_get_other_types();
+        $e = w3_instance('W3_BrowserCacheAdminEnvironment');
+        $mime_types = $e->get_mime_types();
 
-        $this->_get_cache_config($config, $cssjs_types, 'cssjs');
-        $this->_get_cache_config($config, $html_types, 'html');
-        $this->_get_cache_config($config, $other_types, 'other');
+        foreach ($mime_types as $type => $extensions)
+            $this->_get_cache_config($config, $extensions, $type);
 
         return $config;
     }
@@ -308,7 +334,7 @@ class W3_Plugin_BrowserCache extends W3_Plugin {
      * Writes cache config
      *
      * @param string $config
-     * @param string $mime_types
+     * @param array $mime_types
      * @param array $section
      * @return void
      */
@@ -321,12 +347,35 @@ class W3_Plugin_BrowserCache extends W3_Plugin {
         $w3tc = $this->_config->get_boolean('browsercache.' . $section . '.w3tc');
 
         foreach ($mime_types as $mime_type) {
-            $config[$mime_type] = array(
-                'etag' => $etag,
-                'w3tc' => $w3tc,
-                'lifetime' => ($expires ? $lifetime : 0),
-                'cache_control' => ($cache_control ? $cache_policy : false)
-            );
+            if (is_array($mime_type)) {
+                foreach($mime_type as $mime_type2)
+                    $config[$mime_type2] = array(
+                        'etag' => $etag,
+                        'w3tc' => $w3tc,
+                        'lifetime' => $lifetime,
+                        'expires' => $expires,
+                        'cache_control' => ($cache_control ? $cache_policy : false)
+                    );
+            } else
+                $config[$mime_type] = array(
+                    'etag' => $etag,
+                    'w3tc' => $w3tc,
+                    'lifetime' => $lifetime,
+                    'expires' => $expires,
+                    'cache_control' => ($cache_control ? $cache_policy : false)
+                );
         }
+    }
+
+    /**
+     * Filters headers set by WordPress
+     * @param $headers
+     * @param $wp
+     * @return
+     */
+    function filter_wp_headers($headers, $wp) {
+        if (!empty($wp->query_vars['feed']))
+            unset($headers['ETag']);
+        return $headers;
     }
 }

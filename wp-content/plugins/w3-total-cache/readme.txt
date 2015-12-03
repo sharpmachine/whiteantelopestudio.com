@@ -1,21 +1,23 @@
 === Plugin Name ===
 Contributors: fredericktownes
-Tags: user experience, cache, caching, page cache, css cache, js cache, db cache, disk cache, disk caching, database cache, http compression, gzip, deflate, minify, cdn, content delivery network, media library, performance, speed, multiple hosts, css, merge, combine, unobtrusive javascript, compress, optimize, optimizer, javascript, js, cascading style sheet, plugin, yslow, yui, google, google rank, google page speed, mod_pagespeed, s3, cloudfront, aws, amazon web services, cloud files, rackspace, cotendo, max cdn, limelight, cloudflare, microsoft, microsoft azure, iis, nginx, litespeed, apache, varnish, xcache, apc, eacclerator, wincache, mysql, w3 total cache, batcache, wp cache, wp super cache, buddypress
-Requires at least: 2.8
-Tested up to: 3.5
-Stable tag: 0.9.2.5
+Tags: w3totalcache, w3 totalcache, w3total cache, wpo, web performance optimization, performance, availability, scaling, scalability, user experience, cache, caching, page cache, css cache, js cache, db cache, disk cache, disk caching, database cache, http compression, gzip, deflate, minify, cdn, content delivery network, media library, performance, speed, multiple hosts, css, merge, combine, unobtrusive javascript, compress, optimize, optimizer, javascript, js, cascading style sheet, plugin, yslow, yui, google, google rank, google page speed, mod_pagespeed, new relic, newrelic, aws, s3, cloudfront, sns, elasticache, rds, flash media server, amazon web services, cloud files, rackspace, akamai, max cdn, limelight, cloudflare, mod_cloudflare, microsoft, microsoft azure, iis, nginx, litespeed, apache, varnish, xcache, apc, eacclerator, wincache, mysql, w3 total cache, batcache, wp cache, wp super cache, quick cache, wp minify, bwp-minify, buddypress
+Requires at least: 3.2
+Tested up to: 4.3
+Stable tag: 0.9.4.1
+License: GPLv2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Improve site performance and user experience via caching: browser, page, object, database, minify and content delivery network support.
+Easy Web Performance Optimization (WPO) using caching: browser, page, object, database, minify and content delivery network support.
 
 == Description ==
 
-The **most complete** WordPress performance framework.
+The **only** WordPress Performance Optimization (WPO) framework; designed to improve user experience and page speed.
 
-Recommended by web hosts like: MediaTemple, Host Gator, Page.ly and WP Engine and countless more.
+Recommended by web hosts like: Page.ly, Synthesis, DreamHost, MediaTemple, Go Daddy, Host Gator and countless more.
 
-Trusted by countless sites like: stevesouders.com, mattcutts.com, mashable.com, smashingmagazine.com, makeuseof.com, yoast.com, kiss925.com, pearsonified.com, lockergnome.com, johnchow.com, ilovetypography.com, webdesignerdepot.com, css-tricks.com and tens of thousands of others.
+Trusted by countless companies like: AT&T, stevesouders.com, mattcutts.com, mashable.com, smashingmagazine.com, makeuseof.com, yoast.com, kiss925.com, pearsonified.com, lockergnome.com, johnchow.com, ilovetypography.com, webdesignerdepot.com, css-tricks.com and tens of thousands of others.
 
-W3 Total Cache improves the user experience of your site by improving your server performance, caching every aspect of your site, reducing the download times and providing transparent content delivery network (CDN) integration.
+W3 Total Cache improves the user experience of your site by increasing server performance, reducing the download times and providing transparent content delivery network (CDN) integration.
 
 An inside look:
 
@@ -34,7 +36,7 @@ Benefits:
 Features:
 
 * Compatible with shared hosting, virtual private / dedicated servers and dedicated servers / clusters
-* Transparent content delivery network (CDN) integration with Media Library, theme files and WordPress itself
+* Transparent content delivery network (CDN) management with Media Library, theme files and WordPress itself
 * Mobile support: respective caching of pages by referrer or groups of user agents including theme switching for groups of referrers or user agents
 * Caching of (minified and compressed) pages and posts in memory or on disk or on CDN (mirror only)
 * Caching of (minified and compressed) CSS and JavaScript in memory, on disk or on CDN
@@ -49,6 +51,7 @@ Features:
 * JavaScript grouping by template (home page, post page etc) with embed location control
 * Non-blocking JavaScript embedding
 * Import post attachments directly into the Media Library (and CDN)
+* WP-CLI support for cache purging, query string updating and more
 
 Improve the user experience for your readers without having to change WordPress, your theme, your plugins or how you produce your content.
 
@@ -66,9 +69,23 @@ A thousandth of a second is not a long time, yet the impact is quite significant
 
 Search engines like Google, measure and factor in the speed of web sites in their ranking algorithm. When they recommend a site they want to make sure users find what they're looking for quickly. So in effect you and Google should have the same objective.
 
+Many of the other consequences of poor performance were discovered more than a decade ago:
+
+* Lower perceived credibility (Fogg et al. 2001)
+* Lower perceived quality (Bouch, Kuchinsky, and Bhatti 2000)
+* Increased user frustration (Ceaparu et al. 2004)
+* Increased blood pressure (Scheirer et al. 2002)
+* Reduced flow rates (Novak, Hoffman, and Yung 200)
+* Reduced conversion rates (Akamai 2007)
+* Increased exit rates (Nielsen 2000)
+* Are perceived as less interesting (Ramsay, Barbesi, and Preece 1998)
+* Are perceived as less attractive (Skadberg and Kimmel 2004)
+
+There are a number of [resources](http://www.websiteoptimization.com/speed/tweak/psychology-web-performance/) that have been documenting the role of performance in success on the web, W3 Total Cache exists to give you a framework to tune your application or site without having to do years of research.
+
 = Why is W3 Total Cache better than other cache plugins? =
 
-**It's a complete framework.** Many of the popular cache plugins available do a great job at achieving some performance aims. Our plugin remedies numerous performance reducing aspects of any web site going far beyond merely reducing CPU usage (load) and bandwidth consumption for HTML pages alone. Equally important, the plugin requires no theme modifications, modifications to your .htaccess (mod_rewrite rules) or programming compromises to get started. Most importantly, it's the only plugin designed to optimize all practical hosting environments small or large. The options are many and setup is easy.
+**It's a complete framework.** Most cache plugins available do a great job at achieving a couple of performance aims. Our plugin remedies numerous performance reducing aspects of any web site going far beyond merely reducing CPU usage (load) and bandwidth consumption for HTML pages alone. Equally important, the plugin requires no theme modifications, modifications to your .htaccess (mod_rewrite rules) or programming compromises to get started. Most importantly, it's the only plugin designed to optimize all practical hosting environments small or large. The options are many and setup is easy.
 
 = I've never heard of any of this stuff; my site is fine, no one complains about the speed. Why should I install this? =
 
@@ -76,26 +93,28 @@ Rarely do readers take the time to complain. They typically just stop browsing e
 
 It's in every web site owner's best interest is to make sure that the performance of your site is not hindering its success.
 
-= Which web servers do you support? =
-
-We are aware of no incompatibilities with [apache](http://httpd.apache.org/) 1.3+, [nginx](http://wiki.nginx.org/) 0.7+, , [IIS](http://www.iis.net/) 5+ or [litespeed](http://litespeedtech.com/products/webserver/overview/) 4.0.2+. If there's a web server you feel we should be actively testing (e.g. [lighttpd](http://www.lighttpd.net/)), we're [interested in hearing](mailto:wordpressexperts@w3-edge.com).
-
 = Which WordPress versions are supported? =
 
 To use all features in the suite, a minimum of version WordPress 2.8 with PHP 5 is required. Earlier versions will benefit from our Media Library Importer to get them back on the upgrade path and into a CDN of their choosing.
+
+= Why doesn't minify work for me? =
+
+Great question. W3 Total Cache uses several open source tools to attempt to combine and optimize CSS, JavaScript and HTML etc. Unfortunately some trial and error is required on the part of developers is required to make sure that their code can be successfully minified with the various libraries W3 Total Cache supports. Even still, if developers do test their code thoroughly, they cannot be sure that interoperability with other code your site may have. This fault does not lie with any single party here, because there are thousands of plugins and theme combinations that a given site can have, there are millions of possible combinations of CSS, JavaScript etc.
+
+A good rule of thumb is to try auto mode, work with a developer to identify the code that is not compatible and start with combine only mode (the safest optimization) and increase the optimization to the point just before functionality (JavaScript) or user interface / layout (CSS) breaks in your site.
+
+We're always working to make this more simple and straight forward in future releases, but this is not an undertaking we can realize on our own. When you find a plugin, theme or file that is not compatible with minification reach out to the developer and ask them either to provide a minified version with their distribution or otherwise make sure their code is minification-friendly.
 
 = Who do you recommend as a CDN (Content Delivery Network) provider? =
 
 That depends on how you use your site and where most of your readers read your site (regionally). Here's a short list:
 
-* [MaxCDN](http://bit.ly/pXZ4t1)
-* [EdgeCast](http://bit.ly/bIjSWC)
-* [Amazon Cloudfront](http://bit.ly/ao1sGt)
-* [Rackspace Cloud Files](http://bit.ly/9hpX8T)
-* [VPS NET (Level 3)](http://bit.ly/d5hfFt)
-* [Cotendo](http://bit.ly/bnVs0a)
-* [Limelight Networks](http://bit.ly/aCW04j)
-* [Akamai](http://bit.ly/a5GBLV)
+* [MaxCDN](http://www.maxcdn.com/), [Discount Coupon Code](http://tracking.maxcdn.com/c/15753/3982/378?u=https%3A%2F%2Fsecure.maxcdn.com%2F%3Fpackage%3Dstarter%26coupon%3Dw3tc)
+* [EdgeCast / MediaTemple ProCDN](http://www.edgecast.com/)
+* [Amazon Cloudfront](http://aws.amazon.com/cloudfront/)
+* [Rackspace Cloud Files](http://www.rackspace.com/cloud/files/)
+* [Limelight Networks](http://www.limelight.com/)
+* [Akamai](http://www.akamai.com/)
 
 = What about comments? Does the plugin slow down the rate at which comments appear? =
 
@@ -183,7 +202,7 @@ If you specify CDN hostnames in your preferences, they'll be shown under the det
 
 = What is the purpose of the "modify attachment URLs" button? =
 
-If the domain name of your site has changed, this tool is useful in updating your posts and pages to use the current addresses. For example, if your site used to be www.domain.com, and you decided to change it to domain.com, the result would either be many "broken" images or many unncessary redirects (which slow down the visitor's browsing experience). You can use this tool to correct this and similar cases. Correcting the URLs of your images also allows the plugin to do a better job of determining which images are actually hosted with the CDN.
+If the domain name of your site has changed, this tool is useful in updating your posts and pages to use the current addresses. For example, if your site used to be www.domain.com, and you decided to change it to domain.com, the result would either be many "broken" images or many unnecessary redirects (which slow down the visitor's browsing experience). You can use this tool to correct this and similar cases. Correcting the URLs of your images also allows the plugin to do a better job of determining which images are actually hosted with the CDN.
 
 As always, it never hurts to back up your database first.
 
@@ -211,6 +230,14 @@ Add `/.+` to page cache "Never cache the following pages" option on the page cac
 
 First, make sure the plugin is not active (disabled) network-wide. Then make sure it's deactivated network-wide. Now you should be able to successful upgrade without breaking your site.
 
+= A notification about file owner appears along with an FTP form, how can I resolve this? =
+
+The plugin uses WordPress FileSystem functionality to write to files. It checks if the file owner, file owner group of created files match process owner. If this is not the case it cannot write or modify files.
+
+Typically, you should tell your web host about the permission issue and they should be able to resolve it.
+
+You can however try adding <em>define('FS_METHOD', 'direct');</em> to wp-config.php to circumvent the file and folder checks.
+
 = This is too good to be true, how can I test the results? =
 You will be able to see it instantly on each page load, but for tangible metrics, consider the following tools:
 
@@ -230,31 +257,285 @@ You will be able to see it instantly on each page load, but for tangible metrics
 
 Yes! Please [reach out to us](http://www.w3-edge.com/contact/) and we'll get you acclimated so you can "set it and forget it."
 
-Install the plugin to read the full FAQ.
+Install the plugin to read the full FAQ on the plugins FAQ tab.
 
 == Installation ==
 
-1. Deactivate and delete any other caching plugin you may be using. Make sure wp-content/ and wp-content/uploads/ (temporarily) has 777 permissions before proceeding, e.g.: `# chmod 777 /var/www/vhosts/domain.com/httpdocs/wp-content/` using your web hosting control panel or your SSH account.
+1. Deactivate and uninstall any other caching plugin you may be using. Pay special attention if you have customized the rewrite rules for fancy permalinks, have previously installed a caching plugin or have any browser caching rules as W3TC will automate management of all best practices. Also make sure wp-content/ and wp-content/uploads/ (temporarily) have 777 permissions before proceeding, e.g. in the terminal: `# chmod 777 /var/www/vhosts/domain.com/httpdocs/wp-content/` using your web hosting control panel or your FTP / SSH account.
 1. Login as an administrator to your WordPress Admin account. Using the "Add New" menu option under the "Plugins" section of the navigation, you can either search for: w3 total cache or if you've downloaded the plugin already, click the "Upload" link, find the .zip file you download and then click "Install Now". Or you can unzip and FTP upload the plugin to your plugins directory (wp-content/plugins/). In either case, when done wp-content/plugins/w3-total-cache/ should exist.
-1. Locate and activate the plugin on the "Plugins" page. Page caching will **automatically be running** in basic mode. Set the permissions of wp-content and wp-content/uploads back to 755, e.g.: `# chmod 755 /var/www/vhosts/domain.com/httpdocs/wp-content/`.
-1. Now click the "Settings" link to proceed to the "General" tab and select your caching methods for page, database and minify. In most cases, "disk enhanced" mode for page cache, "disk" mode for minify and "disk" mode for database caching are "good" settings.
-1. *Recommended:* On the "Minify Settings" tab, all of the recommended settings are preset. Use the help button to simplify discovery of your CSS and JS files and groups. Pay close attention to the method and location of your JS group embeddings. See the plugin's FAQ for more information on usage.
+1. Locate and activate the plugin on the "Plugins" page. Page caching will **automatically be running** in basic mode. Set the permissions of wp-content and wp-content/uploads back to 755, e.g. in the terminal: `# chmod 755 /var/www/vhosts/domain.com/httpdocs/wp-content/`.
+1. Now click the "Settings" link to proceed to the "General Settings" tab; in most cases, "disk enhanced" mode for page cache is a "good" starting point.
+1. The "Compatibility Mode" option found in the advanced section of the "Page Cache Settings" tab will enable functionality that optimizes the interoperablity of caching with WordPress, is disabled by default, but highly recommended. Years of testing in hundreds of thousands of installations have helped us learn how to make caching behave well with WordPress. The tradeoff is that disk enhanced page cache performance under load tests will be decreased by ~20% at scale.
+1. *Recommended:* On the "Minify Settings" tab, all of the recommended settings are preset. If auto mode causes issues with your web site's layout, switch to manual mode and use the help button to simplify discovery of your CSS and JS files and groups. Pay close attention to the method and location of your JS group embeddings. See the plugin's FAQ for more information on usage.
 1. *Recommended:* On the "Browser Cache" tab, HTTP compression is enabled by default. Make sure to enable other options to suit your goals.
 1. *Recommended:* If you already have a content delivery network (CDN) provider, proceed to the "Content Delivery Network" tab and populate the fields and set your preferences. If you do not use the Media Library, you will need to import your images etc into the default locations. Use the Media Library Import Tool on the "Content Delivery Network" tab to perform this task. If you do not have a CDN provider, you can still improve your site's performance using the "Self-hosted" method. On your own server, create a subdomain and matching DNS Zone record; e.g. static.domain.com and configure FTP options on the "Content Delivery Network" tab accordingly. Be sure to FTP upload the appropriate files, using the available upload buttons.
-1. *Recommended:* On the "Browser Cache" tab, HTTP compression is enabled by default. Make sure to enable other options to suit your goals.
 1. *Optional:* On the "Database Cache" tab, the recommended settings are preset. If using a shared hosting account use the "disk" method with caution, the response time of the disk may not be fast enough, so this option is disabled by default. Try object caching instead for shared hosting.
 1. *Optional:* On the "Object Cache" tab, all of the recommended settings are preset. If using a shared hosting account use the "disk" method with caution, the response time of the disk may not be fast enough, so this option is disabled by default. Test this option with and without database cache to ensure that it provides a performance increase.
 1. *Optional:* On the "User Agent Groups" tab, specify any user agents, like mobile phones if a mobile theme is used. 
 
 == What users have to say: ==
 
-* Read [testimonials](http://bit.ly/6Wbvpt) from W3TC users.
+* Read [testimonials](https://twitter.com/w3edge/favorites) from W3TC users.
 
 == Press: Mentions, Tutorials &amp; Reviews ==
+
+**August 2013:**
+
+* [12 Free WordPress Plugins That Could Make You A Better Blogger](http://www.wpkube.com/12-free-wordpress-plugins-that-could-make-you-a-better-blogger/), Reginald
+
+**June 2013:**
+
+* [Test of WordPress Caching Plugins – W3 Total Cache vs WP Super Cache vs Quick Cache](http://www.dashboardjunkie.com/test-of-wp-caching-plugins-w3-total-cache-vs-wp-super-cache-vs-quick-cache), Kim Tetzlaff
+
+**March 2013:**
+
+* [Top 25 Most Downloaded WordPress Plugins](http://wpforce.com/top-25-most-downloaded-wordpress-plugins/), Jonathan Dingman
+
+**January 2013:**
+
+* [Making WordPress Faster with Apache, Varnish and W3 Total Cache on Amazon AWS EC2 with CloudFront](http://jeffreifman.com/2013/01/26/making-wordpress-faster-with-apache-varnish-and-w3-total-cache-on-amazon-aws-ec2-with-cloudfront-cdn/), Jeff Reifman
+* [How to Speed Up Your WordPress Site (Quickly and Easily)](http://www.wpexplorer.com/how-to-speed-up-wordpress), Tom Ewer
+* [The Periodic Table of WordPress Plugins](http://www.wpexplorer.com/the-periodic-table-of-wordpress-plugins-and-my-top-5/), Tom Ewer
+* [WordPress Optimization Guide](http://gtmetrix.com/wordpress-optimization-guide.html)
+
+**December 2012:**
+
+* [5 of My Favorite WordPress Plugins in 2012](http://torquemag.io/fav-plugins-2012/), Jay Hoffmann
+* [The 25 Best WordPress Plugins Ever](http://www.websitemagazine.com/content/blogs/posts/archive/2012/12/05/the-25-best-wordpress-plugins-ever.aspx), Michael Garrity
+
+**November 2012:**
+
+* [What You Should Know About Using a CDN With WordPress](http://themefuse.com/blog/what-you-should-know-about-using-a-cdn-with-wordpress/), Karol Krol
+
+**October 2012:**
+
+* [The ManageWP Guide to Speeding Up Your WordPress Site with Plugins](http://managewp.com/how-to-speed-up-your-wordpress-website), Tom Ewer
+
+
+**September 2012:**
+
+* [Secrets Of High-Traffic WordPress Blogs](http://wp.smashingmagazine.com/2012/09/12/secrets-high-traffic-wordpress-blogs/), Siobhan McKeown
+* [10 essential WordPress plugins](http://www.computerworld.com/s/article/9230638/10_essential_WordPress_plugins), Ken Gagne
+
+**August 2012:**
+
+* [#114: Let’s Do Simple Stuff to Make Our Websites Faster](http://css-tricks.com/video-screencasts/114-lets-do-simple-stuff-to-make-our-websites-faster/), Chris Coyier
+* [The Plugins I Run](http://pippinsplugins.com/the-plugins-i-run/), Pippin Williamson
+* [WordPress Cache: WP Super Cache vs W3 Total Cache](http://www.wpbrix.com/wordpress-seo/wordpress-cache-wp-super-cache-vs-w3-total-cache/)
+* [15 Tips to Speed Up Your Website](http://www.seomoz.org/blog/15-tips-to-speed-up-your-website), Armin Jalili
+
+**July 2012:**
+
+* [Using Liquid Web's CDN with WordPress via W3 Total Cache](http://lw.rrfaae.com/2012/07/using-liquid-webs-cdn-with-wordpress-via-w3-total-cache/), Jason Gillman Jr.
+* [Tips for Server Admins &amp; Website Owners](http://www.tharunpkarun.com/2012/07/tips-for-server-admins-website-owners/), Tharun Karun
+* [Step-by-Step guide to WordPress Optimization using W3 Total Cache](http://pthakkar.com/category/website-optimization/w3-total-cache/),Pankaj Thakkar
+* [Top 10 Most Essential WordPress Plugins, Must Install](http://omgtoptens.com/web/wordpress/top-10-most-essential-wordpress-plugins-must-install/)
+* [W3 Total Cache Vs WP Super Cache: Best Caching Plugin?](http://bloggerspassion.com/w3-total-cache-vs-wp-super-cache/), Anil Agarwal
+* [How to Install and Configure W3 Total Cache](http://www.techlila.com/wordpress-plugins/how-to-install-configure-w3-total-cache-worpress/)
+
+**June 2012:**
+
+* [The Meaning of Plugins and The Best WordPress Plugins](http://www.bloggersdeck.com/the-meaning-of-plugins-and-the-best-wordpress-plugins/), Reginald Chan
+* [6 Essential Plugins for New WordPress Sites](http://blog.presstrends.io/2012/06/6-essential-plugins-for-new-wordpress-sites/), Mitch Monsen
+
+**May 2012:**
+
+* [﻿W3 Total Cache Settings](﻿http://techod.com/w3-total-cache-settings/), ﻿Jason Graham
+* [Leverage Browser Caching with W3 Total Cache](http://www.mvestormedia.com/leverage-browser-caching-w3-total-cache/), Ian Rogers
+
+**April 2012:**
+
+* [Apache Traffic Server as a Reverse Proxy](http://kpayne.me/2012/04/10/apache-traffic-server-as-a-reverse-proxy/), Kurt Payne
+* [Essential WordPress Plugins For Every WordPress Blog](http://www.softlovers.com/essential-wordpress-plugins-for-every-wordpress-blog/), Shashank Johri
+* [First Steps On A Fresh WordPress Install](http://wpshout.com/first-steps-on-a-fresh-install/), Alex Denning
+* [Essential WordPress Plugins](http://the-hate-project.blogspot.com/2012/04/essential-wordpress-plugins.html)
+* [15 Ridiculously Useful WordPress Plugins for Travel Bloggers](http://travelbloggeracademy.com/wordpress-travel-bloggers/), Adam Costa
+* [10 plugins every new WordPress blog should have](http://kcclaveria.com/2012/04/10-wordpress-plugins/)
+* [Caching and Synthesis Managed WordPress Hosting](http://websynthesis.com/caching-and-synthesis-managed-wordpress-hosting/)
+* [How to: Boost WordPress performance with W3 Total Cache and APC](http://www.neilturner.me.uk/2012/04/30/how-to-boost-wordpress-performance-with-w3-total-cache-and-apc.html), Neil Turner
+* [Supercharge WordPress Blog With Cloudflare, MaxCDN and W3 Total Cache](http://hellboundbloggers.com/2012/04/24/supercharge-wordpress-cloudflare-maxcdn-w3-total-cache/)
+* [W3 Total Cache Setup for Rackspace Cloud Sites with Cloud Files](http://thecustomizewindows.com/2012/04/w3-total-cache-setup-for-rackspace-cloud-sites-with-cloud-files/), Abhishek Ghosh
+* [11 Steps To Speed Up Your WordPress Site](http://www.paulund.co.uk/11-steps-to-speed-up-your-wordpress-site)
+* [Speeding Up WordPress With The W3 Total Cache Plugin](http://invenioblog.com/2012/04/speeding-up-wordpress-with-the-w3-total-cache-plugin/)
+* [11 of Our Favorite Wordpress Plugins](http://www.putontheglasses.com/blog/11-of-our-favorite-wordpress-plugins)
+* [Leverage Browser Caching with W3 Total Cache](http://www.mvestormedia.com/leverage-browser-caching-w3-total-cache/), Ian Rogers
+* [Speeding Up WordPress Websites](http://designershq.net/wordpress-plugins/speeding-up-wordpress-websites/), Craig Butcher
+* [How I Increased My Blog Loading Speed by 500%](http://www.asiogroups.com/how-i-increased-my-blog-loading-speed/)
+* [5 WordPress Plugins I Can’t Live Without – 2012 Edition](http://bit51.com/5-wordpress-plugins-i-cant-live-without-2012-edition/), Chris Wiegman
+* [Setting Up and Optimizing W3 Total Cache - Up to v0.9.2.4](http://tentblogger.com/w3-total-cache/)
+* [W3 Total Cache hilft bei WordPress Optimierung](http://blog.stenki.eu/2012/04/wordpress-optimierung-mit-w3-total-cache/)
+
+**March 2012:**
+
+* [The Plugins and Code Behind WPForce 2.0](http://wpforce.com/plugins-and-code-behind-wpforce/), Jonathan Dingman
+* [﻿5 Must Have Plugins for WordPress Bloggers](﻿http://igaret.com/wordpress/5-must-have-plugins-for-wordpress-bloggers), ﻿Garet McKinley
+* [10 Million hits a day with WordPress using a $15 server](http://www.ewanleith.com/blog/900/10-million-hits-a-day-with-wordpress-using-a-15-server), Ewan Leith via [Hacker News](http://news.ycombinator.com/item?id=3775715)
+* [High-Performance WordPress with W3 Total Cache and Nginx](http://elivz.com/blog/single/wordpress_with_w3tc_on_nginx/), Eli Van Zoeren
+* [How To Speed Up Your WordPress Blog](http://managewp.com/how-to-speed-up-your-wordpress-blog), Vladimir Prelovac
+* [﻿The Lab + W3 Total Cache](﻿http://www.purpleturtleproductions.ca/the-lab/new-category-the-lab-w3-total-cache/), Simon
+* [5 Powerful WordPress Plugins To Increase Sharing Of Your Articles](http://blog.kissmetrics.com/5-powerful-wordpress-plugins/)
+* [﻿How I increased Websitez.com’s performance by an additional 20%](﻿http://websitez.com/how-i-increased-websitez-coms-performance-by-an-additional-20/), ﻿Eric Stolz
+* [﻿WordPress with W3 Total Cache on Nginx with APC ](﻿http://chrisgilligan.com/wordpress/wordpress-with-w3-total-cache-on-nginx-with-apc-virtualmin/), ﻿Chris Gilligan
+* [﻿Screencast Tuesday: Using W3 Total Cache Part 1](﻿http://headwaythemes.com/screencast-tuesday-using-w3-total-cache-part-1/), AJ Morris
+* [Screencast Tuesday: Using W3 Total Cache Part 2 – Implementing a CDN](http://headwaythemes.com/screencast-tuesday-using-w3-total-cache-part-2-implementing-a-cdn/), AJ Morris
+* [A Quick Bit About WordPress Caching](http://blog.ryantoohil.com/2012/03/a-quick-bit-about-wordpress-caching.php), Ryan Toohil
+* [How To Find Out Which WordPress Plugins Are Making Your Site Slow](http://www.business2community.com/blogging/how-to-find-out-which-wordpress-plugins-are-making-your-site-slow-0138577), Kim Castleberry
+* [Top 20 Plugins Used Across 30,000+ WordPress Sites](http://www.presstrends.io/top-20-plugins-used-across-30000-wordpress-sites/), George Ortiz
+* [10 Plugins That Will Speed Up Your WordPress Site](http://blog.brainhost.com/10-plugins-that-will-speed-up-your-wordpress-site/)
+* [Using nRelate to Engage Readers & Make Money](http://imstash.com/using-nrelate-engage-readers-make-money/)
+* [Our Top 10 Favorite WordPress Plugins](http://sitefox.com/blog/top-10-favorite-wordpress-plugins/), Samir Balwani
+* [Screencast Tuesday: Using W3 Total Cache Part 1](http://headwaythemes.com/screencast-tuesday-using-w3-total-cache-part-1/), AJ Morris
+* [Build the WordPress wholly stations CDN utilize the caching plugin W3TC filmed cloud](http://www.84tt.com/web/2012/03/608.html)
+* [3 Tutorials For Speeding Up Your WordPress Site](http://blog.asmallorange.com/3-tutorials-for-speeding-up-your-wordpress-site/), McKinney Brown
+* [WordPress SEO & Security](http://www.albertawebsitemarketing.com/wordpress-seo-and-security/)
+* [CDN – WTF?](http://talkingwordpress.com/cdn-wtf/)
+* [Supercharge WordPress, Part 3](http://linuxaria.com/article/supercharge-wordpress-part-3?lang=en)
+* [7 Effective Ways To Make Your WordPress Blog Load Faster](http://www.uniquetipsonline.com/7-effective-ways-to-make-your-wordpress-blog-load-faster/)
+* [WordPress Plugins to Speed Up Your Website](http://blog.templatemonster.com/2012/03/01/wordpress-plugins-speed-up-blog-website/), Edward Korcheg
+* [CloudFlare and W3TC (Part I)](http://elimcmakin.com/cloudflare-and-w3tc-not-just-another-cdn-part-i/)
+* [CloudFlare and W3TC (Part II)](http://elimcmakin.com/cloudflare-and-w3tc-part-ii/)
+* [How to speed up WordPress – my experience with slow WordPress](http://bachutha.com/how-to-speed-up-wordpress-my-experience-with-slow-wordpress/)
+* [Make Your WordPress Site Lightning Fast](http://www.helpeverybodyeveryday.com/websocial-media/848-make-your-wordpress-site-lightning-fast), Matt Handal
+* [Speed Up WordPress Websites](http://wordpress-tips.info/speed-up-wordpress-websites/2012/03/27/)
+* [W3 Total Cache, caché y compresión para optimizar WordPress](http://www.gamblingprofesional.com/noticias/otros1/w3-total-cache-optimizando-wordpress-de-forma-sencilla/)
+* [Velocizzare WordPress](http://www.evemilano.com/2012/03/velocizzare-wordpress/), Giovanni Sacheli
+* [21 Wicked WordPress Plugins](http://garinkilpatrick.com/21-wicked-wordpress-plugins/), Garin Kilpatrick
+* [How to fix high-CPU load in WordPress](http://support.ecenica.com/wordpress/fix-high-cpu-load-wordpress/)
+* [How much (cache) is too much?](http://blog.gingerlime.com/2012/how-much-cache-is-too-much/), Yoav Aner
+* [10 Must Have WordPress Plugins Of 2012 Every Blogger Should Know About](http://www.jeffbullas.com/2012/03/13/10-must-have-wordpress-plugins-of-2012-every-blogger-should-know-about/), Leo Widrich
+* [Speed up your WordPress Blog: 5 Easy Steps](http://techwalls.com/blogging/speed-up-wordpress-blog-easy-steps/), Sanjib Saha
+* [7 Tips to Test Website Speed and Decrease WordPress Load Time](http://natedevore.com/7-tips-to-test-website-speed-and-decrease-wordpress-load-time/), Nate Devore
+* [How I increased Websitez.com’s performance by an additional 20%](http://websitez.com/how-i-increased-websitez-coms-performance-by-an-additional-20/), Eric Stolz
+* [WordPress with W3 Total Cache on Nginx with APC](http://chrisgilligan.com/wordpress/wordpress-with-w3-total-cache-on-nginx-with-apc-virtualmin/), Chris Gilligan
+* [Speed Up Your Website With The "W3 Total Cache" Wordpress Plugin](http://www.youtube.com/watch?v=Luf2Y_F23l0)
+* [WordPress W3 Total Cache Eklentisi Ayarları](http://www.55dakika.com/wordpress-w3-total-cache-eklentisi-ayarlari-34124.html)
+* [9 Essential WordPress Plugins](http://www.ostraining.com/blog/wordpress/9-essential-wordpress-plugins/), Ed Andrea
+* [15 Must Have WordPress Plugins for the New Blogger](http://avgjoegeek.net/15must-have-wordpress-plugins/), Jason Mathes
+* [10 Must Have WordPress Plugins For Your Blog](http://www.tricksmachine.com/2012/03/10-must-have-wordpress-plugins.html)
+* [How To Speed Up Your WordPress Blog](https://managewp.com/how-to-speed-up-your-wordpress-blog), Tom Ewer
+* [5 Best Plug-ins for WordPress Blog](http://www.thegeeksclub.com/5-plugins-wordpress-blog/), Jonathan Acabo
+* [Easy W3 Total Cache WordPress Plugin Configuration](http://www.mvestormedia.com/easy-w3-total-cache-configuration/), Ian Rogers
+* [Ideal W3 Total Cache Settings For Shared Hosting](http://www.kidnapcustomers.com/how-to-make-a-website/w3-total-cache-settings-wordpress-speed/)
+
+**February 2012:**
+
+* [Get Google Page Speed Report Via W3 Total Cache](http://www.myh3r3.com/code/get-google-page-speed-report-via-w3-total-cache/), Aayush Nagar
+* [3 WordPress Plugins To Speed Up Your Blog](http://www.wordpressninja.com/2012/02/speed-up-your-wordpress-blog/), Missy Diaz
+* [Top 5 Plugins for WordPress](http://creativetech.me/2012/02/top-5-plugins-wordpress/), Phill Fernandes
+* [Geeking out with WordPress, CDNs, and Amazon CloudFront](http://polizeros.com/2012/02/17/geeking-out-with-wordpress-cdns-and-amazon-cloudfront/), Bob Morris
+* [Top 10 Essential WordPress Plugins that Your Website Needs](http://impressthemes.com/2012/02/top-10-essential-wordpress-plugins-that-your-website-needs/)
+* [How to start your own blog using WordPress](http://blog.kualo.com/how-to-start-your-own-blog-using-wordpress/)
+* [Top 10 Must Have WordPress Plugins In Your Blog](http://www.learnblogtips.com/top-10-must-have-wordpress-plugins-in-your-blog/), Rahul Kuntala
+* [Improve WordPress Speed with W3 Total Cache](http://www.webcitz.org/wordpress-tips/improve-wordpress-speed-with-w3-total-cache.html)
+* [WordPress Plugins for 2012](http://proudlypowered.com/wordpress-plugins-2012/)
+* [How to Install Memcached and Use It with Your WordPress via W3 Total Cache on CentOS](http://www.bleuken.com/how-to-install-memcached-and-use-it-with-your-wordpress-via-w3-total-cache-on-centos-20120220/)
+* [How to reduce WordPress CPU usage using Cache and P3 plugin](http://wpmarketing.org/2012/02/how-to-reduce-wordpress-cpu-usage-using-cache-and-p3-plugin/)
+* [Speeding up your WordPress site with MaxCDN (Advanced users)](http://wpverse.com/2012/02/speeding-up-your-wordpress-site-with-maxcdn-advanced-users/), Noel Saw
+* [Cache WordPress With W3 Total Cache](http://wphostingreviews.com/plugins/cache-wordpress-with-w3-total-cache-1768/), David Blane
+* [Cache Plugin For Improving Wordpress Speed](http://www.youtube.com/watch?v=70TqVjmtXYU), Mark Washburn
+* [De snelheid van je website verbeteren](http://www.webtaurus.nl/amersfoort-webdesign/tag/w3-total-cache)
+* [WordPress Plugins that Power Digital Inspiration](http://www.labnol.org/software/must-have-wordpress-plugins/14034/)
+* [9 Essential WordPress Plugins To Install On Your Site](http://www.haikarela.com/9-wordpress-plugins-to-install/)
+* [Some Other Tricks For A Speedy WordPress](http://wp.tutsplus.com/tutorials/some-other-tricks-for-a-speedy-wordpress/), Ariff Shah
+* [5 Essential WordPress Plug-ins You Should Be Using](http://thinktraffic.net/5-essential-wordpress-plug-ins-you-should-be-using), Caleb Wojcik
+* [14 Free WordPress Plugins I Installed, Before Doing Anything Else](http://www.kidnapcustomers.com/how-to-make-a-website/wordpress-plugins-must-have/)
+* [Install Memcached to speed up your WordPress site](http://www.wpinsite.com/articles/install-memcached-speed-wordpress-site)
+* [Cara Membuat CDN dengan W3 Total Cache pada Subdomain](http://www.youtube.com/watch?v=XB1sry9ns4Y), Hadie Danker
+* [Top 10 WordPress Plugins To Improve a WordPress Blog](http://www.bloggingtips.com/2012/02/05/top-10-wordpress-plugins-to-improve-a-wordpress-blog/), Zac Johnson
+* [The 10 Best Plugins for Online Entreprenuers](http://www.webdesigndev.com/make-money-online/the-10-best-wordpress-plugins-for-online-entrepreneurs)
+* [Time to Smarten up Your WordPress Blog – 15 Must Have Plugins](http://www.multyshades.com/2012/02/time-to-smarten-up-your-wordpress-blog-15-must-have-plugins/), Muhammad Haroon
+* [Best WordPress SEO Plugins For Boost Your Traffic](http://www.redfoxmagazine.com/best-wordpress-seo-plugins-for-boost-your-traffic/)
+* [Speed Up WordPress Load Times and Grab More Visitors](http://www.matthewhooper.com/speed-up-wordpress/)Matthew Hooper
+* [Use a windows azure blob storage account with your wordpress blog](http://www.gep13.co.uk/blog/use-a-windows-azure-blob-storage-account-with-your-wordpress-blog/), Gary Ewan Park
+* [How To Find Out Which WordPress Plugins Are Making Your Site Slow](http://just-ask-kim.com/wordpress-plugins-site-slow/#.URBVYVpdec8)
+* [How to Install and Configure W3 Total Cache Plugin](http://www.youtube.com/watch?v=Lbs3pRL4XQg)
+* [Day 8: Speed Up your WordPress Site with W3 Total Cache](http://wplifeguard.com/day-8-speed-up-your-wordpress-site-with-w3-total-cache/)
+* [10 Ways to Improve WordPress Performance on Windows](http://jesscoburn.com/archives/2012/02/25/10-ways-to-improve-wordpress-performance-on-windows/), Jess Coburn
+* [W3 Total Cache - Accélérer votre site Wordpress](http://www.youtube.com/watch?v=Hx-_e8wTUEw)
+* [WordPress on Nginx, Part 1: Preparing VPS the Debian Way](http://www.linuxforu.com/2012/02/wordpress-nginx-part-1-preparing-vps-debian-linux/), Atanu Datta
+* [WordPress on Nginx, Part 2: vhost, MySQL & APC Configurations](http://www.linuxforu.com/2012/02/wordpress-nginx-part-2-domain-vhost-config-migrating-files-fine-tuning-mysql-apc/), Atanu Datta
+
+**January 2012:**
+
+* [﻿Speed up WordPress with W3 Total Cache and Amazon CloudFront (CDN)](﻿http://richwp.com/wordpress-cdn-total-cache-amazon-cloudfront/), Dustin
+* [﻿The Ultimate Quickstart Guide to Speeding Up Your WordPress Site](﻿http://wp.tutsplus.com/tutorials/the-ultimate-quickstart-guide-to-speeding-up-your-wordpress-site/), ﻿Matt Pilott
+* [Speed Up WordPress with W3 Total Cache](http://www.doitwithwp.com/speed-up-wordpress-with-w3-total-cache/), Dave Clements
+* [Speed Up your WordPress Site with W3 Total Cache](http://wplifeguard.com/day-8-speed-up-your-wordpress-site-with-w3-total-cache/)
+* [﻿How to Speed Up Your WordPress Site and Reduce Your Hosting Costs](﻿http://www.washingtonsblog.com/2012/01/how-to-speed-up-your-wordpress-site-and-reduce-your-hosting-costs.html)
+* [Why I Switched From Drupal to WordPress](http://eagereyes.org/blog/2012/why-i-switched-drupal-wordpress), Robert Kosara
+* [Top 10 Best WordPress Plugins](http://ebusinessmatters.com/top10-best-wordpress-plugins/), Brian Duffy
+* [WordPress Plug-ins](http://www.crazyxhtml.com/blog/wordpress-plug-ins/)
+* [Los mejores plugins para WordPress](http://zonawordpress.com/los-mejores-plugins-para-wordpress/)
+* [10 Essential Plugins for Your WordPress Blog](http://sproutsocial.com/insights/2012/01/wordpress-plugins/), Jennifer Beese
+* [10 Must-Have WordPress Plugins on Your Site](http://realityco.com/blog/?p=23&option=com_wordpress&Itemid=168)
+* [3 Must Have Free Smashing WordPress SEO Plugins For Your Blog](http://techtipsportal.com/wordpress-seo-plugins-for-blog/), Kushal Biswas
+* [Best WordPress SEO Plugins For 2012](http://www.iblogzone.com/2012/01/the-best-wordpress-seo-plugins-for-2012-part-1-html.html)
+* [5 Simple Tips for Making WordPress Run Faster](http://headway101.com/5-simple-tips-for-making-wordpress-run-faster/)
+* [Tips on speeding up your WordPress site](http://www.edwardxwu.com/2012/01/tips-on-speeding-up-your-wordpress-site/), Edward Xwu
+* [W3 Total Cache Kurulumu](http://kenancanol.com/2012/w3-total-cache-kurulumu/)
+* [Speed Up WordPress with W3 Total Cache](http://www.doitwithwp.com/speed-up-wordpress-with-w3-total-cache/), Dave Clements
+* [The Ultimate Quickstart Guide to Speeding Up Your WordPress Site](http://wp.tutsplus.com/tutorials/the-ultimate-quickstart-guide-to-speeding-up-your-wordpress-site/), Matt Pilott
+* [Speed up WordPress with W3 Total Cache and Amazon CloudFront (CDN)](http://richwp.com/wordpress-cdn-total-cache-amazon-cloudfront/)
+* [Configure/Install MaxCDN with W3 Total Cache WordPress Plugin](http://www.youtube.com/watch?v=OYqOG7_TIk8), Mrinmay Bhattacharjee
+* [How to Install and Configure W3 Total Cache Plugin](http://www.dailymotion.com/video/xnx1cl_how-to-install-and-configure-w3-total-cache-plugin_tech#.UQ_ujlpdec8)
+* [How to setup a CDN in WordPress using W3 Total Cache & Amazon CloudFront](http://pedrodasilva.co.uk/how-to-setup-content-delivery-network-wordpress-using-w3tc-amazon-cloudfront/), Pedro Da Silva
+* [WordPress plugin – W3 Total Cache](http://www.naschenweng.info/2012/01/16/wordpress-plugin-w3-total-cache/)
+* [Using YUI Compressor with the W3 Total Cache plugin](http://secure.delishost.com/knowledgebase/11/Using-YUI-Compressor-with-the-W3-Total-Cache-plugin.html)
+* [(mt):Install APC for use with W3 Total Cache](http://wiki.mediatemple.net/w/(mt):Install_APC_for_use_with_W3_Total_Cache)
+* [The Perfect APC Configuration](http://gregrickaby.com/2012/01/the-perfect-apc-configuration.html), Greg Rickaby
+* [CloudFlare – A Review](http://complete-concrete-concise.com/web-tools/cloudflare-a-review)
+* [W3 Total Cache Kurulumu ve Ayarları](http://bcakir.com/w3-total-cache-kurulumu-ve-ayarlari.html)
+
+**December 2011:**
+
+* [A shout-out to my tech partners of 2011!](http://www.jimcarroll.com/2011/12/a-shout-out-to-my-tech-partners-of-2011/), Jim Carroll
+* [15 Top WordPress Plugins Of 2011](http://smashinghub.com/15-top-wordpress-plugins-of-2011.htm), Ali Qayyum
+* [Google Speed Online API widget integration with W3 Total Cache in WordPress](http://shivasoft.in/blog/webtech/seo/google-speed-online-api-widget-integration-with-w3-total-cache-in-wordpress/), Jitendra Zaa
+* [Modern WordPress Development for 2012](http://sachagreif.com/modern-wordpress-development-in-2012/), Sacha Greif
+* [Set up W3 Total Cache with Amazon CloudFront CDN](http://www.doitwithwp.com/set-up-w3-total-cache-with-amazon-cloudfront-cdn/), Dave Clements
+* [Installing & Configuring XCache for W3 Total Cache on a cPanel Server](http://www.thewebhostinghero.com/tutorials/xcache-w3tc-on-a-cpanel-server.html)
+* [How-To Install W3 Total Cache: Part One -- What is Page Caching?](http://www.youtube.com/watch?v=HvQ5aVPdHX8), Dorie Scarlet
+* [Must Use: W3 Total Cache WordPress Plugin](http://www.dailyblogtips.com/must-use-w3-total-cache-wordpress-plugin/), Daniel Scocco
+* [10 Best WordPress Plugins](http://www.anhosting.com/blog/2011/12/10-best-wordpress-plugins/), AN Hosting
+* [How to Install & Configure W3 Total Cache Plugin](http://marketgurus.org/how-to-install-configure-w3-total-cache-plugin/)
+* [Website Speed Part 3 – Caching WordPress](http://speckyboy.com/2011/12/14/website-speed-part-3-caching-wordpress/), Andy Killen
+* [WP Super Cache 1.0 Released](http://www.wptavern.com/wp-super-cache-1-0-released), Jeffro
+* [5 Must Have WordPress Plugins](http://www.stormcode.net/marketing/5-must-have-wordpress-plugins/), Brendan
+* [12 Essential WordPress Plugins](https://docs.google.com/a/placester.com/viewer?a=v&q=cache:GGcWVwJTMOUJ:myathleticlife.com/wp-content/uploads/2011/12/12-Essential-Wordpress-Plugins.pdf+&hl=en&gl=us&pid=bl&srcid=ADGEEShOSbWoVFwJiNrmfGCe_rqA48eDO7pjwfdqzzK3CUJevx39BA9vdTm4OzMNSNLlyvBDgJoYIypFnVm3oHF6scJJJB2a-DCgZERkyI9ExrSpSMmI_1AqxmcMOf2FZY0Z6njFouX9&sig=AHIEtbQT-oErlhUCsEOh56YNJVlhLu1AxA)
+* [Measuring impact of plugins on WordPress loading](http://wpdojo.net/tag/woocommerce/page/7/), MillaN
+* [Recommended WordPress Plugins](http://www.cinntech.com/recommended-wordpress-plugins/)
+* [Recommended WordPress Plugins For Any Serious Blogger](http://getbusylivingblog.com/recommended-wordpress-plugins-for-any-serious-blogger/), Benny Hsu
+* [Top 10 WordPress Plugins for 2011](http://y2kemo.com/2011/12/top-10-wordpress-plugins-for-2011/)
+* [Measuring impact of plugins on WordPress loading](http://www.dev4press.com/2011/blog/benchmark/measuring-impact-of-plugins-on-wordpress-loading/)
+
+**November 2011:**
+
+* [10+ Best WordPress Plugins You must have to start a Blog/Website](http://www.wokay.com/technology/10-best-wordpress-plugins-to-use-in-2011-must-have-awesome-blog-website-start-56197.html), Barnabas Reilly
+* [5 Must Have WordPress Plugins](http://sayfsolutions.com/2011/5-must-have-wordpress-plugin/), Abdullah Hashim
+* [Plug 'em in: WordPress plugins I've completely fallen for…](http://bookbagsandcatnaps.com/2011/11/plug-em-in-wordpress-plugins-ive-completely-fallen-for/), Donna Brown
+* [8 WordPress Plugins you have to Install](http://www.123-reg.co.uk/blog/tips-tutorials/8-wordpress-plugins-you-have-to-install/), Alex Moss
+* [Installing and Configuring the W3 Total Cache Plugin on WordPress](http://help.godaddy.com/article/7299?isc=u&locale=en)
+* [Installing CSS Tidy For WordPress W3 Total Cache Plugin](http://hungred.com/how-to/installing-css-tidy-wordpress-w3-total-cache-plugin/), Clay Lua
+
+**October 2011:**
+
+* [10 WordPress Plugins Your Small Business Website Needs](http://searchenginewatch.com/article/2115338/10-WordPress-Plugins-Your-Small-Business-Website-Needs), October 7, 2011
+
+**September 2011:**
+
+* [Boost WordPress Blog Performance: Minify & CDN with W3TC](http://sangatpedas.com/20110901/boosting-increase-wordpress-performance-w3tc-minify-cdn/), Remco
+* [How to Reduce Bandwidth Usage and Optimize Website Performance with W3 Total Cache and Amazon CloudFront](http://helgeklein.com/blog/2011/09/how-to-reduce-bandwidth-usage-and-optimize-website-performance-with-w3-total-cache-and-amazon-cloudfront/), Helge Klein
+* [Speeding Up WordPress, Part 1: Basic W3 Total Cache Configuration and Content Delivery Network](http://www.mattstratton.com/tech-tips/speed-up-wordpress), Matt Stratton
+* [Boost WordPress Blog Performance: Minify & CDN with W3TC](http://sangatpedas.com/boosting-increase-wordpress-performance-w3tc-minify-cdn/)
+* [W3 TOTAL CACHE VS QUICK CACHE FOR WORDPRESS](http://thinkpaid.com/2011/09/reviews/w3-total-cache-vs-quick-cache), Andrew Summers
+* [10 Free WordPress Plugins you must have](http://www.webprocyon.com/2011/09/10-free-wordpress-plugins-you-must-have.html)
 
 **August 2011:**
 
 * [Matt Mullenweg: State of the Word 2011 (4:49)](http://wordpress.tv/2011/08/14/matt-mullenweg-state-of-the-word-2011/), Matt Mullenweg
+* [http://freenuts.com/increase-your-page-speed-to-a-new-level/](Increase Your Page Speed To A New Level)
+* [7 Plugins That Every WordPress Blog Must Have](http://coderbay.com/7-wordpress-plugins-that-every-wordpress-blog-must-have/), Karim Pattoki
+* [Speeding Up Your WordPress Site With W3 Total Cache](http://www.sohailtech.com/2011/08/10/speeding-wordpress-site-w3-total-cache/)
 * [W3 Total Cache Setup with CloudFlare and CDN : Complete Tutorial Guide](http://thecustomizewindows.com/2011/08/w3-total-cache-setup-with-cloudflare-and-cdn-complete-tutorial-guide/), Abhishek Ghosh
 
 **July 2011:**
@@ -266,11 +547,13 @@ Install the plugin to read the full FAQ.
 
 **June 2011:**
 
+* [5 Types of WordPress Plugins for Real Estate Sites](http://www.mytechopinion.com/2011/06/5-types-of-wordpress-plugins-for-your-real-estate-site.html), Nicole Nicolay
 * [WordPress Optimization Results: Varnish/Nginx/APC + W3 Total Cache + Amazon S3 + CloudFlare](http://danielmiessler.com/blog/wordpress-optimization-results-varnishnginxapc-w3-total-cache-amazon-s3-cloudflare), Daniel Miessler
 * [Case Study: WordPress, MaxCDN, CloudFlare and W3 Total Cache Integration](http://www.thewebhostinghero.com/articles/case-study-wp-maxcdn-cloudflare.html), Ritesh Sanap
 
 **May 2011:**
 
+* [HOW TO: Get Google Page Speed Report Via W3 Total Cache](http://hellboundbloggers.com/2011/05/10/get-google-page-speed-report-in-w3-total-cache/), S.Pradeep Kumar
 * [Optimizing WordPress with Nginx, Varnish, APC, W3 Total Cache, and Amazon S3 (With Benchmarks)](http://danielmiessler.com/blog/optimizing-wordpress-with-nginx-varnish-w3-total-cache-amazon-s3-and-memcached), Daniel Miessler
 * [Poll: Best Caching Plugin for WordPress?](http://digwp.com/2011/05/best-caching-plugin-wordpress/), Jeff Starr
 * [Page Speed Online has a shiny new API](http://googlecode.blogspot.com/2011/05/page-speed-online-has-shiny-new-api.html), Andrew Oates and Richard Rabbat
@@ -297,6 +580,7 @@ Install the plugin to read the full FAQ.
 
 **January 2011:**
 
+* [Caching a Dynamic Website. Does it Make a Difference for Loading Speed?](http://bacsoftwareconsulting.com/blog/index.php/web-programming/caching-a-dynamic-website-does-it-make-a-difference-for-loading-speed/)
 * [11 Important Steps to Optimize WordPress and Increase Performance](http://www.bernskiold.com/2011/01/10/11-important-steps-to-optimize-wordpress-and-increase-performance/), Erik Bernskiold
 * [Speed up WordPress with the W3 Total Cache Plugin](http://wplift.com/speed-up-wordpress-with-the-w3-total-cache-plugin), Oliver Dale
 * [How to Make Your Blog Load Faster than ProBlogger](http://www.problogger.net/archives/2011/01/04/how-to-make-your-blog-load-faster-than-problogger/), Pro Blogger
@@ -372,6 +656,7 @@ Install the plugin to read the full FAQ.
 
 **June 2010:**
 
+* [Speed Up Your Wedding Photography Website in less than 5 minutes](https://www.zippykid.com/2010/06/07/speed-up-your-wedding-photography-website/), Vid Luther
 * [12 Ways to Improve Wordpress Page Load Time](http://myblog2day.com/12-ways-to-improve-wordpress-page-load-time.php), Lee Ka Hoong
 * [Significantly Speed Up Your WordPress Blog in 9 Easy Steps](http://www.bloggingpro.com/archives/2010/06/21/significantly-speed-up-your-wordpress-blog-in-9-easy-steps/), Robyn-Dale Samuda
 * [Speed 'Em Up: Wordpress &amp; W3 Total Cache](http://translate.google.com/translate?js=y&prev=_t&hl=en&ie=UTF-8&layout=1&eotf=1&u=http://www.andilicious.com/blog/1473/20100610/wordpress-beschleunigen-grundlagen-w3-total-cache-page-speed&sl=auto&tl=en),  Andi Licious
@@ -454,7 +739,7 @@ It's quite difficult to recall all of the innovators that have shared their thou
 * George Schlossnagle
 * Daniel Cowgill
 * [Rasmus Lerdorf](http://toys.lerdorf.com/)
-* [Gopal Vijayaraghavan](http://t3.dotgnu.info/)
+* [Gopal Vijayaraghavan](http://notmysock.org/)
 * [Bart Vanbraban](http://eaccelerator.net/)
 * [mOo](http://xcache.lighttpd.net/)
 
@@ -462,340 +747,136 @@ Please reach out to all of these people and support their projects if you're so 
 
 == Changelog ==
 
-= 0.9.2.5 =
-* Fixed security issue that can occur if using database caching to disk. If using database caching to disk with a web server with directory listing or web accessible wp-content/w3tc/dbcache/* directories. This patch works for all hosting environments / types where PHP is properly configured, i.e. .htaccess modifications (or other web server configuration changes) are *not* necessary to ensure proper security. Empty the database cache after performing the update if you use database caching to disk.
+= 0.9.4.1 =
+* Fixed security issue if debug mode is enabled XSS vector exists HTML comments. CVE-2014-8724, Tobias Glemser
+* Fixed security issue with missing nonces, Ryan Satterfield
 
-= 0.9.2.4 =
-* Added support for Microsoft SQL Server
-* Added API support for MediaTemple ProCDN (EdgeCast)
-* Added set_time_limit to self test
-* Fixed LiteSpeed web server support
-* Fixed native hostname 301 redirect
-* Fixed redundant object origin push export
-* Fixed WSOD (white screen of death) caused by minify in some hosting configurations
-* Fixed text encoding in feeds
-* Fixed incorrect mime-type in feeds (which caused feedburner anomalies)
-* Fixed array to string notices
-* Fixed expires header support for AWS
-* Fixed minification of font-family
-* Fixed object cache write issue in WP Admin
-* Improved (reduced) memory utilization by up to 70%
-* Improved disk enhanced page caching performance
-* Improved object caching performance
-* Improved activation reliability
-* Improved reliability of minify auto mode
-* Improved security (added nonces, no directory indexing, prevent direct file access)
-* Improved compatibility with network based file systems
+= 0.9.4 =
+* Fixed undefined w3tc_button_link
+* Fixed support and other form submissions
+* Fixed extension enabled key error
+* Fixed Test CDN errors
+* Fixed trailing slashes in custom wp content path and Minify
+* Fixed WP_PLUGIN_DIR not being available when object-cache.php is loaded and W3TC constant not set
+* Fixed Minify Auto and restructuring of JS code placement on page
+* Fixed remove / replace drop in file on plugins page
+* Fixed false positive check for legacy code
+* Fixed deprecated wpdb escape
+* Fixed Fragment Caching and APC anomalies
+* Fixed cached configs causing 500 error on interrupted file writes
+* Fixed readfile errors on servers with the functionality disabled
+* Fixed false positives for license key verification
+* Fixed debug information not printed on cached pages
+* Fixed backwards compatibility and flushing and added doing it wrong notification
+* Fixed "Prevent caching of objects after settings change"
+* Fixed "Use late init" being shown as enabled with Disc:Enhanced
+* Fixed missing param in APC cache method declaration
+* Fixed user roles property not begin an array
+* Fixed adding empty Vary header
+* Fixed notice on failed upgrade licencing check
+* Fixed Database Cache description text
+* Fixed duplicate bb10 agents
+* Fixed settings link in Minify Auto notification
+* Fixed notice with undefined constant
+* Fixed nginx configuration and Referrer, User Groups setting
+* Fixed Genesis settings and Suhosin field name limit error
+* Fixed Genesis and Fragment Caching (caching categories etc)
+* Fixed CDN being enabled when creating NetDNA/MaxCDN pullzone
+* Fixed NewRelic related notice in compatibility popup
+* Fixed trailing slash issue in filename to url conversion
+* Fixed issue with wp in subdirectory and relative Minimal Manual urls
+* Fixed issue with widget styling
+* Fixed issue with Purge All button action
+* Fixed issue with exporting of settings
+* Fixed issue with plugin interferring with preview theme
+* Fixed issue with malformed config files
+* Added caching of list of posts pages (tags, categories etc) to Genesis extension a long with flush it checkbox
+* Added typecasting on expiration time in object cache drop-in
+* Added capability check for save options
+* Added FeedBurner extension
+* Added woff support to Browser Cache
+* Added new CloudFlare IPs
+* Added support for WordPress defined charset and collate in CDN queue table creation
+* Added WordPress SEO by Yoast extension
+* Added *.less to CDN theme uploads and MIME
+* Added default settings for MaxCDN Pull Zone creation
+* Added call to change MaxCDN canonical header setting to match plugin setting
+* Added one button default pull zone creation to MaxCDN without refresh
+* Added MaxCDN authorization validation
+* Added whitelist IPs notification for MaxCDN
+* Added support for use of existing zones without refresh
+* Added new mime types
+* Added support for separate domains for frontend and admin backend
+* Added CloudFlare as an extension
+* Added nofollow to blogroll links
+* Added DEV mode support to PRO version
+* Added EDGE MODE functionality
+* Improved wrapper functions in plugins.php for plugin / theme authors
+* Improved reliability of NetDNA / MaxCDN API calls by using WP HTTP and not cURL
+* Improved Fragment Caching debug information
+* Improved preview mode, removed query string requirement
+* Improved FAQ structure
+* Improved empty minify/pgcache cache notification when using CDN
+* Improved default settings for MaxCDN zone creation
+* Improved CDN queue performance
+* Improved blogmap url sanitation
+* Improved MaxCDN automatic zone creation process
+* Improved license key saving and Pro mode activation on Pro license purchases
+* Updated EDGE MODE: Full site mirroring support for MaxCDN
+* Updated translations
 
-= 0.9.2.3 =
-* Added additional CloudFlare IP range
-* Fixed html tidy encoding
-* Fixed NetDNA / MaxCDN purging
-* Improved handling of markers in .htaccess files - easier upgrades
-* Improved cache busting logic
-* Improved numerous notifications and user interface behaviors
-* Improved AWS S3 and Cloudfront reliability
-* Improved reliability of minify auto mode
+= 0.9.3 =
+* Added support for extensions
+* Added support for WordPress SEO image filter and CDN
+* Added file exclusions for media query string logic
+* Added user agents to user agents groups
+* Added CDN FTP path / host test
+* Fixed object cache and database cache for localization plugins
+* Fixed chinese filenames when using CDN
+* Fixed removal of stale cached files
+* Fixed missing slashes in inline HTML, JS and CSS files when using CDN
+* Fixed auto mode of minify filename length test
+* Fixed NetDNA / MaxCDN testing when domain does not match domain zone settings
+* Fixed CurlException and NetDNA / MaxCDN
+* Fixed pull zone dropdown not showing or showing wrong zone
+* Fixed trailing slash and redirect with apache
+* Fixed false notification for page cache rules verification
+* Fixed duplicate notifications for FTP
+* Fixed empty FTP form
+* Fixed add-in file validation
+* Fixed browser cache headers for proxy cases
+* Fixed wrong slash in Minify filepaths on windows based sites
+* Fixed settings link in minify test failure and multisite
+* Fixed missing param in canonical link generation
+* Fixed PHP 5.2 compatibility
+* Fixed handling of minify in preview mode
+* Fixed order of operation issue on install tab for nginx
+* Fixed translatable strings handling
+* Fixed page cache debug mode issues
+* Fixed home URL handling in multisite
+* Fixed manual minify mode and path based file source for sub-directory installations
+* Fixed path not set in disk enhanced caching
+* Fixed page cache rewrite rule detection
+* Improved security with esc_* usage
+* Improved backend performance with extensive refactoring
 
-= 0.9.2.2 =
-* Fixed minify directives, e.g.: "File param is missing," causing minify caching to fail
-* Fixed document root detection for IIS server
-* Fixed HTTP compression when using CloudFlare
-* Fixed HTML validation with JavaScript embed tags
-* Fixed fancy permalinks, sites with or without trailing slashes can now cache pages using disk enhanced
-* Fixed appending WP_CACHE define into wp-config.php for some users
-* Fixed path to JSON.php
-* Fixed listing of buckets error with AWS S3
-* Improved compatibility with WordPress SEO by Yoast, 404 error exception list sitemap value changed to: sitemap(_index|[0-9]+)?\.xml(\.gz)?
-
-= 0.9.2.1 =
-* Fixed existing installation upgrades: set minify to manual mode by default
-* Fixed unsuccessful transfer queue button
-* Fixed background in lightbox
-* Fixed handling of local http requests being blocked on some hosts
-* Disabled CDN for minify files when auto mode is selected and the CDN method is origin push
-
-= 0.9.2 =
-* Added support for nginx web server
-* Added support for CloudFlare
-* Added origin pull support for Amazon Cloudfront
-* Added Microsoft Azure Storage support for CDN
-* Added WinCache opcode cache support
-* Added additional minifier engines for HTML, CSS and JS including: HTMLtidy, CSStidy, Closure Compiler, YUI Compressor
-* Added Google Page Speed integration
-* Added support for @import processing
-* Added controls for page cache purging policy
-* Added auto mode for minify (not compatible with CDN)
-* Added support for set cookie domain setting
-* Added reliability improvements for Amazon Web Services
-* Added referrer group management for uniquely caching these cases
-* Added Amazon S3 bucket location selection control
-* Added support CNAMEs confguration support for Amazon Cloudfront
-* Added purge tool
-* Added support of custom wp-config.php location
-* Added cache busting support
-* Improved object caching performance when no plugins are active
-* Improved non-blocking JS embedding implementation
-* Improved reliability of CDN export operations
-* Improved implementation of headers for all cache engines
-* Improved minify help (recommendations) tool
-* Improved handling of .htaccess directive changes
-* Improved support of IIS web server
-* Improved varnish support
-* Fixed bugs with API changes with Rackspace Cloudfiles
-* Fixed bugs with origin push content delivery network methods
-* Fixed HTML encoding
-* Fixed emptying cache for various cache keys
-* Fixed rejected CDN file support
-* Fixed HTTPS mode in WP Admin
-* Fixed relative document root for disk enhanced page cache
-* Fixed trailing slash for disk enhanced page cache
-* Fixed minify template group settings being lost upon upgrade
-* Fixed division by zero error
-* Fixed object cache clones
-* Moved browser cache rules to site root instead of document root
-
-= 0.9.1.3 =
-* Improved error messages with AWS S3 CDN
-* Added SSL support for CDN
-* Added control for CDN queue upload interval
-* Added option for 404 file exceptions list in browser cache
-* Added exception for NextGen Gallery flash image rotator to CDN settings
-* Fixed external file imports
-* Fixed document root detection for CDN
-* Fixed minify file search
-* Fixed bugs with AWS CloudFront distribution creation and saving
-* Fixed Rackspace Cloud Files API
-
-= 0.9.1.2 =
-* Improved media library import compatibility
-* Improved various notifications
-* Changed expires implementation to last accessed instead of last modified
-* Resolved Apache 1.3 compatibility issue
-* Fixed issues with document root detection on some servers
-* Fixed an issue with minification of script tags with HTML comments inside
-* Fixed minify gzip compression
-* Fixed cache-control headers
-* Fixed empty fatal error notification on network activation
-* Fixed minify when https is active
-* Fixed fatal error upon activation when uploads path does not exist
-
-= 0.9.1.1 =
-* Added an additional notification to help users identify incomplete installations upon activation
-* Reverted previous Cloud Files workaround
-* Fixed preview mode buttons
-* Fixed duplicate entries appearing when using minify help tool more than once
-* Fixed browser cache rules generation for media files
-
-= 0.9.1 =
-* Improved Rackspace Cloud Files implementation
-* Improved frequently asked questions implementation to support incomplete PHP distributions
-* Fixed 500 Internal Server Error when upgrading with Disk enhanced mode enabled
-* Fixed notification issues with preview mode
-* Fixed an issue with fatal errors with minify and memcache(d) caching engine
-
-= 0.9 =
-* Added preview feature so all cache settings can be reviewed prior to deployment
-* Added minify configuration wizard (help button on minify tab)
-* Added "never cache the following pages" to database and object cache
-* Added minify option to JavaScript embed after &lt;body&gt;
-* Added minify error notifications
-* Added drag and drop dependency resolution for minify CSS / JavaScript groups
-* Added object caching
-* Added option to automatically page cache prime (preload) with or without XML sitemap
-* Added support for multiple CNAMEs to CDN
-* Added support for minifcation of any respective theme installed a single site
-* Added support for page caching of multiple themes for various user agent groups
-* Added support for theme switching / redirection based on groups of user agents
-* Added compatibility with WP Super Cache fragment caching method (disk basic mode only)
-* Added HTTP compression and headers for AWS S3
-* Added ignored comment stems field, with Google AdSense default value to HTML minify
-* Added support for varnish purging
-* Added Rackspace Cloud Files support
-* Added native NetDNA / MaxCDN integration
-* Added option to cache 404 pages
-* Added changed files auto-upload to CDN
-* Added option to handle 404 errors for static objects directly with the web server
-* Added support for gravity forms to database cache default settings
-* Added changed file auto-upload to CDN
-* Database connection errors now return internal server (500) error response and are thus not cached
-* Incomplete plugin installation / removal no longer generates public errors
-* Unterminated string errors no longer display publicly
-* Support tab improvements
-* Install tab improvements
-* Resolved conflicts with disk enhanced .htaccess directives insertion
-* Improved compatibility with all mobile plugins
-* Improved AWS reliability
-* Improved browser caching support and management
-* Improved directory management for disk caching methods for increased performance
-* Improved handling of missing minify files
-* Improved Media Library import
-* Improved Multi Site support
-* Improved SSL interoperability
-
-= 0.8.5.2 =
-* Added support for Bad Behavior plugin
-* Added support for eAccelerator 0.9.5.3 and XCache opcode caches
-* Added support for rewriting href attribute of anchors for images that use the CDN
-* Added deflate http compression support to minify
-* Added setting of file modification time after FTP upload
-* Added check of file modification time and file size before FTP upload
-* Added check of file hash before uploading to Amazon S3
-* Added option to force replacement of uploaded attachments on CDN
-* Added option to toggle feed minification
-* Added combine only option for CSS minification to overcome invalid CSS files
-* Added configuration file import / export
-* Database caching now disabled by default to improve compatibility with some shared hosting environments
-* Default page caching method now disk enhanced
-* Improved HTTP Compression inter-operability
-* Improved compatibility with Multi Site Manager
-* Improved apache compatibility
-* Improved .htaccess directives
-* Improved header management for posts / pages
-* Improved notifications
-* Improved minify handling of external files
-* Improved minify memory limit to avoid blank pages when document size is large
-* Improved minify reliability by reducing comment removal options
-* Improved Media Library Import versatility
-* Improved reliability of plugin activation in WordPress MU
-* Improved security handling for some operations
-* Improved reliability of handling file names containing spaces in CDN functionality
-* Improved non-blocking embedding reliability
-* Improved memcached detection by supporting only PECL memcache
-* Fixed disk enhanced method of page cache in WordPress MU
-* Fixed false match of page cache files in disk enhanced method of page cache
-* Fixed cron anomalies caused by caching of wp_options table
-* Fixed missing trailing slash issue when using disk enhanced page caching
-* Fixed auto-embed bug CSS and JS when already manually embedded
-
-= 0.8.5.1 =
-* Added option to CDN Settings to skip specified directories
-* Added option to allow for full control of HTTP compression options for page cache (some WordPress installations have issues with deflate)
-* Added sql_calc_found_rows to default auto reject SQL list
-* Added more notification cases identified and configured
-* Added new mobile user agents for Japanese market
-* Page cache performance improvements for disk enhanced mode
-* Improved FAQ and option descriptions
-* Improved apache directives for minify headers
-* Improved handling of redirects
-* Improved name space to avoid issues with other plugins
-* Improved handling of incomplete installations, caching runs with default options if custom settings file does not exist
-* Fixed anomalies with memcached-client.php in some environments
-* Fixed another interface bug with management of minify files
-* Fixed minor bug with table column length for some MySQL versions
-* Fixed minify bug with CRLF
-* Fixed minify bug with handling of zlib compression enabled
-* Fixed handling of pages with CDN Media Library import
-
-= 0.8.5 =
-* Added "enhanced" disk caching mode for page cache, a 160% performance improvement over basic mode
-* Added disk caching as an option for Database Cache
-* Added CDN support for Amazon S3 and CloudFront
-* Added mobile user agent rejection and redirect fields to page cache for handling mobile user agents
-* Added Submit Bug Report tab
-* Added support for detection of custom templates for minify groups
-* Added separate controls expiration time field for minify and page cache settings
-* Added PHP4 Support Notification to handle fatal errors on activation
-* Improved database caching by 45%
-* Improved handling of cache-control HTML headers
-* Improved handing of 3rd Party CSS file minification
-* Improved media library import reliability
-* Improved handling of `DOCUMENT_ROOT` on some servers
-* Improved garbage collection routine
-* Improved handling of `<pre>` and `<textarea>` minification
-* Improved handling of regular expressions in custom file list in CDN settings
-* Improved handling of media library attachments in RSS feeds
-* Improved handing of subdomains for CDN settings
-* Improved various notifications and error messages
-* Improved optional .htaccess directives (located in /ini/_htaccess)
-* Fixed JS minifcation saving group settings
-* Fixed false positives for duplicate CSS or JS in minify settings
-* Fixed bug causing settings to be lost on upgrade
-* Fixed attachment URI when CDN mode enabled
-* Fixed small bug with FTP upload when CDN Method is Mirror (Origin Pull)
-* Fixed the URI for wlwmanfiest.xml when CDN enabled 
-* Fixed handling of HTTPS objects according to options
-* Fixed emptying disk cache under various obscure permutations
-* Fixed handling of obscure open_basedir restrictions
-* Fixed various bugs with emptying cache under various obscure permutations
-* Fixed installations deeper than document root
-
-= 0.8 =
-* Added disk as method for page caching
-* Added support for mirror (origin pull) content delivery networks
-* Added options to specify minify group policies per template
-* Added options for toggling inline CSS and JS minification to improve minify reliability
-* Added option to update Media Library attachment hostnames (when migrating domains etc)
-* Added "Empty Cache" buttons to respective tabs
-* Added additional file download fallback methods for minify
-* Improved cookie handling
-* Improved header handling
-* Improved reliability of Media Library import
-* "Don't cache pages for logged in users" is now the default page cache setting
-* Fixed minify bug with RSS feeds
-* Fixed minify bug with rewriting of url() URI in CSS
-* Addressed more page cache invalidity cases
-* Addressed rare occurrence of PHP fatal errors when saving post or comments
-* Addressed CSS bug on wp-login.php
-* Addressed rare MySQL error when uploading attachments to Media Library
-* Modified plugin file/directory structure
-* Confirmed compatibility with varnish and squid
-
-= 0.7.5.2 =
-* Added warning dialog to minify tab about removal of query strings locally hosted object URIs
-* Added empty (memcached) cache button to each tab
-* Improved reliability of memcache flush
-* Minified files now (optionally) upload automatically according to update interval (expiry time)
-* Changed directory of minify working files to wp-content/w3tc-cache/
-* Fixed parsing memcached server strings
-* Fixed minify sometimes not creating files as it should
-* Addressed WordPress network activation/deactivation issues
-* Provided memcache.ini directives updated to improve network throughput
-
-= 0.7.5.1 =
-* Added memcached test button for convenience
-* Added option to concatenate any script to header or footer with non-blocking options for scripts that cannot be minified (e.g. obfuscated scripts)
-* Added options to concatenate JS files only in header or footer (for use with obfuscated scripts)
-* Improved notification handling
-* Improved compatibility with suPHP
-* Improved reliability of Media Library Export
-* Fixed database cache that caused comment counts to become out of date
-* Fixed minor issue with URI with CDN functionality enabled
-* Removed unnecessary minify options
-* Minification error dialogs now disabled when JS or CSS minify settings disabled
-* Normalized line endings with /n as per minify author's direction
-* Resolved bug in the minify library preventing proper permission notification messages
-
-= 0.7.5 =
-* Added handling for magic_quotes set to on
-* Fixed issue with auto-download/upgrade and additional error checking
-* Fixed bug preventing minify working properly if either CSS or JS minification was disabled
-* Improved handling of inline comments and JavaScript in HTML documents
-* Improved handing of @import CSS embedding
-* Addressed privilege control issue
-* Resolved warnings thrown in various versions of WordPress
-* Memcached engine logic modified to better support clustering and multiple memcached instances
-* Eliminated false negatives in a number of gzip / deflate compression analysis tools
-* Total plugin file size reduced
-
-= 0.7 =
-* Added minify support for URIs starting with /
-* WordPress network mode support bug fixes
-* Minor CDN uploader fixes
-* Minor error message improvements
-
-= 0.6 =
-* Added "Debug Mode" listing all settings and queries with statistics
-* Improved error message notifications
-* Improved cache stability for large objects
-* FAQ and installation instructions corrections/adjustments
-* Support for multiple wordpress installations added
-* Resolved bug in minification of feeds
-
-= 0.5 =
-* Initial release
 
 == Upgrade Notice ==
 
-= 0.9.2.5 =
-* Fixed security issue that can occur if using database caching to disk. If using database caching to disk with a web server with directory listing or web accessible wp-content/w3tc/dbcache/* directories. This patch works for all hosting environments / types where PHP is properly configured, i.e. .htaccess modifications (or other web server configuration changes) are *not* necessary to ensure proper security. Empty the database cache after performing the update if you use database caching to disk.
+= 0.9.4.1 =
+Thanks for using W3 Total Cache! This release includes important security updates designed to contribute to a secure WordPress installation.
+
+= 0.9.4 =
+Thanks for using W3 Total Cache! This release introduces hundreds of well-tested stability fixes since the last release as well as a new mode called "edge mode," which allows us to make releases more often containing new features that are still undergoing testing or active iteration.
+
+= 0.9.2.11 =
+Thanks for using W3 Total Cache! This release includes various fixes for MaxCDN and minify users. As always there are general stability / compatibility improvements. Make sure to test in a sandbox or staging environment and report any issues via the bug submission form available on the support tab of the plugin.
+
+= 0.9.2.10 =
+Thanks for using W3 Total Cache! This release includes performance improvements for every type of caching and numerous bug fixes and stability / compatbility improvements. Make sure to keep W3TC updated to ensure optimal reliability and security.
+
+= 0.9.2.9 =
+Thanks for using W3 Total Cache! This release addresses security issues for Cloudflare users as well as users that implement fragment caching via the mfunc functionality. For those using mfunc, temporarily disable page caching to allow yourself time to check the FAQ tab for new usage instructions; if you have a staging environment, that is the most convenient way to test prior to production roll out.
+
+= 0.9.2.8 =
+Thanks for using W3 Total Cache! The recent releases attempted to use WordPress' built in support for managing files and folders and clearly has not worked. Since W3TC is a caching plugin, file management is a critical issue that will cause lots of issues if it doesn't work perfectly. This release is hopefully the last attempt to restore file management back to the reliability of previous versions (0.9.2.4 etc). We realize that having *any* problems is not acceptable, but caching means changing server behavior, so while this plugin is still in pre-release we're trying to focus on learning.

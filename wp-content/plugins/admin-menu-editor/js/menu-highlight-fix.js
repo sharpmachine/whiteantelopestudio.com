@@ -2,6 +2,7 @@ jQuery(function($) {
 	// parseUri 1.2.2
 	// (c) Steven Levithan <stevenlevithan.com>
 	// MIT License
+	// Modified: Added partial URL-decoding support.
 
 	function parseUri (str) {
 		var	o   = parseUri.options,
@@ -13,7 +14,14 @@ jQuery(function($) {
 
 		uri[o.q.name] = {};
 		uri[o.key[12]].replace(o.q.parser, function ($0, $1, $2) {
-			if ($1) uri[o.q.name][$1] = $2;
+			if ($1) {
+				//Decode percent-encoded query parameters.
+				if (o.q.name === 'queryKey') {
+					$1 = decodeURIComponent($1);
+					$2 = decodeURIComponent($2);
+				}
+				uri[o.q.name][$1] = $2;
+			}
 		});
 
 		return uri;
@@ -42,7 +50,8 @@ jQuery(function($) {
 		matchingParams : -1,
 		differentParams : 10000,
 		isAnchorMatch : false,
-		isTopMenu : false
+		isTopMenu : false,
+        isHighlighted: false
 	};
 
 	//Special case: ".../wp-admin/" should match ".../wp-admin/index.php".
@@ -50,17 +59,33 @@ jQuery(function($) {
 		currentUri.path = currentUri.path + 'index.php';
 	}
 
-    var adminMenu = $('#adminmenu');
+	//Special case: if post_type is not specified for edit.php and post-new.php,
+	//WordPress assumes it is "post". Here we make this explicit.
+	if ( (currentUri.file === 'edit.php') || (currentUri.file === 'post-new.php') ) {
+		if ( !currentUri.queryKey.hasOwnProperty('post_type') ) {
+			currentUri.queryKey['post_type'] = 'post';
+		}
+	}
 
+    var adminMenu = $('#adminmenu');
 	adminMenu.find('li > a').each(function(index, link) {
 		var $link = $(link);
 
-		//Skip "#" links. Some plugins (e.g. S2Member 120703) use such no-op items as menu dividers.
-		if ($link.attr('href') == '#') {
+		//Skip links that have no href or contain nothing but an "#anchor". Both AME and some
+		//other plugins (e.g. S2Member 120703) use them as separators.
+		if ( !$link.is('[href]') || ($link.attr('href').substring(0, 1) == '#') ) {
 			return;
 		}
 
 		var uri = parseUri(link.href);
+
+		//Same as above - use "post" as the default post type.
+		if ( (uri.file === 'edit.php') || (uri.file === 'post-new.php') ) {
+			if ( !uri.queryKey.hasOwnProperty('post_type') ) {
+				uri.queryKey['post_type'] = 'post';
+			}
+		}
+		//TODO: Consider using get_current_screen and the current_screen filter to get post types and taxonomies.
 
 		//Check for a close match - everything but query and #anchor.
 		var components = ['protocol', 'host', 'port', 'user', 'password', 'path'];
@@ -77,8 +102,13 @@ jQuery(function($) {
 		var matchingParams = 0, differentParams = 0, param;
 		for(param in uri.queryKey) {
 			if (uri.queryKey.hasOwnProperty(param)) {
-				if (currentUri.queryKey.hasOwnProperty(param) && (uri.queryKey[param] == currentUri.queryKey[param])) {
-					matchingParams++;
+				if (currentUri.queryKey.hasOwnProperty(param)) {
+                    //All parameters that are present in *both* URLs must have the same exact values.
+                    if (uri.queryKey[param] == currentUri.queryKey[param]) {
+                        matchingParams++;
+                    } else {
+                        return; //Skip to the next link.
+                    }
 				} else {
 					differentParams++;
 				}
@@ -92,6 +122,7 @@ jQuery(function($) {
 
 		var isAnchorMatch = uri.anchor == currentUri.anchor;
 		var isTopMenu = $link.hasClass('menu-top');
+        var isHighlighted = $link.is('.current, .wp-has-current-submenu');
 
 		//Figure out if the current link is better than the best found so far.
 		//To do that, we compare them by several criteria (in order of priority):
@@ -108,6 +139,15 @@ jQuery(function($) {
 				better : (isAnchorMatch && (!bestMatch.isAnchorMatch)),
 				equal  : (isAnchorMatch == bestMatch.isAnchorMatch)
 			},
+
+            //All else being equal, the item highlighted by WP is probably a better match.
+            {
+                better : (isHighlighted && !bestMatch.isHighlighted),
+                equal  : (isHighlighted == bestMatch.isHighlighted)
+            },
+
+            //When a menu has multiple submenus, the first submenu usually has the same URL
+            //as the parent menu. We want to highlight this item and not just the parent.
 			{
 				better : (!isTopMenu && bestMatch.isTopMenu),
 				equal  : (isTopMenu == bestMatch.isTopMenu)
@@ -124,14 +164,15 @@ jQuery(function($) {
 			j++;
 		}
 
-		if (isBetterMatch || isEquallyGood) {
+		if (isBetterMatch) {
 			bestMatch = {
 				uri : uri,
 				link : $link,
 				matchingParams : matchingParams,
 				differentParams : differentParams,
 				isAnchorMatch : isAnchorMatch,
-				isTopMenu : isTopMenu
+				isTopMenu : isTopMenu,
+                isHighlighted: isHighlighted
 			}
 		}
 	});
@@ -149,8 +190,8 @@ jQuery(function($) {
 		                              (otherHighlightedMenus.length > 0);
 
 		if (isWrongMenuHighlighted) {
-			//Account for users who use a plugin to keep all menus expanded.
-			var shouldCloseOtherMenus = $('li.wp-has-current-submenu', '#adminmenu').length <= 1;
+			//Account for users who use the Expanded Admin Menus plugin to keep all menus expanded.
+			var shouldCloseOtherMenus = ! $('div.expand-arrow', '#adminmenu').get(0);
 			if (shouldCloseOtherMenus) {
 				otherHighlightedMenus
 					.add('> a', otherHighlightedMenus)
@@ -163,6 +204,14 @@ jQuery(function($) {
 			if (parentMenu.hasClass('wp-has-submenu')) {
 				parentMenuAndLink.addClass('wp-has-current-submenu wp-menu-open');
 			}
+
+			//Note: WordPress switches the admin menu between `position: fixed` and `position: relative` depending on
+			//how tall it is compared to the browser window. Opening a different submenu can change the menu's height,
+			//so we must trigger the position update to avoid bugs. If we don't, we can end up with a very tall menu
+			//that's not scrollable (due to being stuck with `position: fixed`).
+			if ((typeof window['stickyMenu'] === 'object') && (typeof window['stickyMenu']['update'] === 'function')) {
+				window.stickyMenu.update();
+			}
 		}
 
 		if (isWrongItemHighlighted) {
@@ -170,4 +219,14 @@ jQuery(function($) {
 			bestMatchLink.addClass('current').closest('li').addClass('current');
 		}
 	}
+
+    //If a submenu is highlighted, so must be its parent.
+    //In some cases, if we decide to stick with the WP-selected highlighted menu,
+    //this might not be the case and we'll need to fix it.
+    var parentOfHighlightedMenu = $('.wp-submenu a.current', '#adminmenu').closest('.menu-top');
+    parentOfHighlightedMenu
+        .add('> a.menu-top', parentOfHighlightedMenu)
+        .removeClass('wp-not-current-submenu')
+        .addClass('wp-has-current-submenu wp-menu-open');
+
 });

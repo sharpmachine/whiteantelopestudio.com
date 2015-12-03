@@ -1,8 +1,14 @@
 <div class="wrap shopp">
-	<div class="icon32"></div>
-	<h2><?php _e('Page Settings','Shopp'); ?></h2>
 
-	<form action="<?php echo $this->url; ?>" id="pages" method="post">
+	<div class="icon32"></div>
+	<?php
+
+		shopp_admin_screen_tabs();
+		do_action('shopp_admin_notices');
+
+	?>
+
+	<form action="<?php echo esc_url($this->url); ?>" id="pages" method="post">
 	<div>
 		<?php wp_nonce_field('shopp-settings-pages'); ?>
 	</div>
@@ -87,7 +93,7 @@
 		<tbody><tr><td colspan="6"><?php _e('No Shopp pages available! The sky is falling! Contact the Help Desk, stat!','Shopp'); ?></td></tr></tbody>
 	<?php endif; ?>
 	</table>
-
+	
 	</form>
 </div>
 <script type="text/javascript">

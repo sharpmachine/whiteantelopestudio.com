@@ -1,19 +1,21 @@
 <?php
 
 /*
-*  Meta Box: Options
+*  Meta box - options
 *
-*  @description: 
-*  @created: 23/06/12
+*  This template file is used when editing a field group and creates the interface for editing options.
+*
+*  @type	template
+*  @date	23/06/12
 */
-	
+
 
 // global
 global $post;
 
 	
 // vars
-$options = $this->parent->get_acf_options($post->ID);
+$options = apply_filters('acf/field_group/get_options', array(), $post->ID);
 	
 
 ?>
@@ -26,8 +28,8 @@ $options = $this->parent->get_acf_options($post->ID);
 		<td>
 			<?php 
 			
-			$this->parent->create_field(array(
-				'type'	=>	'text',
+			do_action('acf/create_field', array(
+				'type'	=>	'number',
 				'name'	=>	'menu_order',
 				'value'	=>	$post->menu_order,
 			));
@@ -42,14 +44,16 @@ $options = $this->parent->get_acf_options($post->ID);
 		<td>
 			<?php 
 			
-			$this->parent->create_field(array(
-				'type'	=>	'radio',
+			do_action('acf/create_field', array(
+				'type'	=>	'select',
 				'name'	=>	'options[position]',
 				'value'	=>	$options['position'],
 				'choices' => array(
-					'normal'	=>	__("Normal",'acf'),
-					'side'		=>	__("Side",'acf'),
-				)
+					'acf_after_title'	=>	__("High (after title)",'acf'),
+					'normal'			=>	__("Normal (after content)",'acf'),
+					'side'				=>	__("Side",'acf'),
+				),
+				'default_value' => 'normal'
 			));
 
 			?>
@@ -62,20 +66,20 @@ $options = $this->parent->get_acf_options($post->ID);
 		<td>
 			<?php 
 			
-			$this->parent->create_field(array(
-				'type'	=>	'radio',
+			do_action('acf/create_field', array(
+				'type'	=>	'select',
 				'name'	=>	'options[layout]',
 				'value'	=>	$options['layout'],
 				'choices' => array(
-					'no_box'	=>	__("No Metabox",'acf'),
-					'default'	=>	__("Standard Metabox",'acf'),
+					'no_box'			=>	__("Seamless (no metabox)",'acf'),
+					'default'			=>	__("Standard (WP metabox)",'acf'),
 				)
 			));
 			
 			?>
 		</td>
 	</tr>
-	<tr>
+	<tr id="hide-on-screen">
 		<td class="label">
 			<label for="post_type"><?php _e("Hide on screen",'acf'); ?></label>
 			<p class="description"><?php _e("<b>Select</b> items to <b>hide</b> them from the edit screen",'acf'); ?></p>
@@ -84,21 +88,25 @@ $options = $this->parent->get_acf_options($post->ID);
 		<td>
 			<?php 
 			
-			$this->parent->create_field(array(
+			do_action('acf/create_field', array(
 				'type'	=>	'checkbox',
 				'name'	=>	'options[hide_on_screen]',
 				'value'	=>	$options['hide_on_screen'],
 				'choices' => array(
+					'permalink'			=>	__("Permalink", 'acf'),
 					'the_content'		=>	__("Content Editor",'acf'),
-					'excerpt'			=>	__("Excerpt"),
-					'custom_fields'		=>	__("Custom Fields"),
-					'discussion'		=>	__("Discussion"),
-					'comments'			=>	__("Comments"),
-					'revisions'			=>	__("Revisions"),
-					'slug'				=>	__("Slug"),
-					'author'			=>	__("Author"),
-					'format'			=>	__("Format"),
-					'featured_image'	=>	__("Featured Image")
+					'excerpt'			=>	__("Excerpt", 'acf'),
+					'custom_fields'		=>	__("Custom Fields", 'acf'),
+					'discussion'		=>	__("Discussion", 'acf'),
+					'comments'			=>	__("Comments", 'acf'),
+					'revisions'			=>	__("Revisions", 'acf'),
+					'slug'				=>	__("Slug", 'acf'),
+					'author'			=>	__("Author", 'acf'),
+					'format'			=>	__("Format", 'acf'),
+					'featured_image'	=>	__("Featured Image", 'acf'),
+					'categories'		=>	__("Categories", 'acf'),
+					'tags'				=>	__("Tags", 'acf'),
+					'send-trackbacks'	=>	__("Send Trackbacks", 'acf'),
 				)
 			));
 			

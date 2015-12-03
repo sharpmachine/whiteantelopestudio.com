@@ -1,22 +1,4 @@
 <?php
-/*
-+----------------------------------------------------------------+
-|																							|
-|	WordPress 2.8 Plugin: WP-DBManager 2.63								|
-|	Copyright (c) 2009 Lester "GaMerZ" Chan									|
-|																							|
-|	File Written By:																	|
-|	- Lester "GaMerZ" Chan															|
-|	- http://lesterchan.net															|
-|																							|
-|	File Information:																	|
-|	- Database Repair	 																|
-|	- wp-content/plugins/wp-dbmanager/database-repair.php			|
-|																							|
-+----------------------------------------------------------------+
-*/
-
-
 ### Check Whether User Can Manage Database
 if(!current_user_can('manage_database')) {
 	die('Access Denied');
@@ -27,32 +9,34 @@ if(!current_user_can('manage_database')) {
 $base_name = plugin_basename('wp-dbmanager/database-manager.php');
 $base_page = 'admin.php?page='.$base_name;
 
-### Form Processing 
-if($_POST['do']) {
+### Form Processing
+if(!empty($_POST['do'])) {
 	// Lets Prepare The Variables
 	$repair = $_POST['repair'];
+	$text = '';
 
 	// Decide What To Do
 	switch($_POST['do']) {
 		case __('Repair', 'wp-dbmanager'):
 			check_admin_referer('wp-dbmanager_repair');
 			if(!empty($repair)) {
+				$tables_string = '';
 				foreach($repair as $key => $value) {
 					if($value == 'yes') {
 						$tables_string .=  '`, `'.$key;
 					}
 				}
 			} else {
-				$text = '<font color="red">'.__('No Tables Selected', 'wp-dbmanager').'</font>';
+				$text = '<p style="color: red;">'.__('No Tables Selected', 'wp-dbmanager').'</p>';
 			}
 			$selected_tables = substr($tables_string, 2);
 			$selected_tables .= '`';
 			if(!empty($selected_tables)) {
 				$repair2 = $wpdb->query("REPAIR TABLE $selected_tables");
 				if(!$repair2) {
-					$text = '<font color="red">'.sprintf(__('Table(s) \'%s\' NOT Repaired', 'wp-dbmanager'), str_replace('`', '', $selected_tables)).'</font>';					
+					$text = '<p style="color: red;">'.sprintf(__('Table(s) \'%s\' NOT Repaired', 'wp-dbmanager'), str_replace('`', '', $selected_tables)).'</p>';
 				} else {
-					$text = '<font color="green">'.sprintf(__('Table(s) \'%s\' Repaired', 'wp-dbmanager'), str_replace('`', '', $selected_tables)).'</font>';
+					$text = '<p style="color: green;">'.sprintf(__('Table(s) \'%s\' Repaired', 'wp-dbmanager'), str_replace('`', '', $selected_tables)).'</p>';
 				}
 			}
 			break;
@@ -68,7 +52,6 @@ $tables = $wpdb->get_col("SHOW TABLES");
 <form method="post" action="<?php echo admin_url('admin.php?page='.plugin_basename(__FILE__)); ?>">
 	<?php wp_nonce_field('wp-dbmanager_repair'); ?>
 	<div class="wrap">
-		<div id="icon-wp-dbmanager" class="icon32"><br /></div>
 		<h2><?php _e('Repair Database', 'wp-dbmanager'); ?></h2>
 		<br style="clear" />
 		<table class="widefat">
@@ -79,9 +62,10 @@ $tables = $wpdb->get_col("SHOW TABLES");
 				</tr>
 			</thead>
 				<?php
+					$no = 0;
 					foreach($tables as $table_name) {
 						if($no%2 == 0) {
-							$style = '';							
+							$style = '';
 						} else {
 							$style = ' class="alternate"';
 						}

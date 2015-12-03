@@ -13,6 +13,8 @@
  * @subpackage shipping
  **/
 
+defined( 'WPINC' ) || header( 'HTTP/1.1 403' ) & exit; // Prevent direct access
+
 /**
  * ShippingModules class
  *
@@ -26,10 +28,13 @@
  **/
 class ShippingModules extends ModuleLoader {
 
-	var $dimensions = false;	// Flags when a module requires product dimensions
-	var $postcodes = false;		// Flags when a module requires a post code for shipping estimates
-	var $realtime = false;		// Flags when a module provides realtime rates
-	var $methods = array();		// Registry of shipping method handles
+	protected $interface = 'ShippingModule';
+	protected $paths =  array(SHOPP_SHIPPING, SHOPP_ADDONS);
+
+	public $dimensions = false;	// Flags when a module requires product dimensions
+	public $postcodes = false;		// Flags when a module requires a post code for shipping estimates
+	public $realtime = false;		// Flags when a module provides realtime rates
+	public $methods = array();		// Registry of shipping method handles
 
 	/**
 	 * Initializes the shipping module loader
@@ -37,15 +42,13 @@ class ShippingModules extends ModuleLoader {
 	 * @author Jonathan Davis
 	 * @since 1.1
 	 *
-	 * @return void Description...
+	 * @return void
 	 **/
-	function __construct () {
-
-		$this->path = SHOPP_SHIPPING;
+	public function __construct () {
 
 		// Get hooks in place before getting things started
-		add_action('shopp_module_loaded',array(&$this,'addmethods'));
-		add_action('shopp_settings_shipping_ui',array(&$this,'ui'));
+		add_action('shopp_module_loaded', array($this,'addmethods'));
+		add_action('shopp_settings_shipping_ui', array($this,'ui'));
 
 		$this->installed();
 		$this->activated();
@@ -61,10 +64,11 @@ class ShippingModules extends ModuleLoader {
 	 *
 	 * @return array List of module names for the activated modules
 	 **/
-	function activated () {
+	public function activated () {
 		$this->activated = array();
 		$active = shopp_setting('active_shipping');
-		if (!empty($active)) $this->activated = array_keys($active);
+
+		if ( ! empty($active) ) $this->activated = array_keys($active);
 
 		return $this->activated;
 	}
@@ -77,7 +81,7 @@ class ShippingModules extends ModuleLoader {
 	 *
 	 * @return void
 	 **/
-	function settings () {
+	public function settings () {
 		$this->load(true);
 	}
 
@@ -90,8 +94,8 @@ class ShippingModules extends ModuleLoader {
 	 * @param string $module The module class name
 	 * @return void
 	 **/
-	function addmethods ($module) {
-		if (!isset($this->active[$module])) return;
+	public function addmethods ( $module ) {
+		if ( ! isset($this->active[ $module ]) ) return;
 
 		$active = shopp_setting('active_shipping');
 
@@ -99,13 +103,13 @@ class ShippingModules extends ModuleLoader {
 
 		if (empty($m)) return;
 
-		if ($this->active[$module]->postcode) $this->postcodes = true;
-		if ($this->active[$module]->dimensions) $this->dimensions = true;
-		if ($this->active[$module]->realtime) $this->realtime = true;
+		if ( $this->active[ $module ]->postcode ) $this->postcodes = true;
+		if ( $this->active[ $module ]->dimensions ) $this->dimensions = true;
+		if ( $this->active[ $module ]->realtime ) $this->realtime = true;
 
-		if (!is_array($m)) return $this->methods[$module] = $module;
+		if ( ! is_array($m) ) return $this->methods[$module] = $module;
 
-		foreach ($m as $index => $set) {
+		foreach ( $m as $index => $set ) {
 			$setting_name = "$module-$index";
 			$setting = shopp_setting($setting_name);
 			if (empty($setting)) continue;
@@ -121,7 +125,7 @@ class ShippingModules extends ModuleLoader {
 	 *
 	 * @return array The list of method handles
 	 **/
-	function methods () {
+	public function methods () {
 		return $this->methods;
 	}
 
@@ -131,9 +135,9 @@ class ShippingModules extends ModuleLoader {
 	 * @author Jonathan Davis
 	 * @since 1.2
 	 *
-	 * @return void Description...
+	 * @return void
 	 **/
-	function &get ($module) {
+	public function &get ( $module ) {
 		if (empty($this->active)) $this->settings();
 		if (!isset($this->active[$module])) return false;
 		return $this->active[$module];
@@ -145,14 +149,14 @@ class ShippingModules extends ModuleLoader {
 	 * @author Jonathan Davis
 	 * @since 1.1
 	 *
-	 * @return void Description...
+	 * @return void
 	 **/
-	function ui () {
+	public function ui () {
 		foreach ($this->active as $package => &$module)
 			$module->initui($package,$this->modules[$package]->name);
 	}
 
-	function templates () {
+	public function templates () {
 		foreach ($this->active as $package => &$module)
 			$module->uitemplate($package,$this->modules[$package]->name);
 	}
@@ -199,7 +203,7 @@ interface ShippingModule {
 	 *
 	 * @return boolean
 	 **/
-	public function activated();
+	public function activated ();
 
 	/**
 	 * Used to initialize/reset shipping module calculation properties
@@ -225,7 +229,7 @@ interface ShippingModule {
 	 * @param Item $Item The cart Item object
 	 * @return void
 	 **/
-	public function calcitem($id,$Item);
+	public function calcitem ( $id, $Item );
 
 	/**
 	 * Used to calculate aggregate shipping amounts
@@ -239,7 +243,7 @@ interface ShippingModule {
 	 * @param Order $Order A reference to the current Order object
 	 * @return array The modified $options list
 	 **/
-	public function calculate($options,$Order);
+	public function calculate ( &$options, $Order );
 
 } // END interface ShippingModule
 
@@ -255,19 +259,28 @@ interface ShippingModule {
  **/
 abstract class ShippingFramework {
 
-	var $module = false;		// The module class name
-	var $base = false;			// Base of operations settings
-	var $postcode = false;		// Flag to enable the postcode field in the cart
-	var $rates = array();		// The shipping rates that apply to the module
-	var $dimensions = false;	// Uses dimensions in calculating estimates
-	var $xml = false;			// Flag to load and enable XML parsing
-	var $soap = false;			// Flag to load and SOAP client helper
-	var $singular = false;		// Provides realtime rate lookups
-	var $realtime = false;		// Shipping module can only be loaded once
-	var $packager = false;		// Shipping packager object
-	var $setting = '';			// Setting name for the shipping module setting record
-	var $destinations = '';		// Destination label for settings display
-	var $settings = array();	// Settings for the shipping module
+	public $module = false;		// The module class name
+	public $base = false;		// Base of operations settings
+	public $postcode = false;	// Flag to enable the postcode field in the cart
+	public $rates = array();	// The shipping rates that apply to the module
+	public $dimensions = false;	// Uses dimensions in calculating estimates
+	public $xml = false;		// Flag to load and enable XML parsing
+	public $soap = false;		// Flag to load and SOAP client helper
+	public $singular = false;	// Provides realtime rate lookups
+	public $realtime = false;	// Shipping module can only be loaded once
+	public $packager = false;	// Shipping packager object
+	public $setting = '';		// Setting name for the shipping module setting record
+	public $destinations = '';	// Destination label for settings display
+	public $settings = array();	// Settings for the shipping module
+	public $codes = array(200);    // List of valid response codes
+
+	protected $sizes = array(
+		'length' =>	array( 'min' => 1, 'max' => false, 'unit' => 'in' ),
+		'width'	 => array( 'min' => 1, 'max' => false, 'unit' => 'in' ),
+		'height' => array( 'min' => 1, 'max' => false, 'unit' => 'in' ),
+		'girth'  => array( 'min' => 1, 'max' => false, 'unit' => 'in' ),
+		'weight' => array( 'min' => 1, 'max' => false, 'unit' => 'lb' )
+	);
 
 	/**
 	 * Initializes a shipping module
@@ -280,13 +293,24 @@ abstract class ShippingFramework {
 	 *
 	 * @return void
 	 **/
-	function __construct () {
+	public function __construct () {
 		$Order = ShoppOrder();
 
 		$this->module = get_class($this);
 
-		if ($this->singular) $this->settings = shopp_setting($this->module);
-		else {
+		if ( $this->singular ) {
+			// @todo Remove legacy gateway settings migrations
+			// Attempt to copy old settings if this is a new prefixed gateway class
+			$this->settings = shopp_setting($this->module);
+			if ( empty($this->settings) && false !== strpos($this->module, 'Shopp') ) {
+				$legacy = substr($this->module, 5);
+				$this->settings = shopp_setting($legacy);
+				if ( ! empty($this->settings) ) {
+					shopp_set_setting($this->module, $this->settings);
+					shopp_rmv_setting($legacy); // Clean up legacy setting
+				}
+			}
+		} else {
 			$active = shopp_setting('active_shipping');
 			if (isset($active[$this->module]) && is_array($active[$this->module])) {
 				$this->methods = array();
@@ -302,11 +326,6 @@ abstract class ShippingFramework {
 
 		$this->base = shopp_setting('base_operations');
 		$this->units = shopp_setting('weight_unit');
-
-		if ($this->postcode) $Order->Cart->showpostcode = true;
-
-		if ( $this->xml && ! class_exists('xmlQuery')) require(SHOPP_MODEL_PATH."/XML.php");
-		if ( $this->soap && ! class_exists('nusoap_base') ) require(SHOPP_MODEL_PATH."/SOAP.php");
 
 		// Setup default packaging for shipping module
 		$this->settings['shipping_packaging'] = shopp_setting('shipping_packaging');
@@ -330,16 +349,16 @@ abstract class ShippingFramework {
 
 	}
 
-	function fallbacks () {
+	public function fallbacks () {
 		$this->_methods = $this->methods;
 		$this->methods = $this->fallbacks;
 	}
 
-	function reset () {
+	public function reset () {
 		$this->methods = $this->_methods;
 	}
 
-	function setting ($id=false) {
+	public function setting ($id=false) {
 		$active = shopp_setting('active_shipping');
 		if (!$active) $active = array();
 
@@ -365,8 +384,8 @@ abstract class ShippingFramework {
 	 *
 	 * @return boolean
 	 **/
-	function activated () {
-		global $Shopp;
+	public function activated () {
+		$Shopp = Shopp::object();
 		$activated = $Shopp->Shipping->activated();
 		return (in_array($this->module,$activated));
 	}
@@ -381,11 +400,11 @@ abstract class ShippingFramework {
 	 * @param string $name... (optional) Additional setting names to initialize
 	 * @return void
 	 **/
-	function setup () {
+	public function setup () {
 		$settings = func_get_args();
-		foreach ($settings as $name)
-			if (!isset($this->settings[$name]))
-				$this->settings[$name] = false;
+		foreach ( $settings as $name )
+			if ( ! isset($this->settings[ $name ]) )
+				$this->settings[ $name ] = false;
 	}
 
 	/**
@@ -398,7 +417,7 @@ abstract class ShippingFramework {
 	 * @param string $url The URL to connect to
 	 * @return string Raw response
 	 **/
-	function send ($data=false,$url,$options=array()) {
+	public function send ($data=false,$url,$options=array()) {
 
 		$defaults = array(
 			'method' => 'POST',
@@ -429,7 +448,7 @@ abstract class ShippingFramework {
 			return false;
 		} else extract($result);
 
-		if (200 != $response['code']) {
+		if ( ! in_array($response['code'], $this->codes) ) {
 			$error = Lookup::errors('shipping','http-'.$response['code']);
 			if (empty($error)) $error = Lookup::errors('shipping','http-unkonwn');
 			new ShoppError($error,'shipping_comm_error',SHOPP_COMM_ERR);
@@ -448,7 +467,7 @@ abstract class ShippingFramework {
 	 * @param array $data Key/value pairs of data to encode
 	 * @return string
 	 **/
-	function encode ($data) {
+	public function encode ($data) {
 		$query = "";
 		foreach($data as $key => $value) {
 			if (is_array($value)) {
@@ -474,7 +493,7 @@ abstract class ShippingFramework {
 	 * @return string The column index name
 	 **/
 	// @todo remove ShippingFramework::ratecolumn() in favor of tablerate()
-	function ratecolumn ($rate) {
+	public function ratecolumn ($rate) {
 
 		return false; // @deprecated removing in favor of tablerate()
 		$Order = &ShoppOrder();
@@ -494,125 +513,209 @@ abstract class ShippingFramework {
 		return $column;
 	}
 
-	function tablerate ($table) {
-		$Order = &ShoppOrder();
+	public function tablerate ( $table ) {
+		$Order = ShoppOrder();
 
-		$Address = &$Order->Shipping;
+		$Address = $Order->Shipping;
 		$countries = Lookup::countries();
 		$zones = Lookup::country_zones();
 
-		$target = array('region'=>false,'country'=>false,'area'=>false,'zone'=>false,'postcode'=>false);
+		$target = array('region' => false, 'country' => false, 'area' => false, 'zone' => false, 'postcode' => false);
 
 		// Prepare address for comparison
-		$target['region'] = (int)$countries[$Address->country]['region'];
+		$target['region'] = (int)$countries[ $Address->country ]['region'];
 		$target['country'] = $Address->country;
 
-		if (isset($Address->postcode) && !empty($Address->postcode)) {
+		if ( isset($Address->postcode) && ! empty($Address->postcode) ) {
 			$target['postcode'] = $Address->postcode;
 			$Address->postmap();
 		}
 
-		if (isset($Address->state) && !empty($Address->state)) {
+		if ( isset($Address->state) && ! empty($Address->state) ) {
 			$target['zone'] = $Address->state;
 
 			$areas = Lookup::country_areas();
-			if (isset($areas[$Address->country]) && !empty($areas[$Address->country])) {
+			if ( isset($areas[ $Address->country ]) && ! empty($areas[ $Address->country ]) ) {
 				$target['area'] = array();
-				foreach ($areas[$Address->country] as $areaname => $areazones) {
-					if (!in_array($Address->state,$areazones)) continue;
+				foreach ( $areas[ $Address->country ] as $areaname => $areazones ) {
+					if ( ! in_array($Address->state, $areazones) ) continue;
 					$target['area'][] = $areaname;
 				}
 				rsort($target['area']);
-				if (empty($target['area'])) $target['area'] = false;
+				if ( empty($target['area']) ) $target['area'] = false;
 			} else $target['area'] = $target['zone'];
 
 		}
 
 		// Sort table rules more specific to more generic matching
-		usort($table,array('ShippingFramework','_sorttable'));
+		usort($table, array('ShippingFramework', '_sorttable'));
 
-		// echo '<pre>';
 		// Evaluate each destination rule
-		foreach ($table as $index => $rate) {
-			$r = floatvalue(isset($rate['rate'])?$rate['rate']:0);
-			if (isset($rate['tiers'])) {
+		foreach ( $table as $index => $rate ) {
+			$r = Shopp::floatval(isset($rate['rate']) ? $rate['rate'] : 0);
+			if ( isset($rate['tiers']) ) {
 				$r = $rate['tiers'];
-				usort($r,array('ShippingFramework','_sorttier'));
+				usort($r, array('ShippingFramework', '_sorttier'));
 			}
 
-			$dr = strpos($rate['destination'],',') !== false ? explode(',',$rate['destination']) : array($rate['destination']);
+			$dr = strpos($rate['destination'], ',') !== false ? explode(',', $rate['destination']) : array($rate['destination']);
 			$k = array_keys( array_slice($target, 0, count($dr) ) );
 
-			$rule = array_combine($k,$dr);
-			if (isset($rate['postcode']) && !empty($rate['postcode']) && $rate['postcode'] != '*')
+			$rule = array_combine($k, $dr);
+			if ( isset($rate['postcode']) && ! empty($rate['postcode']) && '*' != $rate['postcode'] )
 				$rule['postcode'] = $rate['postcode'];
-			$match = array_intersect_key($target,$rule);
+			$match = array_intersect_key($target, $rule);
 
-			$d = array_diff($rule,$match);
-
-			// @todo remove table rule matching debug
-			// echo "***********************************\n";
-			// echo "MATCH: \n"; print_r($match); echo "\n\n";
-			// echo "RULE: \n"; print_r($rule); echo "\n\n";
-			// echo "DIFF: \n"; print_r($d); echo "\n\n";
+			$d = array_diff($rule, $match);
 
 			// Use the rate if the destination rule is for anywhere
-			if ($rule['region'] == '*') return $r;
+			if ( '*' == $rule['region'] ) return $r;
 
 			// Exact match FTW!
-			if (empty($d)) return $r;
+			if ( empty($d) ) return $r;
 
 			// Handle special case for area matching
-			if (!empty($d['area']) && is_array($match['area'])) {
+			if ( ! empty($d['area']) && is_array($match['area']) ) {
 				// Some countries can have multiple country areas
 				// the target address can match on (most specific matches first)
-				if (in_array($rule['area'],$match['area'])) unset($d['area']); // Clear excpetion to match
+				if ( in_array($rule['area'], $match['area']) ) unset($d['area']); // Clear excpetion to match
 			}
 
 			// Handle postcode matching
-			if (!empty($d['postcode'])) {
-				if (false !== strpos($rule['postcode'],','))
-					$postcodes = explode(',',$rule['postcode']);
+			if ( ! empty($d['postcode']) ) {
+				if ( false !== strpos($rule['postcode'], ',') )
+					$postcodes = explode(',', $rule['postcode']);
 				else $postcodes = array($rule['postcode']);
 
-				foreach ($postcodes as $coderule) {
+				//Exclusive rules need to be evaluated first
+				usort($postcodes, create_function(
+						'$a, $b',
+						'$a = ( "!" == $a{0} );
+						 $b = ( "!" == $b{0} );
+						 if ( $a == $b ) return 0;
+						 return ( $a < $b ) ? -1 : 1;'
+				));
+
+				$exclusions = 0;
+				foreach ( $postcodes as $coderule ) {
 					$coderule = trim($coderule);
+
+					// Determine if rule is exclusive
+					$exclude = false;
+					if ( '!' == substr($coderule, 0, 1) ) {
+						$exclude = true;
+						$exclusions++;
+						$coderule = substr($coderule, 1);
+					}
 
 					// Match numeric postcode ranges (only works for pure numeric postcodes like US zip codes)
 					// Cannot be mixed with wildcard ranges (eg 55*-56* does not work, use 55000-56999)
-					if (false !== strpos($coderule,'-')) {
-						list($start,$end) = explode('-',$coderule);
-						if ($match['postcode'] >= $start && $match['postcode'] <= $end)
+					if ( false !== strpos($coderule,'-') ) {
+						list($start, $end) = explode('-', $coderule);
+						if ( $match['postcode'] >= $start && $match['postcode'] <= $end ) {
+							if ( $exclude ) return false;
 							unset($d['postcode']); // Clear exception to match
+						}
 						continue;
 					}
 
 					// Match wildcard postcode patterns
-					if (strpos($coderule,'*') !== false) {
-						$pattern = str_replace('*','(.+?)',$coderule);
-						if (preg_match("/^$pattern$/i",$match['postcode']))
-							unset($d['postcode']); // Clear exception for match
+					if ( false !== strpos($coderule, '*') ) {
+						$pattern = str_replace('*', '(.+?)', $coderule);
+						if ( preg_match("/^$pattern$/i", $match['postcode']) ) {
+							if ( $exclude ) return false;
+							unset($d['postcode']); // Clear exception to match
+						}
 						continue;
 					}
 
 					// Exact match
-					if ($coderule == $match['postcode']) {
-						unset($d['postcode']);
+					if ( $coderule == $match['postcode'] ) {
+						if ( $exclude ) return false;
+						unset($d['postcode']); // Clear exception to match
 						continue;
 					}
 
 				}
 
+				if ( $exclusions == count($postcodes) )
+					unset($d['postcode']); //All of the rules were exclusive and passed, clear exception
 			}
 
 			// If exceptions were cleared, return the matching rate
-			if (empty($d)) return $r;
+			if ( empty($d) ) return $r;
 
 		}
-		// echo '</pre>';
 
 		// No matches found!?
 		return false;
+	}
+
+	/**
+	 * Gets a converted size amount
+	 *
+	 * @author Jonathan Davis
+	 * @since 1.3
+	 *
+	 * @param int $value The value to convert
+	 * @param string $size The size dimension being converted (the sizing method to use)
+	 * @return float The converted size amount
+	 **/
+	public function size ( $value = 0, $size = 'weight' ) {
+		if ( ! isset($this->sizes[ $size ]) ) return $value;
+
+		$dimension = convert_unit($value, $this->sizes[ $size ]['unit']);
+
+		$method = "size$size";
+		if ( method_exists($this, $method) ) $dimension = $this->$method($dimension);
+		else $dimension = $this->sized($dimension, $size);
+
+		return $dimension;
+	}
+
+	/**
+	 * Converts dimension amounts (length, width, height, girth)
+	 *
+	 * @author Jonathan Davis
+	 * @since 1.3
+	 *
+	 * @param float $value The value to convert
+	 * @param string $size The size dimension name being converted
+	 * @return int The converted size amount
+	 **/
+	protected function sized ( $value, $size ) {
+		if ( ! isset($this->sizes[ $size ]) ) return $value;
+
+		$value = (float)$value;
+
+		if ( $value < $this->sizes[$size]['min']) $value = (float)$this->sizes[$size]['min'];
+		if ( false !== $this->sizes[$size]['max'] && $value > $this->sizes[$size]['max'])
+			$value = (float)$this->sizes[$size]['max'];
+
+		return ceil($value);
+	}
+
+	/**
+	 * Converts weight amounts
+	 *
+	 * @author Jonathan Davis
+	 * @since 1.3
+	 *
+	 * @param float $value The weight value to convert
+	 * @return float The converted weight amount
+	 **/
+	protected function sizeweight ( $value ) {
+
+		$value = (float)$value;
+
+		if ( $value < $this->sizes['weight']['min'] ) $value = (float)$this->sizes['weight']['min'];
+		if ( false !== $this->sizes['weight']['max'] && $value > $this->sizes['weight']['max'])
+			$value = (float)$this->sizes['weight']['max'];
+
+		$pounds = intval($value);
+		$ounces = ceil( ($value - $pounds) * 16 );
+
+		return array($pounds,$ounces);
 	}
 
 	/**
@@ -623,7 +726,7 @@ abstract class ShippingFramework {
 	 *
 	 * @return string Delivery estimate string
 	 **/
-	function delivery ($data = array()) {
+	public function delivery ( array $data = array() ) {
 		$defaults = array( 'mindelivery' => '1w', 'maxdelivery' => '2w' );
 		$data = array_merge( $defaults, $data );
 		$cart = ShoppOrder()->Cart->processing;
@@ -631,15 +734,15 @@ abstract class ShippingFramework {
 		$min = shopp_setting('order_processing_min');
  		$max = shopp_setting('order_processing_max');
 
-		$earliest = ShippingFramework::daytimes($min,$cart['min'],$data['mindelivery']);
-		$latest = ShippingFramework::daytimes($max,$cart['max'],$data['maxdelivery']);
+		$earliest = apply_filters('shopp_mindelivery_estimate', ShippingFramework::daytimes($min, $cart['min'], $data['mindelivery']), $data, $this);
+		$latest = apply_filters('shopp_maxdelivery_estimate', ShippingFramework::daytimes($max, $cart['max'], $data['maxdelivery']), $data, $this);
 
 		return $earliest.'-'.$latest;
 	}
 
-	static function daytimes () {
+	public static function daytimes () {
 		$args = func_get_args();
-		$periods = array("h"=>3600,"d"=>86400,"w"=>604800,"m"=>2592000);
+		$periods = array('h' =>3600, 'd' => 86400, 'w' => 604800, 'm' => 2592000);
 
 		$total = 0;
 		foreach ($args as $timeframe) {
@@ -650,21 +753,40 @@ abstract class ShippingFramework {
 		return ceil($total/$periods['d']).'d';
 	}
 
-	static function _sorttable ($a, $b) {
+	/**
+	 * If the minimum delivery time exceeds the maximum it is changed to be equal instead.
+	 *
+	 * @param &$min
+	 * @param &$max
+	 */
+	public static function sensibleestimates ( &$min, &$max ) {
+		$minval = (int) str_replace('d', '', ShippingFramework::daytimes($min));
+		$maxval = (int) str_replace('d', '', ShippingFramework::daytimes($max));
+
+		if ($minval > $maxval) $min = $max;
+	}
+
+	static function _sorttable ( $a, $b ) {
 		$c = array($a,$b);
 
 		foreach ($c as $id => $r) {
 			$i = strpos($r['destination'],',') !== false?count(explode(',',$r['destination'])):1;
+			if ( '*' == $r['destination'] ) $i = 0;
 			if (!empty($r['postcode']) && $r['postcode'] != '*')
 				$i += strpos($r['postcode'],'*') !== false ? 5 : 6;
 			$c[$id] = $i;
 		}
 
-		return ($c[0] < $c[1]);
+		if ( $c[0] < $c[1] ) return 1;
+		elseif ( $c[0] > $c[1] ) return -1;
+		else return 0;
 	}
 
 	static function _sorttier ($a, $b) {
-		return floatvalue($a['threshold']) < floatvalue($b['threshold']) ? -1 : 1;
+		$at = isset($a['threshold']) ? $a['threshold'] : 0;
+		$bt = isset($b['threshold']) ? $b['threshold'] : 0;
+		if ( Shopp::floatval($at) == Shopp::floatval($bt) ) return 0;
+		return Shopp::floatval($at) < Shopp::floatval($bt) ? -1 : 1;
 	}
 
 
@@ -678,17 +800,17 @@ abstract class ShippingFramework {
 	 * @param string $name The formal name of the module
 	 * @return void
 	 **/
-	function initui ($name) {
+	public function initui ($name) {
 		$label = isset($this->settings['label'])?$this->settings['label']:$name;
 		$this->ui = new ShippingSettingsUI($this,$name);
 		$this->settings();
 	}
 
-	function uitemplate () {
+	public function uitemplate () {
 		$this->ui->template();
 	}
 
-	function ui () {
+	public function ui () {
 		$editor = $this->ui->generate();
 		foreach ($this->settings as $name => $value)
 			$data['${'.$name.'}'] = $value;
@@ -696,21 +818,21 @@ abstract class ShippingFramework {
 		return str_replace(array_keys($data),$data,$editor);
 	}
 
-	function settings() { }
+	public function settings() { }
 
 } // END class ShippingFramework
 
 class ShippingSettingsUI extends ModuleSettingsUI {
 
-	var $fieldname = 'settings';
-	var $template = false;
-	var $tables = false;
-	var $type = '';
-	var $unit = array();
-	var $norates = false;
+	public $fieldname = 'settings';
+	public $template = false;
+	public $tables = false;
+	public $type = '';
+	public $unit = array();
+	public $norates = false;
 
-	function __construct ($Module,$name) {
-		parent::__construct($Module,$name);
+	public function __construct ( $Module, $name ) {
+		parent::__construct($Module, $name);
 
 		$this->id = empty($Module->setting)?$this->module:$Module->setting;
 
@@ -718,20 +840,21 @@ class ShippingSettingsUI extends ModuleSettingsUI {
 		if (method_exists($Module,'logo')) $this->label = 'data:image/png;base64,'.$Module->logo();
 	}
 
-	function settings () {
+	public function settings () {
 		$properties = array('module','type','unit','norates','threshold_class','rate_class');
 		$settings = array();
-		foreach ($properties as $prop)
-			$settings[$prop] = $this->{$prop};
+		foreach ( $properties as $prop )
+			if ( isset($this->$prop) )
+				$settings[$prop] = $this->{$prop};
 
 		return $settings;
 	}
 
-	function behaviors ($script) {
+	public function behaviors ($script) {
 		shopp_custom_script('shiprates',$script);
 	}
 
-	function generate () {
+	public function generate () {
 
 		$logo = (strpos($this->label,'data:image') !== false);
 
@@ -780,7 +903,7 @@ class ShippingSettingsUI extends ModuleSettingsUI {
 
 	}
 
-	function template () {
+	public function template ( $id = null ) {
 		if ($this->tables) return; // Skip table-based UI standard templates (use TemplateShippingUI)
 		$id = strtolower($this->id);
 		$_ = array('<script id="'.$id.'-editor" type="text/x-jquery-tmpl">');
@@ -790,7 +913,7 @@ class ShippingSettingsUI extends ModuleSettingsUI {
 		echo join("",$_)."\n\n";
 	}
 
-	function flatrates ($column=0,$attributes=array()) {
+	public function flatrates ( $column = 0, array $attributes = array() ) {
 		$defaults = array(
 			'name' => '',
 			'classes' => '',
@@ -824,7 +947,7 @@ class ShippingSettingsUI extends ModuleSettingsUI {
 					$_[] = '<th scope="col">'.__('Postal Code','Shopp').'</th>';
 					if (!$norates)
 					$_[] = '<th class="num rate" scope="col">'.__('Rate','Shopp').'</th>';
-					$_[] = '<th class="delete control" scope="col"><img src="'.SHOPP_ICONS_URI.'/clear.png" width="26" height="16" /></th>';
+					$_[] = '<th class="delete control" scope="col"><div>&nbsp;</div></th>';
 				$_[] = '</tr>';
 			$_[] = '</thead>';
 			$_[] = '<tbody>';
@@ -844,7 +967,7 @@ class ShippingSettingsUI extends ModuleSettingsUI {
 		$this->ui(join('',$_),$column);
 	}
 
-	function flatrate_row ($row=0,$setting=array(),$norates=false) {
+	public function flatrate_row ( $row = 0, array $setting = array(), $norates = false ) {
 		$defaults = array(
 			'rate' => '${rate}',
 		);
@@ -859,21 +982,23 @@ class ShippingSettingsUI extends ModuleSettingsUI {
 			$_[] = $this->location_fields($row,$setting);
 		if (!$norates)
 			$_[] = '<td class="num rate"><input type="text" name="'.$this->module.'[table]['.$row.'][rate]" size="7" class="money selectall" value="'.$rate.'" /></td>';
-		$_[] = '<td class="delete control"><button type="submit" name="deleterow" class="delete'.($row == 0?' hidden':'').'" value="'.$row.'"><img src="'.SHOPP_ICONS_URI.'/delete.png" width="16" height="16" /></button></td>';
+		$_[] = '<td class="delete control">' . ShoppUI::button('delete', 'deleterow', array('class' => 'delete' . ($row == 0 ? ' hidden' : ''), 'value' => $row)) . '</td>';
 		$_[] = '</tr>';
 
 		return join('',$_);
 	}
 
-	function tablerates ($column=0,$attributes=array()) {
+	public function tablerates ( $column = 0, array $attributes = array() ) {
 		$defaults = array(
+			'id' => '',
+			'name' => '',
 			'class' => '',
 			'threshold_class' => '',
 			'rate_class' => '',
-			'unit' => array(),
+			'unit' => array('', ''),
 			'table' => array()
 		);
-		$attributes = array_merge($defaults,$attributes);
+		$attributes = array_merge($defaults, $attributes);
 		$attributes['id'] = "{$this->id}-{$attributes['name']}";
 		extract($attributes);
 
@@ -911,11 +1036,11 @@ class ShippingSettingsUI extends ModuleSettingsUI {
 		$_[] = '</table>';
 
 		$this->markup = array();
-		$this->ui(join('',$_),$column);
+		$this->ui(join('', $_), $column);
 	}
 
-	function tablerate_row ($row=0,$attrs,$table) {
-		$unit = $attrs['unit'];
+	public function tablerate_row ( $row = 0, array $attrs = array(), array $table = array() ) {
+		$unit = isset($attrs['unit']) ? $attrs['unit'] : array('', '');
 
 		// Handle adding rate tiers
 		if (isset($_POST['addtier'])) {
@@ -930,11 +1055,11 @@ class ShippingSettingsUI extends ModuleSettingsUI {
 					foreach ($table['tiers'] as $index => $t) {
 						if ($t['threshold'] == 0) continue;
 						$sum['t'] += $t['threshold'];
-						$sum['r'] += floatvalue($t['rate']);
+						$sum['r'] += Shopp::floatval($t['rate']);
 						$c++;
 
 						$max['t'] = max($max['t'],$t['threshold']);
-						$max['r'] = max($max['r'],floatvalue($t['rate']));
+						$max['r'] = max($max['r'],Shopp::floatval($t['rate']));
 						if ($index+1 == $tier) break;
 					}
 					$mean['t'] = $sum['t']/$c;
@@ -943,7 +1068,7 @@ class ShippingSettingsUI extends ModuleSettingsUI {
 					foreach ($table['tiers'] as $index => $t) {
 						if ($t['threshold'] == 0) continue;
 						$deltas['t'] += abs($t['threshold']-$mean['t']);
-						$deltas['r'] += abs(floatvalue($t['rate'])-$mean['r']);
+						$deltas['r'] += abs(Shopp::floatval($t['rate'])-$mean['r']);
 						if ($index+1 == $tier) break;
 					}
 					$avedev['t'] = max(round($deltas['t']/$c,0),1);
@@ -974,13 +1099,13 @@ class ShippingSettingsUI extends ModuleSettingsUI {
 			$_[] = '<th scope="col">'.__('Destination','Shopp').'</th>';
 			$_[] = '<th scope="col">'.__('Postal Code','Shopp').'</th>';
 			$_[] = '<th scope="col">'.sprintf(__('Rates by %s','Shopp'),"{$unit[0]}".((isset($unit[1]) && !empty($unit[1]))?" ({$unit[1]})":'') ).'</th>';
-			$_[] = '<th class="delete control" scope="col"><img src="'.SHOPP_ICONS_URI.'/clear.png" width="26" height="16" /></th>';
+			$_[] = '<th class="delete control" scope="col"><div>&nbsp;</div></th>';
 		$_[] = '</tr>';
 		$_[] = '</thead>';
 		$_[] = '<tbody>';
 		$_[] = '<tr>';
-		if (!$this->template)
-			$_[] = $this->location_fields($row,$setting);
+		if ( ! $this->template )
+			$_[] = $this->location_fields($row, $table);
 			$_[] = '<td>';
 				$_[] = '<table class="panel">';
 
@@ -996,7 +1121,7 @@ class ShippingSettingsUI extends ModuleSettingsUI {
 
 			$_[] = '</td>';
 			$_[] = '<td class="delete control">';
-			$_[] = '<button type="submit" name="deleterow" class="delete'.($row == 0?' hidden':'').'" value="'.$row.'"><img src="'.SHOPP_ICONS_URI.'/delete.png" width="16" height="16" /></button>';
+			$_[] = ShoppUI::button('delete', 'deleterow', array('class' => 'delete' . ($row == 0?' hidden':''), 'value' => $row));
 			$_[] = '</td>';
 		$_[] = '</tr>';
 		$_[] = '</tbody>';
@@ -1004,7 +1129,7 @@ class ShippingSettingsUI extends ModuleSettingsUI {
 		return join('',$_);
 	}
 
-	function tablerate_row_tier ($row=0,$tier=0,$attrs,$setting=array()) {
+	public function tablerate_row_tier ( $row = 0, $tier = 0, array $attrs = array(), array $setting = array() ) {
 		$unit = isset($attrs['unit'][1])?$attrs['unit'][1]:false;
 		$threshold_class = !empty($attrs['threshold_class'])?$attrs['threshold_class']:'';
 		$rate_class = !empty($attrs['rate_class'])?$attrs['rate_class']:'money';
@@ -1023,16 +1148,16 @@ class ShippingSettingsUI extends ModuleSettingsUI {
 
 		$_ = array();
 		$_[] = '<tr>';
-			$_[] = '<td class="control"><button type="submit" name="deletetier" class="delete'.($tier == 0?' hidden':'').'" value="'.("$row,$tier").'"><img src="'.SHOPP_ICONS_URI.'/delete.png" width="16" height="16" /></button></td>';
+			$_[] = '<td class="control">' . ShoppUI::button('delete', 'deletetier', array('class' => 'delete' . ($tier == 0 ? ' hidden' : ''), 'value' => "$row,$tier")) . '</td>';
 			$_[] = '<td class="unit leftfield"><label><input type="text" name="'.$this->module.'[table]['.$row.'][tiers]['.$tier.'][threshold]" size="7" value="'.$setting['threshold'].'" class="threshold selectall '.$threshold_class.'" /> '.$unit.' '.__('and above','Shopp').'</label></td>';
 			$_[] = '<td class="rate rightfield"><input type="text" name="'.$this->module.'[table]['.$row.'][tiers]['.$tier.'][rate]" size="7" class="rate selectall '.$rate_class.'" value="'.$setting['rate'].'" /></td>';
-			$_[] = '<td class="control"><button type="submit" name="addtier" value="'."$row,$tier".'" class="add"><img src="'.SHOPP_ICONS_URI.'/add.png" width="16" height="16" /></button></td>';
+			$_[] = '<td class="control">' . ShoppUI::button('add', 'addtier') . '</td>';
 		$_[] = '</tr>';
 
 		return join('',$_);
 	}
 
-	function parse_location ($destination) {
+	public static function parse_location ($destination) {
 		$selected = array(
 			'region' => '*',
 			'country' => '',
@@ -1079,8 +1204,8 @@ class ShippingSettingsUI extends ModuleSettingsUI {
 		return $selected;
 	}
 
-	function location_menu ($destination = false,$module=false) {
-		if (!$module) $this->module;
+	public function location_menu ( $destination = false, $row = 0, $module = false ) {
+		if ( ! $module ) $module = $this->module;
 		$menuarrow = ' &#x25be;';
 		$tab = str_repeat('&sdot;',3).'&nbsp;';
 		$regions = Lookup::regions();
@@ -1183,12 +1308,12 @@ class ShippingSettingsUI extends ModuleSettingsUI {
 
 	}
 
-	function location_fields ($row=0,$setting=array()) {
+	public function location_fields ( $row = 0, array $setting = array() ) {
 
 		$menuarrow = ' &#x25be;';
 		$destination = isset($setting['destination'])?$setting['destination']:'';
 
-		$menu = $this->location_menu($destination);
+		$menu = $this->location_menu($destination, $row);
 		extract($menu);
 		if ($this->template) {
 			$row = '${row}';
@@ -1213,7 +1338,7 @@ class ShippingSettingsUI extends ModuleSettingsUI {
 
 class TemplateShippingUI extends ShippingSettingsUI {
 
-	function __construct() {
+	public function __construct () {
 		parent::__construct(false,false);
 
 		$this->template = true;
@@ -1226,51 +1351,51 @@ class TemplateShippingUI extends ShippingSettingsUI {
 		$this->templates();
 	}
 
-	function templates () {
+	public function templates () {
 		$callbacks = array('location','flatrates','flatrate_row','tablerates','tablerate_row','tablerate_row_tier');
 		foreach ($callbacks as $callback) add_action('shopp_shipping_module_settings',array($this,$callback));
 	}
 
-	function template ($id) {
+	public function template ( $id = null ) {
 		$_ = array('<script id="'.$id.'" type="text/x-jquery-tmpl">');
 		$_[] = $this->generate();
 		$_[] = '</script>';
 		echo join("",$_)."\n\n";
 	}
 
-	function widget ($id,$markup) {
+	public function widget ($id,$markup) {
 		$_ = array('<script id="'.$id.'" type="text/x-jquery-tmpl">');
 		$_[] = $markup;
 		$_[] = '</script>';
 		echo join("",$_)."\n\n";
 	}
 
-	function location () {
+	public function location () {
 		$markup = parent::location_fields();
 		$this->widget('location-fields',$markup);
 	}
 
-	function flatrates () {
+	public function flatrates ( $column = 0, array $attributes = array() ) {
 		parent::flatrates();
 		$this->template('flatrates-editor');
 	}
 
-	function flatrate_row () {
+	public function flatrate_row ( $row = 0, array $setting = array(), $norates = false ) {
 		$markup = parent::flatrate_row();
 		$this->widget('flatrate-row',$markup);
 	}
 
-	function tablerates () {
+	public function tablerates ( $column = 0, array $attributes = array() ) {
 		parent::tablerates();
 		$this->template('tablerates-editor');
 	}
 
-	function tablerate_row () {
+	public function tablerate_row ( $row = 0, array $attrs = array(), array $table = array() ) {
 		$markup = parent::tablerate_row(0,array(),array());
 		$this->widget('tablerate-row',$markup);
 	}
 
-	function tablerate_row_tier () {
+	public function tablerate_row_tier ( $row = 0, $tier = 0, array $attrs = array(), array $setting = array() ) {
 		$markup = parent::tablerate_row_tier(0,array(),array());
 		$this->widget('tablerate-row-tier',$markup);
 	}
@@ -1363,7 +1488,7 @@ class ShippingPackager implements ShippingPackagingInterface {
 
 	protected $packages = array();
 
-	function __construct( $options = array(), $module = false ) {
+	public function __construct( $options = array(), $module = false ) {
 		$this->types = array_keys( Lookup::packaging_types() );
 
 		if ( $module !== false ) $this->module = $module;
@@ -1400,7 +1525,7 @@ class ShippingPackager implements ShippingPackagingInterface {
 	 **/
 	public function add_item ( $CartItem ) {
 		$Item = new ShippingPackageItem($CartItem, $CartItem->quantity);
-		if ( str_true($Item->packaging) )
+		if ( Shopp::str_true($Item->packaging) )
 			do_action_ref_array('shopp_packager_add_piece', array($Item, $this) );
 		else do_action_ref_array('shopp_packager_add_'.$this->pack, array($Item, $this) );
 	}
@@ -1681,18 +1806,12 @@ interface ShippingPackageInterface {
 
 class ShippingPackage implements ShippingPackageInterface {
 
-	protected $wt = 0; //current weight
-
-	protected $w = 0;  //current width
-
-	protected $h = 0;  //current height
-
-	protected $l = 0;  //current length
-
-	protected $val = 0; // estimated value of package contents
-
-	protected $dims = false; // package has dimensions?
-
+	protected $wt = 0;			//current weight
+	protected $w = 0; 			//current width
+	protected $h = 0;			//current height
+	protected $l = 0;			//current length
+	protected $val = 0;			// estimated value of package contents
+	protected $dims = false;	// package has dimensions?
 	protected $boxtype = 'custom';
 
 	// limits for this package
@@ -1707,7 +1826,7 @@ class ShippingPackage implements ShippingPackageInterface {
 
 	protected $contents = array(); // Item array
 
-	function __construct( $dims = false, $limits = array( 'wtl' => -1, 'wl' => -1, 'hl' => -1, 'll' => -1 ), $boxtype = 'custom' ) {
+	public function __construct( $dims = false, $limits = array( 'wtl' => -1, 'wl' => -1, 'hl' => -1, 'll' => -1 ), $boxtype = 'custom' ) {
 		$this->dims = $dims;
 		$this->limits = array_merge($this->limits, $limits);
 
@@ -1991,6 +2110,7 @@ class ShippingPackage implements ShippingPackageInterface {
 } // end class ShippingPackage
 
 class ShippingPackageItem {
+
 	public $index = false;	// Item index in Cart
 	public $fingerprint; 	// Item fingerprint
 	public $quantity;		// Item quantity
@@ -2002,7 +2122,7 @@ class ShippingPackageItem {
 	public $orient;			// Item orientation
 	public $pos;			// Item position
 
-	function __construct ( $Item, $quantity = 1 ) {
+	public function __construct ( $Item, $quantity = 1 ) {
 		if ( ! is_object($Item) ) return;
 
 		// just a clone of another ShippingPackageItem
@@ -2036,14 +2156,16 @@ class ShippingPackageItem {
 	}
 
 	/**
-	 * Get the Item object referenced in the Cart->contents(). Note the ShippingPackageItem may contain only a portion of the quantity of the referenced Item.
+	 * Get the Item object referenced in the Cart->contents()
+	 *
+	 * Note the ShippingPackageItem may contain only a portion of the quantity of the referenced Item.
 	 *
 	 * @author John Dillick
 	 * @since 1.2.2
 	 *
 	 * @return mixed boolean false if reference doesn't exist, else parent Item object
 	 **/
-	function parentItem () {
+	public function parentItem () {
 		if ( false === $this->index ) return false;
 		return shopp_cart_item($this->index);
 	}
@@ -2062,11 +2184,10 @@ class ShippingPackageItem {
  **/
 class ShippingCarrier extends AutoObjectFramework {
 
-	var $name;			// Display name
-	var $weburl;		// Website URL
-	var $areas;			// Areas serviced (where shipments can be sent from, use * for worldwide or comma-separated country codes)
-	var $trackurl;		// Tracking Query URL (use %s as token for tracking number replacement)
-	var $trackpattern;	// Regular expression pattern for carrier tracking numbers
-}
+	public $name;			// Display name
+	public $weburl;		// Website URL
+	public $areas;			// Areas serviced (where shipments can be sent from, use * for worldwide or comma-separated country codes)
+	public $trackurl;		// Tracking Query URL (use %s as token for tracking number replacement)
+	public $trackpattern;	// Regular expression pattern for carrier tracking numbers
 
-?>
+}

@@ -18,6 +18,16 @@ class blcLinkQuery {
 	function __construct(){
 		//Init. the available native filters.
 		$this->native_filters = array(
+			'all' => array(
+				'params' => array(
+					'where_expr' => '1',
+				),
+				'name' => __('All', 'broken-link-checker'),
+				'heading' => __('Detected Links', 'broken-link-checker'),
+				'heading_zero' => __('No links found (yet)', 'broken-link-checker'),
+				'native' => true,
+			),
+
 			'broken' => array(
 				'params' => array(
 					'where_expr' => '( broken = 1 )',
@@ -27,17 +37,27 @@ class blcLinkQuery {
 				'heading' => __('Broken Links', 'broken-link-checker'),
 				'heading_zero' => __('No broken links found', 'broken-link-checker'),
 				'native' => true,
-			 ), 
-			 'redirects' => array(
-			 	'params' => array(
+			),
+			'warnings' => array(
+				'params' => array(
+					'where_expr' => '( warning = 1 )',
+					's_include_dismissed' => false,
+				),
+				'name' => _x('Warnings', 'filter name', 'broken-link-checker'),
+				'heading' => __('Warnings', 'filter heading', 'broken-link-checker'),
+				'heading_zero' => __('No warnings found', 'broken-link-checker'),
+				'native' => true,
+			),
+			'redirects' => array(
+				'params' => array(
 					'where_expr' => '( redirect_count > 0 )',
-					 's_include_dismissed' => false,
+					's_include_dismissed' => false,
 				),
 				'name' => __('Redirects', 'broken-link-checker'),
 				'heading' => __('Redirected Links', 'broken-link-checker'),
 				'heading_zero' => __('No redirects found', 'broken-link-checker'),
 				'native' => true,
-			 ),
+			),
 
 			'dismissed' => array(
 				'params' => array(
@@ -48,17 +68,13 @@ class blcLinkQuery {
 				'heading_zero' => __('No dismissed links found', 'broken-link-checker'),
 				'native' => true,
 			),
-			 
-			'all' => array(
-				'params' => array(
-					'where_expr' => '1',
-				),
-				'name' => __('All', 'broken-link-checker'),
-				'heading' => __('Detected Links', 'broken-link-checker'),
-				'heading_zero' => __('No links found (yet)', 'broken-link-checker'),
-				'native' => true,
-			 ), 
 		);
+
+		//The user can turn off warnings. In that case, all errors will show up in the "broken" filter instead.
+		$conf = blc_get_configuration();
+		if ( !$conf->get('warnings_enabled') ) {
+			unset($this->native_filters['warnings']);
+		}
 		
 		//Create the special "search" filter
 		$this->search_filter = array(
@@ -158,9 +174,12 @@ class blcLinkQuery {
    */
 	function delete_custom_filter($filter_id){
 		global $wpdb; /** @var wpdb $wpdb */
-		
+
+		if ( !isset($filter_id) ) {
+			$filter_id = $_POST['filter_id'];
+		}
 		//Remove the "f" character from the filter ID to get its database key
-		$filter_id = intval(ltrim($_POST['filter_id'], 'f'));
+		$filter_id = intval(ltrim($filter_id, 'f'));
 		
 		//Try to delete the filter
 		$q = $wpdb->prepare("DELETE FROM {$wpdb->prefix}blc_filters WHERE id = %d", $filter_id);
@@ -292,7 +311,7 @@ class blcLinkQuery {
 		//Parser type should match the parser_type column in the instance table.
 		if ( !empty($s_parser_type) ){
 			$s_parser_type = array_map('trim', array_unique($s_parser_type));
-			$s_parser_type = array_map(array(&$wpdb, 'escape'), $s_parser_type);
+			$s_parser_type = array_map('esc_sql', $s_parser_type);
 			
 			if ( count($s_parser_type) == 1 ){
 				$pieces[] = sprintf("instances.parser_type = '%s'", reset($s_parser_type));
@@ -307,7 +326,7 @@ class blcLinkQuery {
 		if ( !empty($s_container_type) ){
 			//Sanitize for use in SQL
 			$s_container_type = array_map('trim', array_unique($s_container_type));
-			$s_container_type = array_map(array(&$wpdb, 'escape'), $s_container_type);
+			$s_container_type = array_map('esc_sql', $s_container_type);
 			
 			if ( count($s_container_type) == 1 ){
 				$pieces[] = sprintf("instances.container_type = '%s'", reset($s_container_type));
@@ -346,7 +365,7 @@ class blcLinkQuery {
 		
 		//Anchor text - use LIKE search
 		if ( !empty($params['s_link_text']) ){
-			$s_link_text = like_escape($wpdb->escape($params['s_link_text']));
+			$s_link_text = esc_sql($this->esc_like($params['s_link_text']));
 			$s_link_text  = str_replace('*', '%', $s_link_text);
 			
 			$pieces[] = '(instances.link_text LIKE "%' . $s_link_text . '%")';
@@ -357,7 +376,7 @@ class blcLinkQuery {
 		//There is limited wildcard support, e.g. "google.*/search" will match both 
 		//"google.com/search" and "google.lv/search" 
 		if ( !empty($params['s_link_url']) ){
-			$s_link_url = like_escape($wpdb->escape($params['s_link_url']));
+			$s_link_url = esc_sql($this->esc_like($params['s_link_url']));
 			$s_link_url = str_replace('*', '%', $s_link_url);
 			
 			$pieces[] = '(links.url LIKE "%'. $s_link_url .'%") OR '.
@@ -375,7 +394,7 @@ class blcLinkQuery {
 			
 		//Link type can match either the the parser_type or the container_type.
 		if ( !empty($params['s_link_type']) ){
-			$s_link_type = $wpdb->escape($params['s_link_type']);
+			$s_link_type = esc_sql($params['s_link_type']);
 			$pieces[] = "instances.parser_type = '$s_link_type' OR instances.container_type='$s_link_type'";
 			$join_instances = true;
 		}
@@ -442,6 +461,8 @@ class blcLinkQuery {
 		if ( !empty($params['orderby']) ) {
 			$allowed_columns = array(
 				'url' => 'links.url',
+				'link_text' => 'instances.link_text',
+				'redirect_url' => 'links.final_url',
 			);
 			$column = $params['orderby'];
 
@@ -451,6 +472,11 @@ class blcLinkQuery {
 			}
 
 			if ( array_key_exists($column, $allowed_columns) ) {
+				if ( $column === 'redirect_url' ) {
+					//Sort links that are not redirects last.
+					$order_exprs[] = '(links.redirect_count > 0) DESC';
+				}
+
 				$order_exprs[] = $allowed_columns[$column] . ' ' . $direction;
 			}
 		}
@@ -470,6 +496,15 @@ class blcLinkQuery {
 			'join_instances' => $join_instances,
 			'order_exprs' => $order_exprs,
 		);
+	}
+
+	private function esc_like($input) {
+		global $wpdb; /** @var wpdb $wpdb */
+		if ( method_exists($wpdb, 'esc_like') ) {
+			return $wpdb->esc_like($input);
+		} else {
+			return like_escape($input);
+		}
 	}
 	
   /**
@@ -563,7 +598,7 @@ class blcLinkQuery {
 		if ( $params['max_results'] || $params['offset'] ){
 			$q .= sprintf("\nLIMIT %d, %d", $params['offset'], $params['max_results']);
 		}
-		
+
 		$results = $wpdb->get_results($q, ARRAY_A);
 		if ( empty($results) ){
 			return array();
@@ -661,15 +696,22 @@ class blcLinkQuery {
 		foreach ($filters as $filter => $data){
 			if ( !empty($data['hidden']) ) continue; //skip hidden filters
 															
-			$class = $number_class = '';
+			$class = '';
+			$number_class = 'filter-' . $filter . '-link-count';
 			
 			if ( $current == $filter ) {
 				$class = 'class="current"';
-				$number_class = 'current-link-count';	
+				$number_class .= ' current-link-count';
 			}
-			
-			$items[] = "<li><a href='tools.php?page=view-broken-links&filter_id=$filter' {$class}>
-				{$data['name']}</a> <span class='count'>(<span class='$number_class'>{$data['count']}</span>)</span>";
+
+			$items[] = sprintf(
+				"<li><a href='tools.php?page=view-broken-links&filter_id=%s' %s>%s</a> <span class='count'>(<span class='%s'>%d</span>)</span>",
+				esc_attr($filter),
+				$class,
+				esc_html($data['name']),
+				$number_class,
+				$data['count']
+			);
 		}
 		echo implode(' |</li>', $items);
 		
@@ -715,6 +757,10 @@ class blcLinkQuery {
 	 * @return array Associative array of filter data and the results of its execution.
 	 */
 	function exec_filter($filter_id, $page = 1, $per_page = 30, $fallback = 'broken', $orderby = '', $order = 'asc'){
+		//The only valid sort directions are 'asc' and 'desc'.
+		if ( !in_array($order, array('asc', 'desc')) ) {
+			$order = 'asc';
+		}
 		
 		//Get the selected filter (defaults to displaying broken links)
 		$current_filter = $this->get_filter($filter_id);
@@ -818,4 +864,3 @@ function blc_get_links($params = null){
 	return $instance->get_links($params);
 }
 
-?>

@@ -7,7 +7,7 @@ if (!defined('W3TC')) {
     die();
 }
 
-require_once W3TC_LIB_W3_DIR . '/Plugin.php';
+w3_require_once(W3TC_LIB_W3_DIR . '/Plugin.php');
 
 /**
  * Class W3_Plugin_DbCache
@@ -34,49 +34,52 @@ class W3_Plugin_DbCache extends W3_Plugin {
             'on_change'
         ), 0);
 
-        add_action('publish_post', array(
+        add_action('wp_trash_post', array(
             &$this,
-            'on_change'
+            'on_post_change'
         ), 0);
 
-        add_action('edit_post', array(
+        add_action('save_post', array(
             &$this,
-            'on_change'
+            'on_post_change'
         ), 0);
 
-        add_action('delete_post', array(
+        global $wp_version;
+        if (version_compare($wp_version,'3.5', '>=')) {
+            add_action('clean_post_cache', array(
             &$this,
-            'on_change'
-        ), 0);
+            'on_post_change'
+            ), 0, 2);
+        }
 
         add_action('comment_post', array(
             &$this,
-            'on_change'
+            'on_comment_change'
         ), 0);
 
         add_action('edit_comment', array(
             &$this,
-            'on_change'
+            'on_comment_change'
         ), 0);
 
         add_action('delete_comment', array(
             &$this,
-            'on_change'
+            'on_comment_change'
         ), 0);
 
         add_action('wp_set_comment_status', array(
             &$this,
-            'on_change'
-        ), 0);
+            'on_comment_status'
+        ), 0, 2);
 
         add_action('trackback_post', array(
             &$this,
-            'on_change'
+            'on_comment_change'
         ), 0);
 
         add_action('pingback_post', array(
             &$this,
-            'on_change'
+            'on_comment_change'
         ), 0);
 
         add_action('switch_theme', array(
@@ -88,64 +91,30 @@ class W3_Plugin_DbCache extends W3_Plugin {
             &$this,
             'on_change'
         ), 0);
+
+        if (w3_is_multisite()) {
+            add_action('delete_blog', array(
+                &$this,
+                'on_change'
+            ), 0);
+        }
+
+        add_action('delete_post', array(
+            &$this,
+            'on_post_change'
+        ), 0);
     }
 
-    /**
-     * Activate plugin action (called by W3_PluginProxy)
-     */
-    function activate() {
-        require_once W3TC_INC_DIR . '/functions/activation.php';
-        
-        if (!$this->locked() && !@copy(W3TC_INSTALL_FILE_DB, W3TC_ADDIN_FILE_DB)) {
-            w3_writable_error(W3TC_ADDIN_FILE_DB);
-        }
-        
-        $this->schedule();
-    }
-    
-    /**
-     * Deactivate plugin action (called by W3_PluginProxy)
-     */
-    function deactivate() {
-        $this->unschedule();
-        
-        if (!$this->locked()) {
-            @unlink(W3TC_ADDIN_FILE_DB);
-        }
-    }
-    
-    /**
-     * Schedules events
-     */
-    function schedule() {
-        if ($this->_config->get_boolean('dbcache.enabled') && $this->_config->get_string('dbcache.engine') == 'file') {
-            if (!wp_next_scheduled('w3_dbcache_cleanup')) {
-                wp_schedule_event(time(), 'w3_dbcache_cleanup', 'w3_dbcache_cleanup');
-            }
-        } else {
-            $this->unschedule();
-        }
-    }
-    
-    /**
-     * Unschedules events
-     */
-    function unschedule() {
-        if (wp_next_scheduled('w3_dbcache_cleanup')) {
-            wp_clear_scheduled_hook('w3_dbcache_cleanup');
-        }
-    }
-    
     /**
      * Does disk cache cleanup
      *
      * @return void
      */
     function cleanup() {
-        require_once W3TC_LIB_W3_DIR . '/Cache/File/Cleaner.php';
+        w3_require_once(W3TC_LIB_W3_DIR . '/Cache/File/Cleaner.php');
         
-        @$w3_cache_file_cleaner = & new W3_Cache_File_Cleaner(array(
-            'cache_dir' => W3TC_CACHE_FILE_DBCACHE_DIR,
+        $w3_cache_file_cleaner = new W3_Cache_File_Cleaner(array(
+            'cache_dir' => w3_cache_blog_dir('db'),
             'clean_timelimit' => $this->_config->get_integer('timelimit.cache_gc')
         ));
         
@@ -176,10 +145,59 @@ class W3_Plugin_DbCache extends W3_Plugin {
         static $flushed = false;
 
         if (!$flushed) {
-            require_once W3TC_LIB_W3_DIR . '/Db.php';
-            @$w3_db = & W3_Db::instance();
+            $flusher = w3_instance('W3_CacheFlush');
+            $flusher->dbcache_flush();
 
-            $w3_db->flush_cache();
+            $flushed = true;
+        }
+    }
+
+    /**
+     * Change post action
+     */
+    function on_post_change($post_id = 0, $post = null) {
+        static $flushed = false;
+
+        if (!$flushed) {
+            if (is_null($post))
+                $post = $post_id;
+
+            if ($post_id>0 && !w3_is_flushable_post($post, 'dbcache', $this->_config)) {
+                return;
+            }
+
+            $flusher = w3_instance('W3_CacheFlush');
+            $flusher->dbcache_flush();
+
+            $flushed = true;
+        }
+    }
+
+    /**
+     * Comment change action
+     *
+     * @param integer $comment_id
+     */
+    function on_comment_change($comment_id) {
+        $post_id = 0;
+
+        if ($comment_id) {
+            $comment = get_comment($comment_id, ARRAY_A);
+            $post_id = !empty($comment['comment_post_ID']) ? (int) $comment['comment_post_ID'] : 0;
+        }
+
+        $this->on_post_change($post_id);
+    }
+
+    /**
+     * Comment status action
+     *
+     * @param integer $comment_id
+     * @param string $status
+     */
+    function on_comment_status($comment_id, $status) {
+        if ($status === 'approve' || $status === '1') {
+            $this->on_comment_change($comment_id);
         }
     }
 }

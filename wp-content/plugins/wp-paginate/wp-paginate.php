@@ -1,15 +1,16 @@
 <?php
 /*
 Plugin Name: WP-Paginate
-Plugin URI: http://www.ericmmartin.com/projects/wp-paginate/
+Plugin URI: http://www.studiofuel.com/wp-paginate/
 Description: A simple and flexible pagination plugin for WordPress posts and comments.
-Author: Eric Martin
-Version: 1.2.4
-Author URI: http://www.ericmmartin.com
-Revision: $Id: wp-paginate.php 467949 2011-11-26 20:03:29Z emartin24 $
+Version: 1.3.1
+Author: Noah Cinquini
+Author URI: http://www.studiofuel.com
 */
 
-/*  Copyright 2011 Eric Martin (eric@ericmmartin.com)
+/*  Copyright 2014 Studio Fuel (http://www.studiofuel.com)
+
+    Plugin originally created by Eric Martin (http://www.ericmmartin.com)
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -43,7 +44,7 @@ if (!class_exists('WPPaginate')) {
 		/**
 		 * @var string The plugin version
 		 */
-		var $version = '1.2.4';
+		var $version = '1.3.1';
 
 		/**
 		 * @var string The options string name for this plugin
@@ -72,12 +73,7 @@ if (!class_exists('WPPaginate')) {
 		var $type = 'posts';
 
 		/**
-		 * PHP 4 Compatible Constructor
-		 */
-		function WPPaginate() {$this->__construct();}
-
-		/**
-		 * PHP 5 Constructor
+		 * Constructor
 		 */
 		function __construct() {
 			$name = dirname(plugin_basename(__FILE__));
@@ -135,7 +131,9 @@ if (!class_exists('WPPaginate')) {
 			$output = stripslashes($before);
 			if ($pages > 1) {
 				$output .= sprintf('<ol class="wp-paginate%s">', ($this->type === 'posts') ? '' : ' wp-paginate-comments');
-				$output .= sprintf('<li><span class="title">%s</span></li>', stripslashes($title));
+				if (strlen(stripslashes($title)) > 0) {
+					$output .= sprintf('<li><span class="title">%s</span></li>', stripslashes($title));
+				}
 				$ellipsis = "<li><span class='gap'>...</span></li>";
 
 				if ($page > 1 && !empty($previouspage)) {
@@ -203,8 +201,9 @@ if (!class_exists('WPPaginate')) {
 
 		function wp_paginate_css() {
 			$name = "wp-paginate.css";
-			if (false !== @file_exists(TEMPLATEPATH . "/$name")) {
-				$css = get_template_directory_uri() . "/$name";
+
+			if (false !== @file_exists(STYLESHEETPATH . "/$name")) {
+				$css = get_stylesheet_directory_uri() . "/$name";
 			}
 			else {
 				$css = $this->pluginurl . $name;
@@ -213,8 +212,8 @@ if (!class_exists('WPPaginate')) {
 
 			if (function_exists('is_rtl') && is_rtl()) {
 				$name = "wp-paginate-rtl.css";
-				if (false !== @file_exists(TEMPLATEPATH . "/$name")) {
-					$css = get_template_directory_uri() . "/$name";
+				if (false !== @file_exists(STYLESHEETPATH . "/$name")) {
+					$css = get_stylesheet_directory_uri() . "/$name";
 				}
 				else {
 					$css = $this->pluginurl . $name;
@@ -378,22 +377,20 @@ if (!class_exists('WPPaginate')) {
 	</p>
 </form>
 <h2><?php _e('Need Support?', $this->localizationDomain); ?></h2>
-<p><?php printf(__('For questions, issues or feature requests, please post them in the %s and make sure to tag the post with wp-paginate.', $this->localizationDomain), '<a href="http://wordpress.org/tags/wp-paginate?forum_id=10#postform">WordPress Forum</a>'); ?></p>
-<h2><?php _e('Like To Contribute?', $this->localizationDomain); ?></h2>
+<p><?php printf(__('For questions, issues or feature requests, please post them in the %s and make sure to tag the post with wp-paginate.', $this->localizationDomain), '<a href="https://wordpress.org/support/plugin/wp-paginate">WordPress Forum</a>'); ?></p>
+<h2><?php _e('Want To Contribute?', $this->localizationDomain); ?></h2>
 <p><?php _e('If you would like to contribute, the following is a list of ways you can help:', $this->localizationDomain); ?></p>
 <ul>
 	<li>&raquo; <?php _e('Translate WP-Paginate into your language', $this->localizationDomain); ?></li>
 	<li>&raquo; <?php _e('Blog about or link to WP-Paginate so others can find out about it', $this->localizationDomain); ?></li>
 	<li>&raquo; <?php _e('Report issues, provide feedback, request features, etc.', $this->localizationDomain); ?></li>
-	<li>&raquo; <a href="http://wordpress.org/extend/plugins/wp-paginate/"><?php _e('Rate WP-Paginate on the WordPress Plugins Page', $this->localizationDomain); ?></a></li>
-	<li>&raquo; <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=KUL9VQ6U5VYCE&lc=US&item_name=Eric%20Martin%20%28ericmmartin%2ecom%29&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted"><?php _e('Make a donation', $this->localizationDomain); ?></a></li>
+	<li>&raquo; <a href="https://wordpress.org/support/view/plugin-reviews/wp-paginate"><?php _e('Review WP-Paginate on the WordPress Plugins Page', $this->localizationDomain); ?></a></li>
 </ul>
 <h2><?php _e('Other Links', $this->localizationDomain); ?></h2>
 <ul>
-	<li>&raquo; <a href="http://twitter.com/ericmmartin">@ericmmartin</a> on Twitter</li>
-	<li>&raquo; <a href="http://www.ericmmartin.com">EricMMartin.com</a></li>
-	<li>&raquo; <a href="http://www.ericmmartin.com/projects/smcf/">SimpleModal Contact Form (SMCF) - WordPress Plugin</a></li>
-	<li>&raquo; <a href="http://www.ericmmartin.com/projects/simplemodal-login/">SimpleModal Login - WordPress Plugin</a></li>
+	<li>&raquo; <a href='https://github.com/studiofuel/wp-paginate'>WP-Paginate</a> on GitHub</li>
+	<li>&raquo; <a href="http://www.studiofuel.com/simplemodal-contact-form-smcf/">SimpleModal Contact Form (SMCF) - WordPress Plugin</a></li>
+	<li>&raquo; <a href="http://www.studiofuel.com/simplemodal-login/">SimpleModal Login - WordPress Plugin</a></li>
 </ul>
 </div>
 
@@ -429,4 +426,3 @@ function wp_paginate_comments($args = false) {
  * The format of this plugin is based on the following plugin template:
  * http://pressography.com/plugins/wordpress-plugin-template/
  */
-?>

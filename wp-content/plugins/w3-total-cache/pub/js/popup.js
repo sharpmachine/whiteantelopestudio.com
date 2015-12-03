@@ -1,5 +1,5 @@
 function w3tc_seconds_to_string(seconds) {
-    var string = '', days = 0, hours = 0, minutes = 0;
+    var string = '', days, hours, minutes;
     days = Math.floor(seconds / 86400);
     if (days) {
         seconds -= days * 86400;
@@ -35,8 +35,8 @@ var W3tc_Popup_Cdn_Export_File = {
     upload_files: [],
 
     set_progress: function(percent) {
-        jQuery('#cdn_export_file_progress .progress-bar').width(percent + '%');
-        jQuery('#cdn_export_file_progress .progress-value').html(percent + '%');
+        jQuery('#cdn_export_file_progress .bar').width(percent + '%');
+        jQuery('#cdn_export_file_progress .percent').html(percent + '%');
     },
 
     set_status: function(status) {
@@ -136,7 +136,7 @@ var W3tc_Popup_Cdn_Export_File = {
             clearInterval(this.timer);
         } else {
             this.offset += this.upload_files.length;
-            this.set_progress((this.offset * 100 / files.length).toFixed(0));
+            this.set_progress((this.offset * 100 / this.files.length).toFixed(0));
             this.set_processed(this.offset);
 
             if (this.offset < this.files.length) {
@@ -193,8 +193,8 @@ var W3tc_Popup_Cdn_Export_Library = {
     nonce: '',
 
     set_progress: function(percent) {
-        jQuery('#cdn_export_library_progress .progress-bar').width(percent + '%');
-        jQuery('#cdn_export_library_progress .progress-value').html(percent + '%');
+        jQuery('#cdn_export_library_progress .bar').width(percent + '%');
+        jQuery('#cdn_export_library_progress .percent').html(percent + '%');
     },
 
     set_status: function(status) {
@@ -351,8 +351,8 @@ var W3tc_Popup_Cdn_Import_Library = {
     cdn_host: '',
 
     set_progress: function(percent) {
-        jQuery('#cdn_import_library_progress .progress-bar').width(percent + '%');
-        jQuery('#cdn_import_library_progress .progress-value').html(percent + '%');
+        jQuery('#cdn_import_library_progress .bar').width(percent + '%');
+        jQuery('#cdn_import_library_progress .percent').html(percent + '%');
     },
 
     set_status: function(status) {
@@ -402,7 +402,7 @@ var W3tc_Popup_Cdn_Import_Library = {
         }
 
         if (this.is_redirect_cdn()) {
-            dst = 'http://' + (this.cdn_host ? this.cdn_host : document.location.host) + '/' + dst;
+            dst = 'http://' + (this.cdn_host.length > 0 ? this.cdn_host : document.location.host) + '/' + dst;
         } else {
             dst = '/' + dst;
         }
@@ -542,8 +542,8 @@ var W3tc_Popup_Cdn_Rename_Domain = {
     nonce: '',
 
     set_progress: function(percent) {
-        jQuery('#cdn_rename_domain_progress .progress-bar').width(percent + '%');
-        jQuery('#cdn_rename_domain_progress .progress-value').html(percent + '%');
+        jQuery('#cdn_rename_domain_progress .bar').width(percent + '%');
+        jQuery('#cdn_rename_domain_progress .percent').html(percent + '%');
     },
 
     set_status: function(status) {
@@ -759,6 +759,6 @@ jQuery(function() {
 
     jQuery('.ps-refresh').click(function() {
         var nonce = jQuery('.w3tc-widget-ps-nonce').val();
-        document.location.href = 'admin.php?page=w3tc_general&w3tc_pagespeed_results&force=1&_wpnonce=' + nonce;
+        document.location.href = 'admin.php?page=w3tc_dashboard&w3tc_test_pagespeed_results&force=1&_wpnonce=' + nonce;
     });
 });

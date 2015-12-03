@@ -1,9 +1,16 @@
 <script type='text/javascript'>
 
-function alterLinkCounter(factor){
-    var cnt = parseInt(jQuery('.current-link-count').eq(0).html());
+function alterLinkCounter(factor, filterId){
+	var counter;
+	if (filterId) {
+		counter = jQuery('.filter-' + filterId + '-link-count');
+	} else {
+		counter = jQuery('.current-link-count');
+	}
+
+    var cnt = parseInt(counter.eq(0).html(), 10);
     cnt = cnt + factor;
-    jQuery('.current-link-count').html(cnt);
+    counter.html(cnt);
     
 	if ( blc_is_broken_filter ){
 		//Update the broken link count displayed beside the "Broken Links" menu
@@ -25,7 +32,8 @@ function replaceLinkId(old_id, new_id){
 	
 	master.attr('id', 'blc-row-'+new_id);
 	master.find('.blc-link-id').html(new_id);
-	
+	master.find('th.check-column input[type="checkbox"]').val(new_id);
+
 	var details_row = jQuery('#link-details-'+old_id);
 	details_row.attr('id', 'link-details-'+new_id);
 }
@@ -50,6 +58,7 @@ jQuery(function($){
     	var master = $(this).parents('.blc-row');
     	var link_id = master.attr('id').split('-')[2];
 		$('#link-details-'+link_id).toggle();
+		return false;
     });
 
 	var ajaxInProgressHtml = '<?php echo esc_js(__('Wait...', 'broken-link-checker')); ?>';
@@ -82,9 +91,11 @@ jQuery(function($){
 					master.attr('class', classNames);
 					
 					//Flash the main row green to indicate success, then remove it if the current view
-					//is supposed to show only broken links.
+					//is supposed to show only broken links or warnings.
+					var should_hide_link = blc_is_broken_filter || (blc_current_base_filter == 'warnings');
+
 					flashElementGreen(master, function(){
-						if ( blc_is_broken_filter ){
+						if ( should_hide_link ){
 							details.remove();
 							master.remove();
 						} else {
@@ -93,7 +104,7 @@ jQuery(function($){
 					});
 					
 					//Update the elements displaying the number of results for the current filter.
-					if( blc_is_broken_filter ){
+					if( should_hide_link ){
                     	alterLinkCounter(-1);
                     }
 				} else {
@@ -114,7 +125,7 @@ jQuery(function($){
 
 		var master = me.closest('.blc-row');
 		var link_id = master.attr('id').split('-')[2];
-		var should_hide_link = (blc_current_base_filter == 'broken') || (blc_current_base_filter == 'redirects');
+		var should_hide_link = $.inArray(blc_current_base_filter, ['broken', 'redirects', 'warnings']) > -1;
 
 		$.post(
 			"<?php echo admin_url('admin-ajax.php'); ?>",
@@ -141,6 +152,7 @@ jQuery(function($){
 					//Update the elements displaying the number of results for the current filter.
 					if( should_hide_link ){
 						alterLinkCounter(-1);
+						alterLinkCounter(1, 'dismissed');
 					}
 				} else {
 					me.html(oldButtonHtml);
@@ -198,6 +210,78 @@ jQuery(function($){
 		return false;
 	});
 
+	//The "Recheck" button.
+	$(".blc-recheck-button").click(function () {
+		var me = $(this);
+		var oldButtonHtml = me.html();
+		me.html(ajaxInProgressHtml);
+
+		var master = me.closest('.blc-row');
+		var link_id = master.attr('id').split('-')[2];
+
+		$.post(
+			"<?php echo admin_url('admin-ajax.php'); ?>",
+			{
+				'action' : 'blc_recheck',
+				'link_id' : link_id,
+				'_ajax_nonce' : '<?php echo esc_js(wp_create_nonce('blc_recheck'));  ?>'
+			},
+			function (response){
+				me.html(oldButtonHtml);
+
+				if (response && (typeof(response['error']) != 'undefined')){
+					//An internal error occurred before the plugin could check the link (e.g. database error).
+					alert(response.error);
+				} else {
+					//Display the new status in the link row.
+					displayLinkStatus(master, response);
+					reloadDetailsRow(link_id);
+
+					//Flash the row green to indicate success
+					flashElementGreen(master);
+				}
+			},
+			'json'
+		);
+
+		return false;
+	});
+
+	//The "Fix redirect" action.
+	$('.blc-deredirect-button').click(function() {
+		//This action can only be used once. If it succeeds, it will no longer be applicable to the current link.
+		//If it fails, something is broken and trying again probably won't help.
+		var me = $(this);
+		me.text(ajaxInProgressHtml);
+
+		var master = me.closest('.blc-row');
+		var linkId = master.attr('id').split('-')[2];
+		var shouldHideLink = blc_current_base_filter == 'redirects';
+		var details = $('#link-details-' + linkId);
+
+		$.post(
+			"<?php echo admin_url('admin-ajax.php'); ?>",
+			{
+				'action' : 'blc_deredirect',
+				'link_id' : linkId,
+				'_ajax_nonce' : '<?php echo esc_js(wp_create_nonce('blc_deredirect'));  ?>'
+			},
+			function (response){
+				me.closest('span').hide();
+
+				if (handleEditResponse(response, master, linkId, null)) {
+					if (shouldHideLink) {
+						details.remove();
+						master.remove();
+					}
+				}
+			},
+			'json'
+		);
+
+		return false;
+	});
+
 	function flashElementGreen(element, callback) {
 		var oldColor = element.css('background-color');
 		element.animate({ backgroundColor: "#E0FFB3" }, 200).animate({ backgroundColor: oldColor }, 300, callback);
@@ -205,197 +289,360 @@ jQuery(function($){
 
 
 	/**
-    * Display the inline URL editor for a particular link (that's present in the current view).
-    *
-    * @param link_id Either a link ID (int), or a jQuery object representing the link row.
-    */
-    function showUrlEditor(link_id){
-	   var master;
-    	if ( isNaN(link_id) ){
-    		master = link_id;
-    	} else {
-    		master = $('#blc-row-' + link_id);
-    	}
-    	
-    	var url_el = master.find('a.blc-link-url').hide();
-    	
-    	master.find('div.blc-url-editor-buttons').show();
-        master.find('input.blc-link-editor')
-			.val( url_el.attr('href') ).show().focus().select()
-			.parents('td').find('div.row-actions').hide();
-    }
-    
-   /**
-    * Hide the URL editor of a particular link.
-    *
-    * @param link_id Either a link ID (int), or a jQuery object representing the link row.
-    */
-    function hideUrlEditor(link_id){
-	   var master;
-    	if ( isNaN(link_id) ){
-    		master = link_id;
-    	} else {
-    		master = $('#blc-row-' + link_id);
-    	}
-    	
-    	master.find('div.blc-url-editor-buttons').hide();
-    	master.find('input.blc-link-editor').hide();
-    	master.find('a.blc-link-url').show();
-    	master.find('div.row-actions').show();
-    }
-    
-   /**
-    * Call our PHP backend and tell it to edit all occurences of particular link so that they 
-	* point to a different URL. Updates UI with the new link info and displays any error messages 
-	* that might be generated.
-    *
-    * @param link_id Either a link ID (int), or a jQuery object representing the link row.
-    * @param new_url The new URL for the link.
-    */
-    function updateLinkUrl(link_id, new_url){
-	   var master;
-    	if ( isNaN(link_id) ){
-    		master = link_id;
-    		link_id = master.attr('id').split("-")[2]; //id="blc-row-$linkid"
-    	} else {
-    		master = $('#blc-row-' + link_id);
-    	}
-    	var url_el = master.find('a.blc-link-url');
-    	var orig_url = url_el.attr('href');
-    	var progress_indicator = master.find('.waiting');
-    	
-    	progress_indicator.show();
-    	
-    	$.getJSON(
-			"<?php echo admin_url('admin-ajax.php'); ?>",
-			{
-				'action' : 'blc_edit',
-				'link_id' : link_id,
-				'new_url' : new_url,
-				'_ajax_nonce' : '<?php echo esc_js(wp_create_nonce('blc_edit'));  ?>'
-			},
-			function (data, textStatus){
-				var display_url = '';
-				
-				if ( data && (typeof(data['error']) != 'undefined') ){
-					//An internal error occured before the link could be edited.
-					//data.error is an error message.
-					alert(data.error);
-					display_url = orig_url;
-				} else {
-					//data contains info about the performed edit
-					if ( data.errors.length == 0 ){
-						//Everything went well. 
-						
-						//Replace the displayed link URL with the new one.
-						display_url = new_url;
-						url_el.attr('href', new_url);
-						
-						//Save the new ID 
-						replaceLinkId(link_id, data.new_link_id);
-						//Load up the new link info
-						reloadDetailsRow(data.new_link_id);
-						//Remove classes indicating link state - they're probably wrong by now
-						var classNames = master.attr('class').replace(/(^|\s)link-status-[^\s]+(\s|$)/, ' ')+' link-status-unknown';
-						master.attr('class', classNames);
-						master.removeClass('blc-redirect');
-						
-						//Flash the row green to indicate success
-						var oldColor = master.css('background-color');
-						master.animate({ backgroundColor: "#E0FFB3" }, 200).animate({ backgroundColor: oldColor }, 300);
-						
-					} else {
-						display_url = orig_url;
-						
-						//Build and display an error message.
-						var msg = '';
-						
-						if ( data.cnt_okay > 0 ){
-							var msgpiece = sprintf(
-								'<?php echo esc_js(__('%d instances of the link were successfully modified.', 'broken-link-checker')); ?>',
-								data.cnt_okay 
-							);
-							msg = msg + msgpiece + '\n';
-							if ( data.cnt_error > 0 ){
-								msgpiece = sprintf(
-									'<?php echo esc_js(__("However, %d instances couldn't be edited and still point to the old URL.", 'broken-link-checker')); ?>',
-									data.cnt_error
-								);
-								msg = msg + msgpiece + "\n";
-							}
-						} else {
-							msg = msg + '<?php echo esc_js(__('The link could not be modified.', 'broken-link-checker')); ?>\n';
+	 * Update status indicators for a link. This includes the contents of the "Status" column, CSS classes and so on.
+	 *
+	 * @param {Object} row Table row as a jQuery object.
+	 * @param {Object} status
+	 */
+	function displayLinkStatus(row, status) {
+		//Update the status code and class.
+		var statusColumn = row.find('td.column-status');
+		if (status.status_text) {
+			statusColumn.find('.status-text').text(status.status_text);
+		}
+		statusColumn.find('.http-code').text(status.http_code ? status.http_code : '');
+
+		var oldStatusClass = row.attr('class').match(/(?:^|\s)(link-status-[^\s]+)(?:\s|$)/);
+		oldStatusClass = oldStatusClass ? oldStatusClass[1] : '';
+		var newStatusClass = 'link-status-' + status.status_code;
+
+		statusColumn.find('.link-status-row').removeClass(oldStatusClass).addClass(newStatusClass);
+		row.removeClass(oldStatusClass).addClass(newStatusClass);
+
+		//Last check time and failure duration are complicated to update, so we'll just hide them.
+		//The user can refresh the page to get the new values.
+		statusColumn.find('.link-last-checked td').html('&nbsp;');
+		statusColumn.find('.link-broken-for td').html('&nbsp;');
+
+		//The link may or may not be a redirect now.
+		row.toggleClass('blc-redirect', status.redirect_count > 0);
+
+		if (typeof status['redirect_count'] !== 'undefined') {
+			var redirectColumn = row.find('td.column-redirect-url').empty();
+
+			if (status.redirect_count > 0 && status.final_url) {
+				redirectColumn.append(
+					$(
+						'<a></a>',
+						{
+							href: status.final_url,
+							text: status.final_url,
+							title: status.final_url,
+							'class': 'blc-redirect-url',
+							target: '_blank'
 						}
-														
-						msg = msg + '\n<?php echo esc_js(__("The following error(s) occured :", 'broken-link-checker')); ?>\n* ';
-						msg = msg + data.errors.join('\n* ');
-						
-						alert(msg);
-					}
+					)
+				);
+			}
+		}
+	}
+
+
+	/**
+	 * Display the inline link editor.
+	 *
+	 * @param {Number} link_id Link ID. The link must be visible in the current view.
+	 */
+	function showLinkEditor(link_id) {
+		var master = $('#blc-row-' + link_id),
+			editorId = 'blc-edit-row-' + link_id,
+			editRow;
+
+		//Get rid of all existing inline editors.
+		master.closest('table').find('tr.blc-inline-editor').each(function() {
+			hideLinkEditor($(this));
+		});
+
+		//Create an inline editor for this link.
+		editRow = $('#blc-inline-edit-row').clone(true).attr('id', editorId);
+		editRow.toggleClass('alternate', master.hasClass('alternate'));
+		master.after(editRow);
+
+		//Populate editor fields.
+		var urlElement = master.find('a.blc-link-url');
+		var linkUrl = urlElement.data('editable-url') || urlElement.attr('href');
+		var urlInput = editRow.find('.blc-link-url-field').val(linkUrl);
+
+		var titleInput = editRow.find('.blc-link-text-field');
+		var linkText = master.data('link-text'),
+			canEditText = master.data('can-edit-text') == 1, //jQuery will convert a '1' to 1 (number) when reading a data attribute.
+			canEditUrl = master.data('can-edit-url') == 1,
+			noneText = '<?php echo esc_js(_x('(None)', 'link text', 'broken-link-checker')); ?>',
+			multipleLinksText = '<?php echo esc_js(_x('(Multiple links)', 'link text', 'broken-link-checker')); ?>';
+
+		titleInput.prop('readonly', !canEditText);
+		urlInput.prop('readonly', !canEditUrl);
+
+		if ( (typeof linkText !== 'undefined') && (linkText !== null) ) {
+			if (linkText === '') {
+				titleInput.val(canEditText ? linkText : noneText);
+			} else {
+				titleInput.val(linkText)
+			}
+			titleInput.prop('placeholder', noneText);
+		} else {
+			if (canEditText) {
+				titleInput.val('').prop('placeholder', multipleLinksText);
+			} else {
+				titleInput.val(multipleLinksText)
+			}
+		}
+
+		//Populate the list of URL replacement suggestions.
+		if (canEditUrl && blc_suggestions_enabled && (master.hasClass('link-status-error') || master.hasClass('link-status-warning'))) {
+			editRow.find('.blc-url-replacement-suggestions').show();
+			var suggestionList = editRow.find('.blc-suggestion-list');
+			findReplacementSuggestions(linkUrl, suggestionList);
+		}
+
+		editRow.find('.blc-update-link-button').prop('disabled', !(canEditUrl || canEditText));
+
+		//Make the editor span the entire width of the table.
+		editRow.find('td.blc-colspan-change').attr('colspan', master.closest('table').find('thead th:visible').length);
+
+		master.hide();
+		editRow.show();
+		urlInput.focus();
+		if (canEditUrl) {
+			urlInput.select();
+		}
+	}
+
+    /**
+     * Hide the inline editor for a particular link.
+	 *
+	 * @param link_id Either a numeric link ID or a jQuery object that represents the editor row.
+     */
+	function hideLinkEditor(link_id) {
+		var editRow = isNaN(link_id) ? link_id : $('#blc-edit-row-' + link_id);
+		editRow.prev('tr.blc-row').show();
+		editRow.remove();
+	}
+
+    /**
+	 * Find possible replacements for a broken link and display them in a list.
+     *
+	 * @param {String} url The current link URL.
+	 * @param suggestionList jQuery object that represents a list element.
+     */
+	function findReplacementSuggestions(url, suggestionList) {
+		var searchingText     = '<?php echo esc_js(_x('Searching...', 'link suggestions', 'broken-link-checker')) ?>';
+		var noSuggestionsText = '<?php echo esc_js(_x('No suggestions available.', 'link suggestions', 'broken-link-checker')) ?>';
+		var iaSuggestionName  = '<?php echo esc_js(_x('Archived page from %s (via the Wayback Machine)', 'link suggestions', 'broken-link-checker')); ?>';
+
+		suggestionList.empty().append('<li>' + searchingText + '</li>');
+
+		var suggestionTemplate = $('#blc-suggestion-template').find('li').first();
+
+		//Check the Wayback Machine for an archived version of the page.
+		$.getJSON(
+			'//archive.org/wayback/available?callback=?',
+			{ url: url },
+
+			function(data) {
+				suggestionList.empty();
+
+				//Check if there are any results.
+				if (!data || !data.archived_snapshots || !data.archived_snapshots.closest || !data.archived_snapshots.closest.available ) {
+					suggestionList.append('<li>' + noSuggestionsText + '</li>');
+					return;
 				}
-				
-				url_el.text(display_url);
-				
-				progress_indicator.hide();
-				hideUrlEditor(master);
+
+				var snapshot = data.archived_snapshots.closest;
+
+				//Convert the timestamp from YYYYMMDDHHMMSS to ISO 8601 date format.
+				var readableTimestamp = snapshot.timestamp.substr(0, 4) +
+					'-' + snapshot.timestamp.substr(4, 2) +
+					'-'	+ snapshot.timestamp.substr(6, 2);
+				var name = sprintf(iaSuggestionName, readableTimestamp);
+
+				//Display the suggestion.
+				var item = suggestionTemplate.clone();
+				item.find('.blc-suggestion-name a').text(name).attr('href', snapshot.url);
+				item.find('.blc-suggestion-url').text(snapshot.url);
+				suggestionList.append(item);
 			}
 		);
-    }
-    
-    //The "Edit URL" button - displays the inline editor
-    $(".blc-edit-button").click(function () {
-		var edit_button = $(this);
-		var master = $(edit_button).parents('.blc-row');
-		var editor = $(master).find('input.blc-link-editor');
-		var url_el = $(master).find('.blc-link-url');
-		
-      	//Find the current/original URL
-    	var orig_url = url_el.attr('href');
-    	//Find the link ID
-    	var link_id = master.attr('id').split('-')[2];
-    	
-        if ( !editor.is(':visible') ){
-        	showUrlEditor(link_id);
-        } else {
-        	hideUrlEditor(link_id);
-        }
-    });
-    
-    //The "Update URL" button in the inline editor
-    $('.blc-update-url-button').click(function(){
-    	var master = $(this).parents('tr.blc-row');
-		var url_el = master.find('.blc-link-url');
-		var editor = master.find('input.blc-link-editor');
-		
-		var old_url = url_el.attr('href');
-		var new_url = editor.val();
-		
-		if ( (new_url == old_url) || ($.trim(new_url) == '') ){
-			hideUrlEditor(master);
+	}
+
+    /**
+     * Call our PHP backend and tell it to edit all occurrences of particular link.
+	 * Updates UI with the new link info and displays any error messages that might be generated.
+	 *
+	 * @param linkId Either a numeric link ID or a jQuery object representing the link row.
+     * @param {String} newUrl The new link URL.
+     * @param {String} newText The new link text. Optional. Set to null to leave it unchanged.
+     */
+	function updateLink(linkId, newUrl, newText) {
+		var master, editRow;
+		if ( isNaN(linkId) ){
+			master = linkId;
+			linkId = master.attr('id').split("-")[2]; //id="blc-row-$linkid"
 		} else {
-			updateLinkUrl(master, new_url);
+			master = $('#blc-row-' + linkId);
 		}
-    });
-    
-    //Let the user use Enter and Esc as shortcuts for "Update URL" and "Cancel"
-    $('input.blc-link-editor').keypress(function (e) {
-		if ((e.which && e.which == 13) || (e.keyCode && e.keyCode == 13)) {
-			$(this).parents('.blc-row').find('.blc-update-url-button').click();
+		editRow = $('#blc-edit-row-' + linkId);
+
+		var urlElement = master.find('a.blc-link-url');
+		var progressIndicator = editRow.find('.waiting'),
+			updateButton = editRow.find('.blc-update-link-button');
+		progressIndicator.show();
+		updateButton.prop('disabled', true);
+
+		$.post(
+			'<?php echo admin_url('admin-ajax.php'); ?>',
+			{
+				'action'   : 'blc_edit',
+				'link_id'  : linkId,
+				'new_url'  : newUrl,
+				'new_text' : newText,
+				'_ajax_nonce' : '<?php echo esc_js(wp_create_nonce('blc_edit'));  ?>'
+			},
+			function(response) {
+				progressIndicator.hide();
+				updateButton.prop('disabled', false);
+
+				handleEditResponse(response, master, linkId, newText);
+
+				hideLinkEditor(editRow);
+			},
+			'json'
+		);
+
+	}
+
+	function handleEditResponse(response, master, linkId, newText) {
+		if (response && (typeof(response['error']) != 'undefined')){
+			//An internal error occurred before the link could be edited.
+			alert(response.error);
 			return false;
-		} else if ((e.which && e.which == 27) || (e.keyCode && e.keyCode == 27)) {
-			$(this).parents('.blc-row').find('.blc-cancel-button').click();
+		} else if (response.errors.length > 0) {
+			//Build and display an error message.
+			var msg = '';
+
+			if ( response.cnt_okay > 0 ){
+				var fragment = sprintf(
+					'<?php echo esc_js(__('%d instances of the link were successfully modified.', 'broken-link-checker')); ?>',
+					response.cnt_okay
+				);
+				msg = msg + fragment + '\n';
+				if ( response.cnt_error > 0 ){
+					fragment = sprintf(
+						'<?php echo esc_js(__("However, %d instances couldn't be edited and still point to the old URL.", 'broken-link-checker')); ?>',
+						response.cnt_error
+					);
+					msg = msg + fragment + "\n";
+				}
+			} else {
+				msg = msg + '<?php echo esc_js(__('The link could not be modified.', 'broken-link-checker')); ?>\n';
+			}
+
+			msg = msg + '\n<?php echo esc_js(__("The following error(s) occurred :", 'broken-link-checker')); ?>\n* ';
+			msg = msg + response.errors.join('\n* ');
+
+			alert(msg);
 			return false;
 		} else {
+			//Everything went well. Update the link row with the new values.
+
+			//Replace the displayed link URL with the new one.
+			var urlElement = master.find('a.blc-link-url');
+			urlElement
+				.attr('href', response.url)
+				.text(response.url)
+				.data('editable-url', response.url)
+				.prop('title', response.url);
+			if ( typeof response['escaped_url'] != 'undefined' ) {
+				urlElement.attr('href', response.escaped_url)
+			}
+
+			//Save the new ID
+			replaceLinkId(linkId, response.new_link_id);
+			//Load up the new link info
+			reloadDetailsRow(response.new_link_id);
+
+			//Update the link text if it was edited.
+			if ((newText !== null) && (response.link_text !== null)) {
+				master.data('link-text', response.link_text);
+				if (response.ui_link_text !== null) {
+					master.find('.column-new-link-text').html(response.ui_link_text);
+				}
+			}
+
+			//Update the status code and class.
+			displayLinkStatus(master, response);
+
+			//Flash the row green to indicate success
+			flashElementGreen(master);
+
 			return true;
 		}
-	});
-    
-    //The "Cancel" in the inline editor
-    $(".blc-cancel-button").click(function () { 
-		var master = $(this).parents('.blc-row');
-		hideUrlEditor(master);
+	}
+
+    //The "Edit URL" button - displays the inline editor
+    $(".blc-edit-button").click(function () {
+		var master = $(this).closest('.blc-row');
+    	var link_id = master.attr('id').split('-')[2];
+        showLinkEditor(link_id);
     });
     
+    //Let the user use Enter and Esc as shortcuts for "Update" and "Cancel"
+    $('.blc-inline-editor input[type="text"]').keypress(function (e) {
+		var editRow = $(this).closest('.blc-inline-editor');
+		if (e.which == 13) {
+			editRow.find('.blc-update-link-button').click();
+			return false;
+		} else if (e.which == 27) {
+			editRow.find('.blc-cancel-button').click();
+			return false;
+		}
+		return true;
+	});
+
+
+	//The "Update" button in the inline editor.
+	$('.blc-update-link-button').click(function() {
+		var editRow = $(this).closest('tr'),
+			master = editRow.prev('.blc-row');
+
+		//Ensure the new URL is not empty.
+		var urlField = editRow.find('.blc-link-url-field');
+		var newUrl = urlField.val();
+		if ($.trim(newUrl) == '') {
+			alert('<?php echo esc_js(__('Error: Link URL must not be empty.', 'broken-link-checker')); ?>');
+			urlField.focus();
+			return;
+		}
+
+		var newLinkText = null,
+			linkTextField = editRow.find('.blc-link-text-field'),
+			oldLinkText = master.data('link-text');
+		if (!linkTextField.prop('readonly')) {
+			newLinkText = linkTextField.val();
+			//Empty or identical to the original = leave the text unchanged.
+			if ((newLinkText === '') || (newLinkText === oldLinkText)) {
+				newLinkText = null;
+			}
+		}
+
+		updateLink(master, newUrl, newLinkText);
+	});
+
+    //The "Cancel" in the inline editor.
+    $(".blc-cancel-button").click(function () { 
+		var editRow = $(this).closest('tr');
+		hideLinkEditor(editRow);
+    });
+
+	//The "Use this URL" button in the inline editor replaces the link URL
+	//with the selected suggestion URL.
+	$('#blc-links').on('click', '.blc-use-url-button', function() {
+		var button = $(this);
+		var suggestionUrl = button.closest('tr').find('.blc-suggestion-name a').attr('href');
+		button.closest('.blc-inline-editor').find('.blc-link-url-field').val(suggestionUrl);
+	});
+
+
     //The "Unlink" button - remove the link/image from all posts, custom fields, etc.
     $(".blc-unlink-button").click(function () { 
     	var me = this;
@@ -416,7 +663,7 @@ jQuery(function($){
 				eval('data = ' + data);
 				 
 				if ( data && (typeof(data['error']) != 'undefined') ){
-					//An internal error occured before the link could be edited.
+					//An internal error occurred before the link could be edited.
 					//data.error is an error message.
 					alert(data.error);
 				} else {
@@ -476,25 +723,19 @@ jQuery(function($){
 		dialogClass : 'blc-search-container',
 		resizable: false
 	});
-    
+
     $('#blc-open-search-box').click(function(){
     	if ( searchForm.dialog('isOpen') ){
 			searchForm.dialog('close');
 		} else {
-			//Display the search form under the "Search" button
-	    	var button_position = $('#blc-open-search-box').offset();
-	    	var button_height = $('#blc-open-search-box').outerHeight(true);
-	    	var button_width = $('#blc-open-search-box').outerWidth(true);
-	    	
-			var dialog_width = searchForm.dialog('option', 'width');
-						
-	    	searchForm.dialog('option', 'position', 
-				[ 
-					button_position.left - dialog_width + button_width/2, 
-					button_position.top + button_height + 1 - $(document).scrollTop()
-				]
-			);
-			searchForm.dialog('open');
+			searchForm
+				.dialog('open')
+				.dialog('widget')
+				.position({
+					my: 'right top',
+					at: 'right bottom',
+					of: $('#blc-open-search-box')
+				});
 		}
 	});
 	
@@ -515,7 +756,11 @@ jQuery(function($){
 	$('#blc-delete-filter').click(function(){
 		var message = '<?php
 		echo esc_js(
-			__("You are about to delete the current filter.\n'Cancel' to stop, 'OK' to delete", 'broken-link-checker')
+			html_entity_decode(
+				__("You are about to delete the current filter.\n'Cancel' to stop, 'OK' to delete", 'broken-link-checker'),
+				ENT_QUOTES,
+				get_bloginfo('charset')
+			)
 		);
 		?>';
 		return confirm(message);
@@ -535,7 +780,11 @@ jQuery(function($){
     		//Convey the gravitas of deleting link sources.
     		message = '<?php
 				echo esc_js(  
-					__("Are you sure you want to delete all posts, bookmarks or other items that contain any of the selected links? This action can't be undone.\n'Cancel' to stop, 'OK' to delete", 'broken-link-checker')
+					html_entity_decode(
+						__("Are you sure you want to delete all posts, bookmarks or other items that contain any of the selected links? This action can't be undone.\n'Cancel' to stop, 'OK' to delete", 'broken-link-checker'),
+						ENT_QUOTES,
+						get_bloginfo('charset')
+					)
 				); 
 			?>'; 
 			if ( !confirm(message) ){
@@ -545,13 +794,35 @@ jQuery(function($){
 			//Likewise for unlinking.
 			message = '<?php
 				echo esc_js(  
-					__("Are you sure you want to remove the selected links? This action can't be undone.\n'Cancel' to stop, 'OK' to remove", 'broken-link-checker')
+					html_entity_decode(
+						__("Are you sure you want to remove the selected links? This action can't be undone.\n'Cancel' to stop, 'OK' to remove", 'broken-link-checker'),
+						ENT_QUOTES,
+						get_bloginfo('charset')
+					)
 				); 
 			?>'; 
 			if ( !confirm(message) ){
 				return false;
 			}
 		}
+	});
+
+	//Automatically disable bulk actions that don't apply to the currently selected links.
+	$('#blc-bulk-action').focus(function() {
+		var redirectsSelected = false, brokenLinksSelected = false;
+		$('tr th.check-column input:checked', '#blc-links').each(function() {
+			var row = $(this).closest('tr');
+			if (row.hasClass('blc-redirect')) {
+				redirectsSelected = true
+			}
+			if (row.hasClass('link-status-error') || row.hasClass('link-status-warning')) {
+				brokenLinksSelected = true;
+			}
+		});
+
+		var bulkAction = $(this);
+		bulkAction.find('option[value="bulk-deredirect"]').prop('disabled', !redirectsSelected);
+		bulkAction.find('option[value="bulk-not-broken"]').prop('disabled', !brokenLinksSelected);
 	});
 	
 	//------------------------------------------------------------
@@ -665,6 +936,8 @@ jQuery(function($){
 			e.preventDefault();
 		}
 	});
+
+
 });
 
 </script>

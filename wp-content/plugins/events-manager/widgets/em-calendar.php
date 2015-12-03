@@ -8,14 +8,14 @@ class EM_Widget_Calendar extends WP_Widget {
 	var $defaults = array();
 	
     /** constructor */
-    function EM_Widget_Calendar() {
+    function __construct() {
     	$this->defaults = array(
     		'title' => __('Calendar','dbem'),
     		'long_events' => 0,
     		'category' => 0
     	);
     	$widget_ops = array('description' => __( "Display your events in a calendar widget.", 'dbem') );
-        parent::WP_Widget(false, $name = __('Events Calendar','dbem'), $widget_ops);	
+        parent::__construct(false, $name = __('Events Calendar','dbem'), $widget_ops);	
     }
 
     /** @see WP_Widget::widget */
@@ -25,7 +25,7 @@ class EM_Widget_Calendar extends WP_Widget {
     	echo $args['before_widget'];
     	if( !empty($instance['title']) ){
 		    echo $args['before_title'];
-		    echo $instance['title'];
+		    echo apply_filters('widget_title',$instance['title'], $instance, $this->id_base);
 		    echo $args['after_title'];
     	}
     	//Shall we show a specific month?

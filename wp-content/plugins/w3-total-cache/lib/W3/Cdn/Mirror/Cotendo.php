@@ -11,7 +11,7 @@ define('W3TC_CDN_MIRROR_COTENDO_WSDL', 'https://api.cotendo.net/cws?wsdl');
 define('W3TC_CDN_MIRROR_COTENDO_ENDPOINT', 'http://api.cotendo.net/cws?ver=1.0');
 define('W3TC_CDN_MIRROR_COTENDO_NAMESPACE', 'http://api.cotendo.net/');
 
-require_once W3TC_LIB_W3_DIR . '/Cdn/Mirror.php';
+w3_require_once(W3TC_LIB_W3_DIR . '/Cdn/Mirror.php');
 
 /**
  * Class W3_Cdn_Mirror_Cotendo
@@ -33,15 +33,6 @@ class W3_Cdn_Mirror_Cotendo extends W3_Cdn_Mirror {
     }
 
     /**
-     * PHP4 Constructor
-     *
-     * @param array $config
-     */
-    function W3_Cdn_Mirror_Cotendo($config = array()) {
-        $this->__construct($config);
-    }
-
-    /**
      * Purges remote files
      *
      * @param array $files
@@ -50,24 +41,24 @@ class W3_Cdn_Mirror_Cotendo extends W3_Cdn_Mirror {
      */
     function purge($files, &$results) {
         if (empty($this->_config['username'])) {
-            $results = $this->_get_results($files, W3TC_CDN_RESULT_HALT, 'Empty username.');
+            $results = $this->_get_results($files, W3TC_CDN_RESULT_HALT, __('Empty username.', 'w3-total-cache'));
 
             return false;
         }
 
         if (empty($this->_config['password'])) {
-            $results = $this->_get_results($files, W3TC_CDN_RESULT_HALT, 'Empty password.');
+            $results = $this->_get_results($files, W3TC_CDN_RESULT_HALT, __('Empty password.', 'w3-total-cache'));
 
             return false;
         }
 
         if (empty($this->_config['zones'])) {
-            $results = $this->_get_results($files, W3TC_CDN_RESULT_HALT, 'Empty zones list.');
+            $results = $this->_get_results($files, W3TC_CDN_RESULT_HALT, __('Empty zones list.', 'w3-total-cache'));
 
             return false;
         }
 
-        require_once W3TC_LIB_NUSOAP_DIR . '/nusoap.php';
+        w3_require_once(W3TC_LIB_NUSOAP_DIR . '/nusoap.php');
 
         $client = new nusoap_client(
             W3TC_CDN_MIRROR_COTENDO_WSDL,
@@ -77,7 +68,7 @@ class W3_Cdn_Mirror_Cotendo extends W3_Cdn_Mirror {
         $error = $client->getError();
 
         if ($error) {
-            $results = $this->_get_results($files, W3TC_CDN_RESULT_HALT, sprintf('Constructor error (%s).', $error));
+            $results = $this->_get_results($files, W3TC_CDN_RESULT_HALT, sprintf(__('Constructor error (%s).', 'w3-total-cache'), $error));
 
             return false;
         }
@@ -90,7 +81,8 @@ class W3_Cdn_Mirror_Cotendo extends W3_Cdn_Mirror {
         foreach ((array) $this->_config['zones'] as $zone) {
             $expressions = array();
 
-            foreach ($files as $remote_path) {
+            foreach ($files as $file) {
+                $remote_path = $file['remote_path'];
                 $expressions[] = '/' . $remote_path;
             }
 
@@ -105,7 +97,7 @@ class W3_Cdn_Mirror_Cotendo extends W3_Cdn_Mirror {
             $client->call('doFlush', $params, W3TC_CDN_MIRROR_COTENDO_NAMESPACE);
 
             if ($client->fault) {
-                $results = $this->_get_results($files, W3TC_CDN_RESULT_HALT, 'Invalid response.');
+                $results = $this->_get_results($files, W3TC_CDN_RESULT_HALT, __('Invalid response.', 'w3-total-cache'));
 
                 return false;
             }
@@ -113,14 +105,31 @@ class W3_Cdn_Mirror_Cotendo extends W3_Cdn_Mirror {
             $error = $client->getError();
 
             if ($error) {
-                $results = $this->_get_results($files, W3TC_CDN_RESULT_HALT, sprintf('Unable to purge (%s).', $error));
+                $results = $this->_get_results($files, W3TC_CDN_RESULT_HALT, sprintf(__('Unable to purge (%s).', 'w3-total-cache'), $error));
 
                 return false;
             }
         }
 
-        $results = $this->_get_results($files, W3TC_CDN_RESULT_OK, 'OK');
+        $results = $this->_get_results($files, W3TC_CDN_RESULT_OK, __('OK', 'w3-total-cache'));
 
+        return true;
+    }
+
+    /**
+     * Purges CDN completely
+     * @param $results
+     * @return bool
+     */
+    function purge_all(&$results) {
+        return $this->purge(array(array('local_path'=>'*', 'remote_path'=> '*')), $results);
+    }
+
+    /**
+     * If CDN supports path of type folder/*
+     * @return bool
+     */
+    function supports_folder_asterisk() {
         return true;
     }
 }

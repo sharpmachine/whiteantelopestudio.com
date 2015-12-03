@@ -1,33 +1,38 @@
 <?php
 /**
-* ShoppCollectionThemeAPI - Provided theme api tags.
-*
-* @version 1.0
-* @since 1.2
-* @package shopp
-* @subpackage ShoppCollectionThemeAPI
-*
-**/
+ * collection.php
+ *
+ * ShoppCollectionThemeAPI provides shopp('collection') Theme API tags
+ *
+ * @api
+ * @copyright Ingenesis Limited, 2012-2013
+ * @package Shopp\API\Theme\Collection
+ * @version 1.3
+ * @since 1.2
+ **/
+
+defined( 'WPINC' ) || header( 'HTTP/1.1 403' ) & exit; // Prevent direct access
 
 add_filter('shopp_themeapi_context_name', array('ShoppCollectionThemeAPI', '_context_name'));
 
 // Default text filters for category/collection Theme API tags
-add_filter('shopp_themeapi_category_description', 'wptexturize');
-add_filter('shopp_themeapi_category_description', 'convert_chars');
-add_filter('shopp_themeapi_category_description', 'wpautop');
-add_filter('shopp_themeapi_category_description', 'do_shortcode',11);
+add_filter('shopp_themeapi_collection_description', 'wptexturize');
+add_filter('shopp_themeapi_collection_description', 'convert_chars');
+add_filter('shopp_themeapi_collection_description', 'wpautop');
+add_filter('shopp_themeapi_collection_description', 'do_shortcode',11);
 
 /**
  * shopp('category','...') tags
  *
- * @author Jonathan Davis, John Dillick
  * @since 1.0
  * @version 1.1
- * @see http://docs.shopplugin.net/Category_Tags
- *
  **/
 class ShoppCollectionThemeAPI implements ShoppAPI {
-	static $context = 'Category'; // @todo transition to Collection
+
+	/**
+	 * @var array The registry of available `shopp('cart')` properties
+	 * @internal
+	 **/
 	static $register = array(
 		'carousel' => 'carousel',
 		'coverimage' => 'coverimage',
@@ -64,6 +69,7 @@ class ShoppCollectionThemeAPI implements ShoppAPI {
 		'facetfiltered' => 'facet_filtered',
 		'facetmenus' => 'facet_menus',
 		'facetname' => 'facet_name',
+		'facetlabel' => 'facet_label',
 		'facetslug' => 'facet_slug',
 		'facetlink' => 'facet_link',
 		'facetmenuhasoptions' => 'facet_menu_has_options',
@@ -75,18 +81,36 @@ class ShoppCollectionThemeAPI implements ShoppAPI {
 		'facetoptioncount' => 'facet_option_count'
 	);
 
-	static function _context_name ( $name ) {
+	/**
+	 * Remaps the other Theme API contexts to the authoritative context
+	 *
+	 * @internal
+	 * @since 1.2
+	 *
+	 * @return string The Theme API context name
+	 */
+	public static function _context_name ( $name ) {
 		switch ( $name ) {
 			case 'collection':
 			case 'category':
 			case 'subcategory':
-			return 'category';
+			return 'collection';
 			break;
 		}
 		return $name;
 	}
 
-	static function _setobject ($Object, $context) {
+	/**
+	 * Returns the proper global context object used in a shopp('collection') call
+	 *
+	 * @internal
+	 * @since 1.2
+	 *
+	 * @param ShoppOrder $Object The ShoppOrder object to set as the working context
+	 * @param string     $context The context being worked on by the Theme API
+	 * @return ShoppCollection The active object context
+	 **/
+	public static function _setobject ( $Object, $context ) {
 		if( is_object($Object) && is_a($Object, 'ProductCollection') ) return $Object;
 
 		switch ( $context ) {
@@ -95,309 +119,698 @@ class ShoppCollectionThemeAPI implements ShoppAPI {
 				return ShoppCollection();
 				break;
 			case 'subcategory':
-				if (isset(ShoppCollection()->child))
+				if ( isset(ShoppCollection()->child) )
 					return ShoppCollection()->child;
 				break;
 		}
 		return $Object;
 	}
 
-	static function _apicontext () { return "category"; }
+	/**
+	 * Provides the authoritative Theme API context
+	 *
+	 * @internal
+	 * @since 1.2
+	 *
+	 * @return string The Theme API context name
+	 */
+	public static function _apicontext () {
+		return 'collection';
+	}
 
-	static function carousel ($result, $options, $O) {
+	/**
+	 * Provides a side-scrolling carousel of products loaded in the collection
+	 *
+	 * @api `shopp('collection.carousel')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * - **duration**: `500` The duration in microseconds of the transition effect (1000 = 1 second)
+	 * - **fit**: `crop` (width, height, crop, matte, all) The fit of unproportional images
+	 * - **imageheight**: `96` The maximum height of the images
+	 * - **imagewidth**: `96` The maximum width of the images
+	 * - **style**: `chevron-sign` (arrow, chevron-sign, circle-arrow, caret) The style of arrow icons to use
+	 * @param ShoppCollection $O       The working object
+	 * @return string The generated carousel markup
+	 **/
+	public static function carousel ( $result, $options, $O ) {
 		$options['load'] = array('images');
-		if (!$O->loaded) $O->load($options);
-		if (count($O->products) == 0) return false;
+		if ( ! $O->loaded ) $O->load($options);
+		if ( count($O->products) == 0 ) return false;
+
+		// Supported arrow styles
+		$styles = array('arrow', 'chevron-sign', 'circle-arrow', 'caret');
 
 		$defaults = array(
 			'imagewidth' => '96',
 			'imageheight' => '96',
 			'fit' => 'all',
-			'duration' => 500
+			'duration' => 500,
+			'style' => 'chevron-sign'
+		);
+		$options = array_merge($defaults, $options);
+		extract($options, EXTR_SKIP);
+
+		if ( ! in_array($style, $styles) )
+			$style = $defaults['style'];
+
+		$_  = '<div class="carousel duration-' . $duration . '">';
+		$_ .= '<div class="frame">';
+		$_ .= '<ul>';
+		foreach ( $O->products as $Product ) {
+			if ( empty($Product->images) ) continue;
+			$_ .= '<li><a href="' . $Product->tag('url') . '">';
+			$_ .= $Product->tag('image', array('width' => $imagewidth, 'height' => $imageheight, 'fit' => $fit));
+			$_ .= '</a></li>';
+		}
+		$_ .= '</ul></div>';
+		$_ .= '<button type="button" name="left" class="left shoppui-' . $style . '-left"><span class="hidden">' . Shopp::__('Previous Page') . '</span></button>';
+		$_ .= '<button type="button" name="right" class="right shoppui-' . $style . '-right"><span class="hidden">' . Shopp::__('Next Page') . '</span></button>';
+		$_ .= '</div>';
+
+		return $_;
+	}
+
+	/**
+	 * Provides the markup for the category cover image
+	 *
+	 * @api `shopp('collection.coverimage')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * - **alt**: The alt property of the image
+	 * - **bg**: The background color to use with the matte fit (#rrggbb)
+	 * - **class**: Specifies the CSS class of the image
+	 * - **fit**: The fit of unproportional images to the requested size:
+	 *   - **all**: Scale the image down to fit within the new size (the final size may differ from the specified dimensions)
+	 *   - **crop**: Scale the image down to fit by the smallest dimension to fill the entire image, cropping the extra off the other dimension (specific cropping adjustments can be made in the product editor)
+	 *   - **height**: Scale the image down to fit the image in the new size by the height, cropping any extra width
+	 *   - **matte**: Scale the image down to fit within the new size filling extra space with a background color
+	 *   - **width**: Scale the image down to fit the image in the new size by the width, cropping any extra height
+	 * - **id**: Specify the image to show by the database ID
+	 * - **property**: (id,url,src,title,alt,width,height,class) Provide a property of the image rather than the image markup
+	 * - **quality**: The JPEG image quality (0-100%, default is 80)
+	 * - **sharpen**: Apply an unsharp mask to the image (100%-500%, default is none)
+	 * - **size**: The size to use for width and height of the image (used in place of width and height)
+	 * - **title**: The title property of the image
+	 * - **width**: The width of the image in pixels
+	 * - **height**: The height of the image in pixels
+	 * - **zoom**: Enables the image zoom effect to view the original size image in a modal image viewer (Colorbox)
+	 * - **zoomfx**: `shopp-zoom` Enables zoom (also known as lightbox) effects for alternate JavaScript-based modal content viewers.
+	 * @param ShoppCollection $O       The working object
+	 * @return string The image markup
+	 **/
+	public static function coverimage ( $result, $options, $O ) {
+		// Force select the first loaded image
+		unset($options['id']);
+		$options['index'] = 0;
+		return self::image( $result, $options, $O );
+	}
+
+	/**
+	 * Provides the category description
+	 *
+	 * @api `shopp('collection.description')`
+	 * @since 1.0
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * - **collapse**: `on` (on,off) Provides an empty string instead of an empty wrapping container if no category description is set
+	 * - **wrap**: `on` (on,off) Enable or disable the before and after settings off
+	 * - **before**: `<div class="category-description">` Markup to add before the widget
+	 * - **after**: `</div>` Markup to add after the widget
+	 * @param ShoppCollection $O       The working object
+	 * @return string The description markup
+	 **/
+	public static function description ( $result, $options, $O ) {
+		$defaults = array(
+			'collapse' => true,
+			'wrap' => true,
+			'before' => '<div class="category-description">' . "\n\n",
+			'after' => '</div>'
 		);
 		$options = array_merge($defaults,$options);
 		extract($options, EXTR_SKIP);
 
-		$string = '<div class="carousel duration-'.$duration.'">';
-		$string .= '<div class="frame">';
-		$string .= '<ul>';
-		foreach ($O->products as $Product) {
-			if (empty($Product->images)) continue;
-			$string .= '<li><a href="'.$Product->tag('url').'">';
-			$string .= $Product->tag('image',array('width'=>$imagewidth,'height'=>$imageheight,'fit'=>$fit));
-			$string .= '</a></li>';
-		}
-		$string .= '</ul></div>';
-		$string .= '<button type="button" name="left" class="left">&nbsp;</button>';
-		$string .= '<button type="button" name="right" class="right">&nbsp;</button>';
-		$string .= '</div>';
-		return $string;
+		if ( ( Shopp::str_true($collapse) && empty($O->description)) || ! isset($O->description) ) return '';
+		if ( ! Shopp::str_true($wrap) ) $before = $after = '';
+		return $before . $O->description . $after;
 	}
 
-	static function coverimage ($result, $options, $O) {
-		// Force select the first loaded image
-		unset($options['id']);
-		$options['index'] = 0;
-		return self::image($result, $options, $O);
+	/**
+	 * Checks if any faceted menu filters have been applied to the current product collection
+	 *
+	 * @api `shopp('collection.is-facet-filtered')`
+	 * @since 1.1
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return bool True if filtered, false otherwise
+	 **/
+	public static function is_facet_filtered ( $result, $options, $O ) {
+		return ( count($O->filters) > 0 );
 	}
 
-	static function description ($result, $options, $O) { return $O->description;  }
-
-
-	static function is_facet_filtered ($result, $options, $O) {
-		return (count($O->filters) > 0);
-	}
-
-	static function facet_filters ($result, $options, $O) {
-		if (!isset($O->_filters_loop)) {
+	/**
+	 * Iterate over the faceted menu filters that are applied to the current product collection view
+	 *
+	 * @api `shopp('collection.facet-filters')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return bool True if the next filter exists, false otherwise
+	 **/
+	public static function facet_filters ( $result, $options, $O ) {
+		if ( ! isset($O->_filters_loop) ) {
 			reset($O->filters);
 			$O->_filters_loop = true;
 		} else next($O->filters);
 
 		$slug = key($O->filters);
-		if (isset($O->facets[ $slug ]))
+		if ( isset($O->facets[ $slug ]) )
 			$O->facet = $O->facets[ $slug ];
 
-		if (current($O->filters) !== false) return true;
+		if ( current($O->filters) !== false ) return true;
 		else {
-			unset($O->_filters_loop,$O->facet);
+			unset($O->_filters_loop, $O->facet);
 			return false;
 		}
-
 	}
 
-	static function facet_filter ($result, $options, $O) {
-		if (!isset($O->_filters_loop)) return false;
-		return $O->facet->selected;
+	/**
+	 * Displays the current faceted menu filter from the facet-filters loop
+	 *
+	 * @api `shopp('collection.facet-filter')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string The current filter value
+	 **/
+	public static function facet_filter ( $result, $options, $O ) {
+		if ( ! isset($O->_filters_loop) ) return false;
+		return ProductCategoryFacet::range_labels($O->facet->selected);
 	}
 
-	static function facet_menus ($result, $options, $O) {
-		if (!isset($O->_facets_loop)) {
+	/**
+	 * Iterate over the faceted menus for a product category
+	 *
+	 * @api `shopp('collection.facet-menus')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return bool True if the next menu exists, false otherwise
+	 **/
+	public static function facet_menus ( $result, $options, $O ) {
+		if ( ! isset($O->_facets_loop) ) {
 			reset($O->facets);
 			$O->_facets_loop = true;
 		} else next($O->facets);
 
-		if (current($O->facets) !== false) return true;
+		if ( current($O->facets) !== false ) return true;
 		else {
 			unset($O->_facets_loop);
 			return false;
 		}
 	}
 
-	static function facet_name ($result, $options, $O) {
-		if (isset($O->_filters_loop)) $facet = $O->facet;
+	/**
+	 * Displays the current faceted menu name
+	 *
+	 * @api `shopp('collection.facet-name')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string The current facet name
+	 **/
+	public static function facet_name ( $result, $options, $O ) {
+		if ( isset($O->_filters_loop) ) $facet = $O->facet;
 		else $facet = current($O->facets);
 		return $facet->name;
 	}
 
-	static function facet_slug ($result, $options, $O) {
-		$facet = current($O->facets);
+	/**
+	 * Display the label of the current facet from the loop
+	 *
+	 * @api `shopp('collection.facet-label')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string The current facet label
+	 **/
+	public static function facet_label ($result, $options, $O) {
+		if ( isset($O->_filters_loop) ) $facet = $O->facet;
+		else $facet = current($O->facets);
+		return $facet->filters[ $facet->selected ]->label;
+	}
+
+
+	/**
+	 * Display the current facet manu slug
+	 *
+	 * @api `shopp('collection.facet-slug')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string The current facet slug
+	 **/
+	public static function facet_slug ( $result, $options, $O ) {
+		if ( isset($O->_filters_loop) ) $facet = $O->facet;
+		else $facet = current($O->facets);
 		return $facet->slug;
 	}
 
-	static function facet_link ($result, $options, $O) {
-		if (isset($O->_filters_loop)) $facet = $O->facet;
+	/**
+	 * Display the current facet manu link
+	 *
+	 * @api `shopp('collection.facet-link')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string The current facet slug
+	 **/
+	public static function facet_link ( $result, $options, $O ) {
+		if ( isset($O->_filters_loop) ) $facet = $O->facet;
 		else $facet = current($O->facets);
 		return $facet->link;
 	}
 
-	static function facet_filtered ($result, $options, $O) {
-		if (isset($O->_filters_loop)) $facet = $O->facet;
+	/**
+	 * Check if the current facet has an active filter
+	 *
+	 * @api `shopp('collection.facet-filtered')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return bool True if the facet has an active filter, false otherwise
+	 **/
+	public static function facet_filtered ( $result, $options, $O ) {
+		if ( isset($O->_filters_loop) ) $facet = $O->facet;
 		else $facet = current($O->facets);
-		return !empty($facet->selected);
+		return ! empty($facet->selected);
 	}
 
-	static function facet_menu_has_options ($result, $options, $O) {
+	/**
+	 * Check if the facet has any filter options
+	 *
+	 * @api `shopp('collection.facet-menu-has-options')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return bool True if the are filter options, false otherwise
+	 **/
+	public static function facet_menu_has_options ( $result, $options, $O ) {
 		$facet = current($O->facets);
-		return (count($facet->filters) > 0);
+		return ( count($facet->filters) > 0 );
 	}
 
-	static function facet_options   ($result, $options, $O) {
+	/**
+	 * Iterate over the faceted menu's filter options
+	 *
+	 * @api `shopp('collection.facet-options')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return bool True if the next option exists, false otherwise
+	 **/
+	public static function facet_options   ( $result, $options, $O ) {
 		$facet = current($O->facets);
 
-		if (!isset($O->_facetoptions_loop)) {
+		if ( ! isset($O->_facetoptions_loop) ) {
 			reset($facet->filters);
 			$O->_facetoptions_loop = true;
 		} else next($facet->filters);
 
-		if (current($facet->filters) !== false) return true;
+		if ( current($facet->filters) !== false ) return true;
 		else {
 			unset($O->_facetoptions_loop);
 			return false;
 		}
-
 	}
 
-	static function facet_option_link  ($result, $options, $O) {
+	/**
+	 * Provides the URL for enabling the current filter option
+	 *
+	 * @api `shopp('collection.facet-option-link')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string The current filter option link
+	 **/
+	public static function facet_option_link  ( $result, $options, $O ) {
 		$facet = current($O->facets);
 		$option = current($facet->filters);
-		return add_query_arg(urlencode($facet->slug),$option->param,$facet->link);
+		return add_query_arg(urlencode($facet->slug), $option->param, $facet->link);
 	}
 
-	static function facet_option_label  ($result, $options, $O) {
+	/**
+	 * Displays the current faceted menu filter option label
+	 *
+	 * @api `shopp('collection.facet-option-label')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string The current filter option label
+	 **/
+	public static function facet_option_label  ( $result, $options, $O ) {
 		$facet = current($O->facets);
 		$option = current($facet->filters);
 		return $option->label;
 	}
 
-	static function facet_option_value  ($result, $options, $O) {
+	/**
+	 * Displays the current faceted menu filter option value
+	 *
+	 * @api `shopp('collection.facet-option-value')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string The current filter option value
+	 **/
+	public static function facet_option_value  ( $result, $options, $O ) {
 		$facet = current($O->facets);
 		$option = current($facet->filters);
 		return $option->param;
 	}
 
-	static function facet_option_count  ($result, $options, $O) {
+	/**
+	 * Provides the number of products that match the current filter option
+	 *
+	 * @api `shopp('collection.facet-option-count')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string The product count of the current filter option
+	 **/
+	public static function facet_option_count  ( $result, $options, $O ) {
 		$facet = current($O->facets);
 		$option = current($facet->filters);
 		return $option->count;
 	}
 
-	static function facet_option_input  ($result, $options, $O) {
+	/**
+	 * Provides markup for an input to activate the current filter option
+	 *
+	 * @api `shopp('collection.facet-option-input')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * - **type**: `checkbox` (checkbox,text,hidden,button,submit) The type of input to generate
+	 * - **label**: The label of the current filter option
+	 * - **value**: The value of the current filter option
+	 * - **class**: `click-submit` The class attribute specifies one or more class-names for the input element
+	 * @param ShoppCollection $O       The working object
+	 * @return string Markup for the current filter option input
+	 **/
+	public static function facet_option_input  ( $result, $options, $O ) {
 		$facet = current($O->facets);
 		$option = current($facet->filters);
 
 		$defaults = array(
-			'type' => 'checkbox',
+			'type'  => 'checkbox',
 			'label' => $option->label,
 			'value' => $option->param,
 			'class' => 'click-submit'
 		);
-		if (isset($options['class'])) $options['class'] = trim($defaults['class'].' '.$options['class']);
-		$options = array_merge($defaults,$options);
+		if ( isset($options['class']) ) $options['class'] = trim($defaults['class'] . ' ' . $options['class']);
+		$options = array_merge($defaults, $options);
 		extract($options);
-		if ($option->param == $facet->selected) $options['checked'] = 'checked';
+		if ( $option->param == $facet->selected ) $options['checked'] = 'checked';
 
 		$_ = array();
-		$_[] = '<form action="'.self::url(false,false,$O).'" method="get"><input type="hidden" name="s_ff" value="on" /><input type="hidden" name="'.$facet->slug.'" value="" />';
-		$_[] = '<label><input type="'.$type.'" name="'.$facet->slug.'" value="'.$value.'"'.inputattrs($options).' />'.(!empty($label)?'&nbsp;'.$label:'').'</label>';
+		$_[] = '<form action="' . self::url(false, false, $O) . '" method="get">';
+		$_[] = '<input type="hidden" name="s_ff" value="on" /><input type="hidden" name="' . $facet->slug . '" value="" />';
+		$_[] = '<label><input type="' . $type . '" name="' . $facet->slug . '" value="' . $value . '"' . inputattrs($options) . ' />' . ( ! empty($label) ? '&nbsp;' . $label : '' ) . '</label>';
 		$_[] = '</form>';
-		return join('',$_);
+		return join('', $_);
 	}
 
-	static function faceted_menu ($result, $options, $O) {
+	/**
+	 * Provides markup for a menu of faceted filter options to find products in the current category
+	 *
+	 * @api `shopp('collection.faceted-menu')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string Markup of the faceted menu for the collection
+	 **/
+	public static function faceted_menu ( $result, $options, $O ) {
 		$_ = array();
 
 		// Use a template if available
-		$template = locate_shopp_template(array('facetedmenu-'.$O->slug.'.php','facetedmenu.php'));
-		if ($template) {
+		$template = locate_shopp_template(array('facetedmenu-' . $O->slug . '.php', 'facetedmenu.php'));
+		if ( $template ) {
 			ob_start();
 			include($template);
-			$content = ob_get_contents();
-			ob_end_clean();
-			return $content;
+			return ob_get_clean();
 		}
 
-		if (self::is_facet_filtered('',false,$O)) {
+		if ( self::is_facet_filtered('', false, $O) ) {
 			$_[] = '<ul>';
-			while(self::facet_filters(false,false,$O)) {
-				$_[] = '<li>';
-				$_[] = '<strong>'.self::facet_name(false,false,$O).':</strong> ';
-				$_[] = self::facet_filter(false,false,$O);
-				$_[] = sprintf(' <a href="%s" class="cancel">%s</a>',self::facet_link(false,false,$O),'X');
+			while( self::facet_filters(false, false, $O) ) {
+			 	$_[] = '<li>';
+				$_[] = '<strong>' . self::facet_name(false, false, $O) . ':</strong> ';
+				$_[] = self::facet_filter(false, false, $O);
+				$_[] = sprintf(' <a href="%s" class="shoppui-remove-sign cancel"><span class="hidden">%s</span></a>', self::facet_link(false, false, $O), Shopp::__('Remove Filter'));
 				$_[] = '</li>';
 			}
 			$_[] = '</ul>';
 		}
 
 		$_[] = '<ul class="faceted-menu">';
-		while(self::facet_menus(false,false,$O)) {
-			if (self::facet_filtered(false,false,$O)) continue;
-			if (!self::facet_menu_has_options(false,false,$O)) continue;
+		while ( self::facet_menus(false, false, $O) ) {
+			if ( self::facet_filtered(false, false, $O) ) continue;
+			if ( ! self::facet_menu_has_options(false, false, $O) ) continue;
 			$_[] = '<li>';
-			$_[] = '<h4>'.self::facet_name(false,false,$O).'</h4>';
-			$_[] = '<ul class="facet-option '.self::facet_slug(false,false,$O).'">';
-			while(self::facet_options(false,false,$O)) {
+			$_[] = '<h4>' . self::facet_name(false, false, $O) . '</h4>';
+			$_[] = '<ul class="facet-option ' . self::facet_slug(false, false, $O) . '">';
+			while ( self::facet_options(false, false, $O) ) {
 				$_[] = '<li>';
-				$_[] = sprintf('<a href="%s">%s</a>',esc_url(self::facet_option_link(false,false,$O)),self::facet_option_label(false,false,$O));
-				$_[] = ' <span class="count">'.self::facet_option_count(false,false,$O).'</span>';
+				$_[] = sprintf('<a href="%s">%s</a>', esc_url(self::facet_option_link(false, false, $O)), self::facet_option_label(false, false, $O));
+				$_[] = ' <span class="count">' . self::facet_option_count(false, false, $O) . '</span>';
 				$_[] = '</li>';
 			}
 			$_[] = '</ul>';
-
 			$_[] = '</li>';
 
 		}
 		$_[] = '</ul>';
 
-		return join('',$_);
+		return join('', $_);
 	}
 
-	static function feed_url ($result, $options, $O) {
-		$url = self::url($result,$options,$O);
-		if ( '' == get_option('permalink_structure') ) return add_query_arg(array('src'=>'category_rss'),$url);
+	/**
+	 * Provides the URL for the collection's RSS feed
+	 *
+	 * @api `shopp('collection.feed-url')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string The URL of the RSS feed
+	 **/
+	public static function feed_url ( $result, $options, $O ) {
+		global $wp_rewrite;
+		$url = self::url($result, $options, $O);
+		if ( ! $wp_rewrite->using_permalinks() ) return add_query_arg(array('src' => 'category_rss'), $url);
 
 		$query = false;
-		if (strpos($url,'?') !== false) list($url,$query) = explode('?',$url);
-		$url = trailingslashit($url)."feed";
-		if ($query) $url = "$url?$query";
+		if ( strpos($url, '?') !== false ) list($url, $query) = explode('?', $url);
+		$url = trailingslashit($url) . 'feed';
+		if ( $query ) $url = "$url?$query";
 			return $url;
 	}
 
-	static function has_categories ($result, $options, $O) {
-		if (empty($O->children) && method_exists($O, 'load_children')) $O->load_children();
-		return (!empty($O->children));
+	/**
+	 * Checks if the current category has sub-categories and, if so, loads them
+	 *
+	 * This tag is used to detect and load sub-categories for use with the
+	 * `shopp('collection.subcategories')` looping tag.
+	 *
+	 * @api `shopp('collection.has-categories')`
+	 * @since 1.0
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return bool True if sub-categories exist, false otherwise
+	 **/
+	public static function has_categories ( $result, $options, $O ) {
+		if ( empty($O->children) && method_exists($O, 'load_children') ) $O->load_children( $options );
+		reset($O->children);
+		return ( ! empty($O->children) );
 	}
 
-	static function has_faceted_menu ($result, $options, $O) {
+	/**
+	 * Checks if the current category has a faceted menu setup
+	 *
+	 * @api `shopp('collection.has-faceted-menu')`
+	 * @since 1.1
+	 *
+	 * @param string      $result  The output
+	 * @param array       $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return bool True if there are faceted menus, false otherwise
+	 **/
+	public static function has_faceted_menu ( $result, $options, $O ) {
 		if ( ! is_a($O, 'ProductCategory') ) return false;
-		if (empty($O->meta)) $O->load_meta();
-		if ('on' == $O->facetedmenus) {
+		if ( empty($O->meta) ) $O->load_meta();
+		if ( property_exists($O,'facetedmenus') && Shopp::str_true($O->facetedmenus) ) {
 			$O->load_facets();
 			return true;
 		}
 		return false;
 	}
 
-	static function has_images ($result, $options, $O) {
+	/**
+	 * Checks if the category has images and loads them
+	 *
+	 * @api `shopp('collection.has-images')`
+	 * @since 1.0
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return bool True if there are images
+	 **/
+	public static function has_images ( $result, $options, $O ) {
+
 		if ( ! is_a($O, 'ProductCategory') ) return false;
-		if (empty($O->images)) $O->load_images();
-		if (empty($O->images)) return false;
-		return true;
+
+		if ( empty($O->images) ) {
+			$O->load_images();
+			reset($O->images);
+		}
+
+		return ( ! empty($O->images) );
+
 	}
 
-	static function id ($result, $options, $O) {
-		if ( isset($O->term_id)) return $O->term_id;
+	/**
+	 * Provides the database term ID for the category
+	 *
+	 * @api `shopp('collection.id')`
+	 * @since 1.0
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string|bool The id of the category or false
+	 **/
+	public static function id ( $result, $options, $O ) {
+		if ( isset($O->term_id) ) return $O->term_id;
 		return false;
 	}
 
 	/**
 	 * Renders a custom category image
 	 *
-	 * @see the image() method from theme/catalog.php
-	 * @author Jonathan Davis
+	 * @api `shopp('collection.image')`
+	 * @see ShoppStorefrontThemeAPI::image() from api/theme/storefront.php
 	 * @since 1.2
 	 *
-	 * @return string
+	 * @param string      $result  The output
+	 * @param array       $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string The image markup
 	 **/
-	static function image ($result, $options, $O) {
-		if (!self::has_images($result, $options, $O)) return '';
-		return ShoppCatalogThemeAPI::image($result, $options, $O);
+	public static function image ( $result, $options, $O ) {
+		if ( ! self::has_images( $result, $options, $O )) return '';
+		return ShoppStorefrontThemeAPI::image( $result, $options, $O );
 	}
 
-	static function images ($result, $options, $O) {
-		if (!isset($O->_images_loop)) {
+	/**
+	 * Iterate over the images loaded for the category
+	 *
+	 * @api `shopp('collection.images')`
+	 * @since 1.0
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return bool True if the next image exists, false otherwise
+	 **/
+	public static function images ( $result, $options, $O ) {
+		if ( ! isset($O->_images_loop) ) {
 			reset($O->images);
 			$O->_images_loop = true;
 		} else next($O->images);
 
-		if (current($O->images) !== false) return true;
+		if ( current($O->images) !== false ) return true;
 		else {
 			unset($O->_images_loop);
 			return false;
 		}
 	}
 
-	static function is_subcategory ($result, $options, $O) {
-		if (isset($options['id'])) return ($this->parent == $options['id']);
-		return ($O->parent != 0);
+	/**
+	 * Checks if the current category is a subcategory of another
+	 *
+	 * @api `shopp('collection.is-subcategory')`
+	 * @since 1.1
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return bool True if it is a subcategory, false otherwise
+	 **/
+	public static function is_subcategory ( $result, $options, $O ) {
+		if ( isset($options['id']) ) return ( $this->parent == $options['id'] );
+		return ( $O->parent != 0 );
 	}
 
-	static function load_products ($result, $options, $O) {
-		if (empty($O->id) && empty($O->slug)) return false;
-		if (isset($options['load'])) {
-			$dataset = explode(",",$options['load']);
+	/**
+	 * Checks if there are products available to display and loads product data
+	 *
+	 * @api `shopp('collection.load-products')`
+	 * @since 1.1
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return bool True if products are loaded, false otherwise
+	 **/
+	public static function load_products ( $result, $options, $O ) {
+		if ( empty($O->id) && empty($O->slug) ) return false;
+
+		if ( isset($options['load']) ) {
+			$dataset = explode(',', $options['load']);
 			$options['load'] = array();
-			foreach ($dataset as $name) {
+			foreach ( $dataset as $name ) {
 				if ( 'description' == trim(strtolower($name)) )
 					$options['columns'] = 'p.post_content';
 				$options['load'][] = trim($name);
@@ -405,147 +818,246 @@ class ShoppCollectionThemeAPI implements ShoppAPI {
 		 } else {
 			$options['load'] = array('prices');
 		}
-		if (!$O->loaded) $O->load($options);
-		if (count($O->products) > 0) return true; else return false;
+		if ( ! $O->loaded ) $O->load($options);
+
+		return count($O->products) > 0;
 	}
 
-	static function name ($result, $options, $O) { return $O->name; }
+	/**
+	 * Provides the name of the collection
+	 *
+	 * @api `shopp('collection.name')`
+	 * @since 1.0
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string The collection name
+	 **/
+	public static function name ( $result, $options, $O ) {
+		return $O->name;
+	}
 
-	static function pagination ($result, $options, $O) {
-		if (!$O->paged) return "";
+	/**
+	 * Provides markup for a list of linked page numbers for pages of products in the collection
+	 *
+	 * @api `shopp('collection.pagination')`
+	 * @since 1.0
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * - **after**: `</div>` Markup to add after the pagination
+	 * - **before**: `<div>` Markup to add before the pagination
+	 * - **jumpback**: `&laquo;` The label for the jump backward link (jumps to the first page)
+	 * - **jumpfwd**: `&raquo;` The label for the jump forward link (jumps to the last page)
+	 * - **label**: `Pages:` The label for the pagination list
+	 * - **next**: `next` The label for the next button
+	 * - **previous**: `previous` The label for the previous button
+	 * - **show**: `1000` The maximum number of pages to show
+	 * @param ShoppCollection $O       The working object
+	 * @return string The pagination markup
+	 **/
+	public static function pagination ( $result, $options, $O ) {
+		if ( ! $O->paged ) return '';
 
 		$defaults = array(
-			'label' => __("Pages:","Shopp"),
-			'next' => __("next","Shopp"),
-			'previous' => __("previous","Shopp"),
+			'after' => '</div>',
+			'before' => '<div>',
 			'jumpback' => '&laquo;',
 			'jumpfwd' => '&raquo;',
-			'show' => 1000,
-			'before' => '<div>',
-			'after' => '</div>'
+			'label' => Shopp::__('Pages:'),
+			'next' => Shopp::__('next'),
+			'previous' => Shopp::__('previous'),
+			'show' => 1000
 		);
-		$options = array_merge($defaults,$options);
+		$options = array_merge($defaults, $options);
 		extract($options);
 
 		$_ = array();
-		if (isset($O->alpha) && $O->paged) {
-			$_[] = $before.$label;
+		if ( isset($O->alpha) && $O->paged ) {
+			$_[] = $before . $label;
 			$_[] = '<ul class="paging">';
-			foreach ($O->alpha as $letter => $products) {
+			foreach ( $O->alpha as $letter => $products ) {
 				$link = $O->pagelink($letter);
-				if ($products > 0) $_[] = '<li><a href="'.esc_url($link).'">'.$letter.'</a></li>';
-				else $_[] = '<li><span>'.$letter.'</span></li>';
+				if ( $products > 0 ) $_[] = '<li><a href="' . esc_url_raw($link) . '">' . $letter . '</a></li>';
+				else $_[] = '<li><span>' . $letter . '</span></li>';
 			}
 			$_[] = '</ul>';
 			$_[] = $after;
-			return join("\n",$_);
+			return join("\n", $_);
 		}
 
-		if ($O->pages > 1) {
+		if ( $O->pages > 1 ) {
 
 			if ( $O->pages > $show ) $visible_pages = $show + 1;
 			else $visible_pages = $O->pages + 1;
-			$jumps = ceil($visible_pages/2);
-			$_[] = $before.$label;
+			$jumps = ceil( $visible_pages / 2 );
+			$_[] = $before . $label;
 
 			$_[] = '<ul class="paging">';
-			if ( $O->page <= floor(($show) / 2) ) {
+			if ( $O->page <= floor( $show / 2) ) {
 				$i = 1;
 			} else {
-				$i = $O->page - floor(($show) / 2);
-				$visible_pages = $O->page + floor(($show) / 2) + 1;
-				if ($visible_pages > $O->pages) $visible_pages = $O->pages + 1;
-				if ($i > 1) {
+				$i = $O->page - floor( $show / 2 );
+				$visible_pages = $O->page + floor( $show / 2 ) + 1;
+				if ( $visible_pages > $O->pages ) $visible_pages = $O->pages + 1;
+				if ( $i > 1 ) {
 					$link = $O->pagelink(1);
-					$_[] = '<li><a href="'.esc_url($link).'">1</a></li>';
+					$_[] = '<li><a href="' . esc_url_raw($link) . '">1</a></li>';
 
-					$pagenum = ($O->page - $jumps);
-					if ($pagenum < 1) $pagenum = 1;
+					$pagenum = ( $O->page - $jumps );
+					if ( $pagenum < 1 ) $pagenum = 1;
 					$link = $O->pagelink($pagenum);
-					$_[] = '<li><a href="'.esc_url($link).'">'.$jumpback.'</a></li>';
+					$_[] = '<li><a href="' . esc_url_raw($link) . '">' . $jumpback . '</a></li>';
 				}
 			}
 
 			// Add previous button
-			if (!empty($previous) && $O->page > 1) {
+			if ( ! empty($previous) && $O->page > 1 ) {
 				$prev = $O->page-1;
 				$link = $O->pagelink($prev);
-				$_[] = '<li class="previous"><a href="'.esc_url($link).'">'.$previous.'</a></li>';
-			} else $_[] = '<li class="previous disabled">'.$previous.'</li>';
+				$_[] = '<li class="previous"><a href="' . esc_url_raw($link) . '" rel="prev">' . $previous . '</a></li>';
+			} else $_[] = '<li class="previous disabled">' . $previous . '</li>';
 			// end previous button
 
-			while ($i < $visible_pages) {
+			while ( $i < $visible_pages ) {
 				$link = $O->pagelink($i);
-				if ( $i == $O->page ) $_[] = '<li class="active">'.$i.'</li>';
-				else $_[] = '<li><a href="'.esc_url($link).'">'.$i.'</a></li>';
+				if ( $i == $O->page ) $_[] = '<li class="active">' . $i . '</li>';
+				else $_[] = '<li><a href="' . esc_url_raw($link) . '">' . $i . '</a></li>';
 				$i++;
 			}
-			if ($O->pages > $visible_pages) {
-				$pagenum = ($O->page + $jumps);
-				if ($pagenum > $O->pages) $pagenum = $O->pages;
+			if ( $O->pages > $visible_pages ) {
+				$pagenum = ( $O->page + $jumps );
+				if ( $pagenum > $O->pages ) $pagenum = $O->pages;
 				$link = $O->pagelink($pagenum);
-				$_[] = '<li><a href="'.esc_url($link).'">'.$jumpfwd.'</a></li>';
+				$_[] = '<li><a href="' . esc_url_raw($link) . '">' . $jumpfwd . '</a></li>';
 				$link = $O->pagelink($O->pages);
-				$_[] = '<li><a href="'.esc_url($link).'">'.$O->pages.'</a></li>';
+				$_[] = '<li><a href="' . esc_url_raw($link) . '">' . $O->pages . '</a></li>';
 			}
 
 			// Add next button
-			if (!empty($next) && $O->page < $O->pages) {
-				$pagenum = $O->page+1;
+			if ( ! empty($next) && $O->page < $O->pages) {
+				$pagenum = $O->page + 1;
 				$link = $O->pagelink($pagenum);
-				$_[] = '<li class="next"><a href="'.esc_url($link).'">'.$next.'</a></li>';
-			} else $_[] = '<li class="next disabled">'.$next.'</li>';
+				$_[] = '<li class="next"><a href="' . esc_url_raw($link) . '" rel="next">' . $next . '</a></li>';
+			} else $_[] = '<li class="next disabled">' . $next . '</li>';
 
 			$_[] = '</ul>';
 			$_[] = $after;
 		}
-		return join("\n",$_);
+		return join("\n", $_);
 	}
 
-	static function parent ($result, $options, $O) { return isset($O->parent) ? $O->parent : false;  }
+	/**
+	 * Provides the category ID of the parent category for sub-categories
+	 *
+	 * @api `shopp('collection.parent')`
+	 * @since 1.0
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string|bool The parent ID or false otherwise
+	 **/
+	public static function parent ( $result, $options, $O ) {
+		return isset($O->parent) ? $O->parent : false;
+	}
 
-	static function products ($result, $options, $O) {
+	/**
+	 * Iterates over the products in the collection
+	 *
+	 * @api `shopp('collection.products')`
+	 * @since 1.0
+	 *
+	 * @param string           $result  The output
+	 * @param array            $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return bool True if the next product exists, false otherwise
+	 **/
+	public static function products ( $result, $options, $O ) {
+		if ( isset($options['looping']) ) return isset($O->_product_loop);
+
 		$null = null;
-		if (!isset($O->_product_loop)) {
+		if ( ! isset($O->_product_loop) ) {
 			reset($O->products);
 			ShoppProduct(current($O->products));
 			$O->_pindex = 0;
 			$O->_rindex = false;
 			$O->_product_loop = true;
 		} else {
-			ShoppProduct(next($O->products));
+			if ( $Product = next($O->products) )
+				ShoppProduct($Product);
 			$O->_pindex++;
 		}
 
-		if (current($O->products) !== false) return true;
+		if ( current($O->products) !== false ) return true;
 		else {
 			unset($O->_product_loop);
 			ShoppProduct($null);
-			if ( is_a(ShoppStorefront()->Requested, 'Product') ) ShoppProduct(ShoppStorefront()->Requested);
+			if ( is_a(ShoppStorefront()->Requested, 'ShoppProduct') )
+				ShoppProduct(ShoppStorefront()->Requested);
 			$O->_pindex = 0;
 			return false;
 		}
 	}
 
-	static function row ($result, $options, $O) {
-		global $Shopp;
-		if (!isset($O->_rindex) || $O->_rindex === false) $O->_rindex = 0;
+	/**
+	 * Checks if a new row is needed based on the products-per-row presentation setting
+	 *
+	 * @api `shopp('collection.row')`
+	 * @since 1.1
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return bool True if a new row is needed, false otherwise
+	 **/
+	public static function row ( $result, $options, $O ) {
+		if ( ! isset($O->_rindex) || $O->_rindex === false ) $O->_rindex = 0;
 		else $O->_rindex++;
-		if (empty($options['products'])) $options['products'] = shopp_setting('row_products');
-		if (isset($O->_rindex) && $O->_rindex > 0 && $O->_rindex % $options['products'] == 0) return true;
-		else return false;
+
+		if ( empty($options['products']) )
+			$options['products'] = shopp_setting('row_products');
+
+		return ( 0 == $O->_rindex || $O->_rindex > 0 && $O->_rindex % $options['products'] == 0 );
 	}
 
-	static function section_list ($result, $options, $O) {
-		if (!isset($O->id) || empty($O->id)) return false;
+	/**
+	 * Provides a linked list of categories in the current category section
+	 *
+	 * A category section is a listing of all of the descendant (children) categories
+	 * and ancestor (parents) categories up to the top-level parent.
+	 *
+	 * @api `shopp('collection.section-list')`
+	 * @since 1.1
+	 *
+	 * @param string           $result  The output
+	 * @param array            $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string The list markup
+	 **/
+	public static function section_list ( $result, $options, $O ) {
+		if ( ! isset($O->id) || empty($O->id) ) return false;
 		$options['section'] = true;
-		return ShoppCatalogThemeAPI::category_list($result, $options, $O);
+		return ShoppStorefrontThemeAPI::category_list($result, $options, $O);
 	}
 
-	static function slideshow ($result, $options, $O) {
+
+	/**
+	 * Provides markup for a slideshow of cover images for products in the collection
+	 *
+	 * @api `shopp('collection.slideshow')`
+	 * @since 1.1
+	 *
+	 * @param string           $result  The output
+	 * @param array            $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string The slideshow markup
+	 **/
+	public static function slideshow ( $result, $options, $O ) {
 		$options['load'] = array('images');
-		if (!$O->loaded) $O->load($options);
-		if (count($O->products) == 0) return false;
+		if ( ! $O->loaded ) $O->load($options);
+		if ( count($O->products) == 0 ) return false;
 
 		$defaults = array(
 			'fx' => 'fade',
@@ -564,32 +1076,54 @@ class ShoppCollectionThemeAPI implements ShoppAPI {
 			'bg' => false,
 		);
 
-		$options = array_merge($defaults,$imgdefaults,$options);
+		$options = array_merge($defaults, $imgdefaults, $options);
 		extract($options, EXTR_SKIP);
 
-		$href = shoppurl('' != get_option('permalink_structure')?trailingslashit('000'):'000','images');
-		$imgsrc = add_query_string("$width,$height",$href);
+		$href = Shopp::url( '' != get_option('permalink_structure') ? trailingslashit('000') : '000', 'images');
+		$imgsrc = add_query_string("$width,$height", $href);
 
-		$string = '<ul class="slideshow '.$fx.'-fx '.$order.'-order duration-'.$duration.' delay-'.$delay.'">';
-		$string .= '<li class="clear"><img src="'.$imgsrc.'" width="'.$width.'" height="'.$height.'" /></li>';
-		foreach ($O->products as $Product) {
-			if (empty($Product->images)) continue;
-			$string .= '<li><a href="'.$Product->tag('url').'">';
-			$imgoptions = array_filter(array_intersect_key($options,$imgdefaults));
-			$string .= shopp($Product,'get-image',$imgoptions);
+		$string = '<ul class="slideshow ' . $fx . '-fx ' . $order . '-order duration-' . $duration . ' delay-' . $delay . '">';
+		$string .= '<li class="clear"><img src="' . $imgsrc . '" width="' . $width . '" height="' . $height . '" /></li>';
+		foreach ( $O->products as $Product ) {
+			if ( empty($Product->images) ) continue;
+			$string .= '<li><a href="' . $Product->tag('url') . '">';
+			$imgoptions = array_filter(array_intersect_key($options, $imgdefaults));
+			$string .= shopp($Product, 'get-image', $imgoptions);
 			$string .= '</a></li>';
 		}
 		$string .= '</ul>';
 		return $string;
 	}
 
-	static function slug ($result, $options, $O) {
-		if (isset($O->slug)) return urldecode($O->slug);
+	/**
+	 * Provides the collection slug
+	 *
+	 * @api `shopp('collection.slug')`
+	 * @since 1.0
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string The collection slug
+	 **/
+	public static function slug ( $result, $options, $O ) {
+		if ( isset($O->slug) ) return urldecode($O->slug);
 		return false;
 	}
 
-	static function subcategories ($result, $options, $O) {
-		if (!isset($O->_children_loop)) {
+	/**
+	 * Iterates over the subcategories of the current category
+	 *
+	 * @api `shopp('collection.subcategories')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return bool True if the next subcategory exists, false otherwise
+	 **/
+	public static function subcategories ( $result, $options, $O ) {
+		if ( ! isset($O->_children_loop) ) {
 			reset($O->children);
 			$O->child = current($O->children);
 			$O->_cindex = 0;
@@ -599,7 +1133,7 @@ class ShoppCollectionThemeAPI implements ShoppAPI {
 			$O->_cindex++;
 		}
 
-		if ($O->child !== false) return true;
+		if ( $O->child !== false ) return true;
 		else {
 			unset($O->_children_loop);
 			$O->_cindex = 0;
@@ -608,28 +1142,55 @@ class ShoppCollectionThemeAPI implements ShoppAPI {
 		}
 	}
 
-	static function subcategory_list ($result, $options, $O) {
+	/**
+	 * Provides markup for a list of subcategories of the current category
+	 *
+	 * @api `shopp('collection.subcategories')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string The subcategory list markup
+	 **/
+	public static function subcategory_list ( $result, $options, $O ) {
 		if (!isset($O->id) || empty($O->id)) return false;
 		$options['childof'] = $O->id;
-		$options['default'] = __('Select a sub-category&hellip;','Shopp');
-		return ShoppCatalogThemeAPI::category_list($result, $options, $O);
+		$options['default'] = Shopp::__('Select a sub-category&hellip;');
+		return ShoppStorefrontThemeAPI::category_list( $result, $options, $O );
 	}
 
-	static function total ($result, $options, $O) { return $O->loaded?$O->total:false; }
+	/**
+	 * Provides the total count of products in the collection
+	 *
+	 * @api `shopp('collection.total')`
+	 * @since 1.2
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string The total number of products
+	 **/
+	public static function total ( $result, $options, $O ) {
+		return $O->loaded ? $O->total : false;
+	}
 
-	static function url ($result, $options, $O) {
-		global $ShoppTaxonomies;
-		if ( $O->id && isset($O->taxonomy) && ! in_array($O->taxonomy, array_keys($ShoppTaxonomies)) )
-			return get_term_link( (int) $O->id, $O->taxonomy);
-
-		$namespace = get_class_property( get_class($O) ,'namespace');
-		$prettyurls = ( '' != get_option('permalink_structure') );
-
-		$url = shoppurl( $prettyurls ? "$namespace/$O->slug" : array($O->taxonomy=>$O->slug),false );
-		if (isset($options['page'])) $url = $O->pagelink((int)$options['page']);
+	/**
+	 * Provides the URL for the collection
+	 *
+	 * @api `shopp('collection.url')`
+	 * @since 1.0
+	 *
+	 * @param string          $result  The output
+	 * @param array           $options The options
+	 * @param ShoppCollection $O       The working object
+	 * @return string The collection URL
+	 **/
+	public static function url ( $result, $options, $O ) {
+		$url = get_term_link($O);
+		if ( isset($options['page']) )
+			$url = $O->pagelink((int)$options['page']);
 		return $url;
 	}
 
 }
-
-?>

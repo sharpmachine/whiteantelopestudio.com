@@ -1,7 +1,7 @@
 <?php
 
 function save_meta_box ($Product) {
-	global $Shopp;
+	$Shopp = Shopp::object();
 
 	$workflows = array(
 		"continue" => __('Continue Editing','Shopp'),
@@ -26,14 +26,14 @@ function save_meta_box ($Product) {
 				<div id="schedule-calendar" class="calendar-wrap">
 					<?php
 						$previous = false;
-						$dateorder = date_format_order(true);
+						$dateorder = Shopp::date_format_order(true);
 						foreach ($dateorder as $type => $format):
 							if ($previous == "s" && $type[0] == "s") continue;
 							if ("month" == $type): ?><input type="text" name="publish[month]" id="publish-month" title="<?php _e('Month','Shopp'); ?>" size="2" maxlength="2" value="<?php echo ($Product->publish>1)?date("n",$Product->publish):''; ?>" class="publishdate selectall" /><?php elseif ("day" == $type): ?><input type="text" name="publish[date]" id="publish-date" title="<?php _e('Day','Shopp'); ?>" size="2" maxlength="2" value="<?php echo ($Product->publish>1)?date("j",$Product->publish):''; ?>" class="publishdate selectall" /><?php elseif ("year" == $type): ?><input type="text" name="publish[year]" id="publish-year" title="<?php _e('Year','Shopp'); ?>" size="4" maxlength="4" value="<?php echo ($Product->publish>1)?date("Y",$Product->publish):''; ?>" class="publishdate selectall" /><?php elseif ($type[0] == "s"): echo "/"; endif; $previous = $type[0]; ?><?php endforeach; ?>
 					 <br />
 					<input type="text" name="publish[hour]" id="publish-hour" title="<?php _e('Hour','Shopp'); ?>" size="2" maxlength="2" value="<?php echo ($Product->publish>1)?date("g",$Product->publish):date('g'); ?>" class="publishdate selectall" />:<input type="text" name="publish[minute]" id="publish-minute" title="<?php _e('Minute','Shopp'); ?>" size="2" maxlength="2" value="<?php echo ($Product->publish>1)?date("i",$Product->publish):date('i'); ?>" class="publishdate selectall" />
 					<select name="publish[meridiem]" class="publishdate">
-					<?php echo menuoptions(array('AM' => __('AM','Shopp'),'PM' => __('PM','Shopp')),date('A',$Product->publish),true); ?>
+					<?php echo Shopp::menuoptions(array('AM' => __('AM','Shopp'),'PM' => __('PM','Shopp')),date('A',$Product->publish),true); ?>
 					</select>
 				</div>
 			</div>
@@ -49,7 +49,7 @@ function save_meta_box ($Product) {
 	</div>
 <?php
 }
-add_meta_box(
+ShoppUI::addmetabox(
 	'save-product',
 	__('Save','Shopp').$Admin->boxhelp('product-editor-save'),
 	'save_meta_box',
@@ -108,15 +108,16 @@ function shopp_categories_meta_box ($Product,$options) {
 	</div>
 
 	<div id="<?php echo $taxonomy; ?>-all" class="multiple-select category-menu tabs-panel">
-		<ul id="<?php echo $taxonomy; ?>-checklist" class="list:<?php echo $taxonomy?> form-no-clear">
+		<ul id="<?php echo $taxonomy; ?>-checklist" data-wp-lists="list:<?php echo $taxonomy; ?>" class="list:<?php echo $taxonomy; ?> form-no-clear">
 		<?php wp_terms_checklist($Product->id, array( 'taxonomy' => $taxonomy, 'popular_cats' => $popular_ids) ) ?>
 		</ul>
 	</div>
 
-	<div id="new-<?php echo $taxonomy; ?>" class="new-category hide-if-no-js">
+	<div id="<?php echo $taxonomy; ?>-add" class="new-category hide-if-no-js">
 	<input type="text" name="new<?php echo $taxonomy; ?>" value="" id="new-<?php echo $taxonomy; ?>-name" /><br />
 	<?php wp_dropdown_categories( array( 'taxonomy' => $taxonomy, 'hide_empty' => 0, 'name' => 'new'.$taxonomy.'_parent', 'orderby' => 'name', 'hierarchical' => 1, 'show_option_none' => $tax->labels->parent_item.'&hellip;', 'tab_index' => 3 ) ); ?>
-	<button id="add-new-category" type="button" class="add:<?php echo $taxonomy ?>-checklist:taxonomy-<?php echo $taxonomy ?> button category-add-sumbit" tabindex="2"><small><?php _e('Add','Shopp'); ?></small></button>
+
+	<input type="button" id="<?php echo $taxonomy; ?>-add-submit" value="<?php _e('Add'); ?>" data-wp-lists="add:<?php echo $taxonomy ?>-checklist:<?php echo $taxonomy ?>-add" class="add:<?php echo $taxonomy ?>-checklist:taxonomy-<?php echo $taxonomy ?> button <?php echo $taxonomy ?>-add-submit" tabindex="3" />
 	<?php wp_nonce_field( 'add-'.$taxonomy, '_ajax_nonce-add-'.$taxonomy, false ); ?>
 	<span id="<?php echo $taxonomy; ?>-ajax-response"></span>
 	</div>
@@ -129,7 +130,7 @@ function shopp_categories_meta_box ($Product,$options) {
 </div><?php
 }
 
-function shopp_tags_meta_box ($Product) {
+function shopp_tags_meta_box ($Product, $options) {
 	$defaults = array('taxonomy' => 'shopp_tag');
 	if ( !isset($options['args']) || !is_array($options['args']) ) $options = array();
 	else $options = $options['args'];
@@ -150,18 +151,18 @@ function shopp_tags_meta_box ($Product) {
 }
 
 // Load all Shopp product taxonomies
-global $Shopp;
-foreach ( get_object_taxonomies(Product::$posttype) as $taxonomy_name ) {
+$Shopp = Shopp::object();
+foreach ( get_object_taxonomies(ShoppProduct::$posttype) as $taxonomy_name ) {
 	$taxonomy = get_taxonomy($taxonomy_name);
 	$label = $taxonomy->labels->name;
 	if ( is_taxonomy_hierarchical($taxonomy_name) )
-		add_meta_box($taxonomy_name.'-box', $label.$Admin->boxhelp('product-editor-categories'), 'shopp_categories_meta_box', Product::$posttype, 'side', 'core', array( 'taxonomy' => $taxonomy_name ));
-	else add_meta_box($taxonomy_name.'-box', $label.$Admin->boxhelp('product-editor-tags'), 'shopp_tags_meta_box', Product::$posttype, 'side', 'core', array( 'taxonomy' => $taxonomy_name ));
+		ShoppUI::addmetabox($taxonomy_name.'-box', $label.$Admin->boxhelp('product-editor-categories'), 'shopp_categories_meta_box', ShoppProduct::$posttype, 'side', 'core', array( 'taxonomy' => $taxonomy_name ));
+	else ShoppUI::addmetabox($taxonomy_name.'-box', $label.$Admin->boxhelp('product-editor-tags'), 'shopp_tags_meta_box', ShoppProduct::$posttype, 'side', 'core', array( 'taxonomy' => $taxonomy_name ));
 
 }
 
 function settings_meta_box ($Product) {
-	global $Shopp;
+	$Shopp = Shopp::object();
 	$Admin =& $Shopp->Flow->Admin;
 
 ?>
@@ -170,7 +171,7 @@ function settings_meta_box ($Product) {
 	<p><input type="hidden" name="addons" value="off" /><input type="checkbox" name="addons" value="on" id="addons-setting" tabindex="13"<?php if ($Product->addons == "on") echo ' checked="checked"'?> /><label for="addons-setting"> <?php _e('Add-ons','Shopp'); ?><?php echo $Admin->boxhelp('product-editor-addons'); ?></label></p>
 
 	<?php if (shopp_setting_enabled('tax_inclusive')): ?>
-		<p><input type="hidden" name="meta[excludetax]" value="off" /><input type="checkbox" name="meta[excludetax]" value="on" id="excludetax-setting" tabindex="18"  <?php if(isset($Product->meta['excludetax']) && str_true($Product->meta['excludetax']->value)) echo 'checked="checked"'; ?> /> <label for="excludetax-setting"><?php _e('Exclude Taxes','Shopp'); ?></label></p>
+		<p><input type="hidden" name="meta[excludetax]" value="off" /><input type="checkbox" name="meta[excludetax]" value="on" id="excludetax-setting" tabindex="18"  <?php if(isset($Product->meta['excludetax']) && Shopp::str_true($Product->meta['excludetax']->value)) echo 'checked="checked"'; ?> /> <label for="excludetax-setting"><?php _e('Exclude Taxes','Shopp'); ?></label></p>
 	<?php endif; ?>
 
 	<?php if ($Shopp->Shipping->realtime): ?>
@@ -178,11 +179,11 @@ function settings_meta_box ($Product) {
 	<?php endif; ?>
 
 
-	<p><input type="hidden" name="comment_status" value="closed" /><input type="checkbox" name="comment_status" value="open" id="allow-comments" tabindex="18"  <?php if(str_true($Product->comment_status)) echo 'checked="checked"'; ?> /> <label for="allow-comments"><?php _e('Comments','Shopp'); ?></label>
+	<p><input type="hidden" name="comment_status" value="closed" /><input type="checkbox" name="comment_status" value="open" id="allow-comments" tabindex="18"  <?php if(Shopp::str_true($Product->comment_status)) echo 'checked="checked"'; ?> /> <label for="allow-comments"><?php _e('Comments','Shopp'); ?></label>
 
-	<p><input type="hidden" name="ping_status" value="closed" /><input type="checkbox" name="ping_status" value="open" id="allow-trackpings" tabindex="18"  <?php if(str_true($Product->ping_status)) echo 'checked="checked"'; ?> /> <label for="allow-trackpings"><?php _e('Trackbacks & Pingbacks','Shopp'); ?></label>
+	<p><input type="hidden" name="ping_status" value="closed" /><input type="checkbox" name="ping_status" value="open" id="allow-trackpings" tabindex="18"  <?php if(Shopp::str_true($Product->ping_status)) echo 'checked="checked"'; ?> /> <label for="allow-trackpings"><?php _e('Trackbacks & Pingbacks','Shopp'); ?></label>
 
-	<p><input type="hidden" name="meta[processing]" value="off" /><input type="checkbox" name="meta[processing]" value="on" id="process-time" tabindex="18"  <?php if(isset($Product->meta['processing']) && str_true($Product->meta['processing']->value)) echo 'checked="checked"'; ?> /> <label for="process-time"><?php _e('Processing Time','Shopp'); ?></label>
+	<p><input type="hidden" name="meta[processing]" value="off" /><input type="checkbox" name="meta[processing]" value="on" id="process-time" tabindex="18"  <?php if(isset($Product->meta['processing']) && Shopp::str_true($Product->meta['processing']->value)) echo 'checked="checked"'; ?> /> <label for="process-time"><?php _e('Processing Time','Shopp'); ?></label>
 
 	<div id="processing" class="hide-if-js">
 		<select name="meta[minprocess]"><?php echo menuoptions(Lookup::timeframes_menu(),isset($Product->meta['minprocess'])?$Product->meta['minprocess']->value:false,true); ?></select> &mdash;
@@ -193,11 +194,11 @@ function settings_meta_box ($Product) {
 
 <?php
 }
-add_meta_box(
+ShoppUI::addmetabox(
 	'product-settings',
 	__('Settings','Shopp').$Admin->boxhelp('product-editor-settings'),
 	'settings_meta_box',
-	Product::$posttype,
+	ShoppProduct::$posttype,
 	'side',
 	'core'
 );
@@ -208,7 +209,7 @@ function summary_meta_box ($Product) {
     <label for="summary"><?php _e('A brief description of the product to draw the customer\'s attention.','Shopp'); ?></label>
 <?php
 }
-add_meta_box(
+ShoppUI::addmetabox(
 	'product-summary',
 	__('Summary','Shopp').$Admin->boxhelp('product-editor-summary'),
 	'summary_meta_box',
@@ -234,7 +235,7 @@ function details_meta_box ($Product) {
 	</div>
 <?php
 }
-add_meta_box(
+ShoppUI::addmetabox(
 	'product-details-box',
 	__('Details &amp; Specs','Shopp').$Admin->boxhelp('product-editor-details'),
 	'details_meta_box',
@@ -245,29 +246,32 @@ add_meta_box(
 
 function images_meta_box ($Product) {
 ?>
+	<div id="confirm-delete-images" class="notice hidden"><p><?php _e('Save the product to confirm deleted images.','Shopp'); ?></p></div>
 	<ul id="lightbox">
-	<?php foreach ((array)$Product->images as $i => $Image): ?>
-		<li id="image-<?php echo $Image->id; ?>"><input type="hidden" name="images[]" value="<?php echo $Image->id; ?>" />
-			<div id="image-<?php echo $Image->id; ?>-details">
-				<img src="?siid=<?php echo $Image->id; ?>&amp;<?php echo $Image->resizing(96,0,1); ?>" width="96" height="96" />
-				<input type="hidden" name="imagedetails[<?php echo $i; ?>][id]" value="<?php echo $Image->id; ?>" />
-				<input type="hidden" name="imagedetails[<?php echo $i; ?>][title]" value="<?php echo $Image->title; ?>" class="imagetitle" />
-				<input type="hidden" name="imagedetails[<?php echo $i; ?>][alt]" value="<?php echo $Image->alt; ?>"  class="imagealt" />
+	<?php foreach ( (array) $Product->images as $i => $Image ): ?>
+		<li id="image-<?php echo (int)$Image->id; ?>"><input type="hidden" name="images[]" value="<?php echo $Image->id; ?>" />
+			<div id="image-<?php echo (int)$Image->id; ?>-details" title="<?php _e('Double-click images to edit their details&hellip;','Shopp'); ?>">
+				<img src="?siid=<?php echo (int)$Image->id; ?>&amp;<?php echo $Image->resizing(96,0,1); ?>" width="96" height="96" />
+				<input type="hidden" name="imagedetails[<?php echo (int)$i; ?>][id]" value="<?php echo (int)$Image->id; ?>" />
+				<input type="hidden" name="imagedetails[<?php echo (int)$i; ?>][title]" value="<?php echo $Image->title; ?>" class="imagetitle" />
+				<input type="hidden" name="imagedetails[<?php echo (int)$i; ?>][alt]" value="<?php echo $Image->alt; ?>"  class="imagealt" />
 				<?php
-					if (isset($Product->cropped) && count($Product->cropped) > 0 && isset($Product->cropped[$Image->id])):
-						$cropped = is_array($Product->cropped[$Image->id]) ? $Product->cropped[$Image->id] : array($Product->cropped[$Image->id]);
+					if ( isset($Product->cropped) && count($Product->cropped) > 0 && isset($Product->cropped[ $Image->id ]) ):
+
+						$cropped = is_array($Product->cropped[ $Image->id ]) ? $Product->cropped[ $Image->id ] : array($Product->cropped[$Image->id]);
 
 						foreach ($cropped as $cache):
 							$cropimage = unserialize($cache->value);
-
-							$cropping = false;
-							if (join('',array($cropimage->settings['dx'],$cropimage->settings['dy'],$cropimage->settings['cropscale'])) != '')
-								$cropping = join(',',array($cropimage->settings['dx'],$cropimage->settings['dy'],$cropimage->settings['cropscale']));
-							$c = "$cropimage->width:$cropimage->height"; ?>
+							$cropdefaults = array('dx' => '','dy' => '','cropscale' => '');
+							$cropsettings = array_intersect_key($cropimage->settings, $cropdefaults);
+							$cropping = ( array_filter($cropsettings) == array() ) ? '' : join(',', array_merge($cropdefaults, $cropsettings));
+							$c = "$cropimage->width:$cropimage->height";
+				?>
 					<input type="hidden" name="imagedetails[<?php echo $i; ?>][cropping][<?php echo $cache->id; ?>]" alt="<?php echo $c; ?>" value="<?php echo $cropping; ?>" class="imagecropped" />
-				<?php endforeach; endif;?>
+				<?php endforeach; endif; ?>
 			</div>
-			<button type="button" name="deleteImage" value="<?php echo $Image->id; ?>" title="<?php _e('Delete product image&hellip','Shopp'); ?>" class="deleteButton"><input type="hidden" name="ieisstupid" value="<?php echo $Image->id; ?>" /><img src="<?php echo SHOPP_PLUGINURI; ?>/core/ui/icons/delete.png" alt="-" width="16" height="16" /></button></li>
+			<?php echo ShoppUI::button('delete', 'deleteImage', array('type' => 'button', 'class' => 'delete', 'value' => $Image->id, 'title' => Shopp::__('Remove image&hellip;')) ); ?>
+			</li>
 	<?php endforeach; ?>
 	</ul>
 	<div class="clear"></div>
@@ -277,11 +281,9 @@ function images_meta_box ($Product) {
 	<div id="browser-uploader">
 		<button type="button" name="image_upload" id="image-upload" class="button-secondary"><small><?php _e('Add New Image','Shopp'); ?></small></button><br class="clear"/>
 	</div>
-
-	<p><?php _e('Double-click images to edit their details. Save the product to confirm deleted images.','Shopp'); ?></p>
 <?php
 }
-add_meta_box(
+ShoppUI::addmetabox(
 	'product-images',
 	 __('Product Images','Shopp').$Admin->boxhelp('product-editor-images'),
 	'images_meta_box',
@@ -292,7 +294,7 @@ add_meta_box(
 
 function pricing_meta_box ($Product) {
 ?>
-<div id="prices-loading" class="updating"></div>
+<div id="prices-loading"><span class="shoppui-spinner shoppui-spinfx shoppui-spinfx-steps8"></div>
 <div id="product-pricing"></div>
 
 <div id="variations">
@@ -356,14 +358,14 @@ function pricing_meta_box ($Product) {
 
 <div id="chooser">
 	<p><label for="import-url"><?php _e('Attach file by URL','Shopp'); ?>&hellip;</label></p>
-	<p><input type="text" name="url" id="import-url" class="fileimport" /><button class="button-secondary" id="attach-file"><small><?php _e('Attach File','Shopp'); ?></small></button><br /><span><label for="import-url">file:///path/to/file.zip<?php if (!in_array('http',stream_get_wrappers())): ?>, http://server.com/file.zip<?php endif; ?></label></span></p>
+	<p><span class="fileimporter"><input type="text" name="url" id="import-url" class="fileimport" /><span class="shoppui-spin-align"><span class="status"></span></span></span><button class="button-secondary" id="attach-file"><small><?php _e('Attach File','Shopp'); ?></small></button><br /><span><label for="import-url">file:///path/to/file.zip<?php if (!in_array('http',stream_get_wrappers())): ?>, http://server.com/file.zip<?php endif; ?></label></span></p>
 	<label class="alignleft"><?php _e('Select a file from your computer','Shopp'); ?>:</label>
 	<div class=""><div id="flash-upload-file"></div><button id="ajax-upload-file" class="button-secondary"><small><?php _e('Upload File','Shopp'); ?></small></button></div>
 </div>
 
 <?php
 }
-add_meta_box(
+ShoppUI::addmetabox(
 	'product-pricing-box',
 	__('Pricing','Shopp').$Admin->boxhelp('product-editor-pricing'),
 	'pricing_meta_box',
@@ -378,5 +380,3 @@ function priceline_ui () {
 
 }
 add_action('shopp_product_editor_templates','priceline_ui');
-
-?>

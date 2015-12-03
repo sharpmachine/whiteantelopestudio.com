@@ -3,7 +3,9 @@ function manage_meta_box ($Purchase) {
 	$Gateway = $Purchase->gateway();
 
 ?>
-<?php if ($Purchase->shipable): ?>
+<form action="<?php echo ShoppAdminController::url( array('id'=>$Purchase->id) ); ?>" method="post">
+
+<?php if ($Purchase->shippable): ?>
 <script id="shipment-ui" type="text/x-jquery-tmpl">
 <?php ob_start(); ?>
 <li class="inline-fields">
@@ -23,8 +25,8 @@ function manage_meta_box ($Purchase) {
 <?php ob_start(); ?>
 <div class="shipnotice misc-pub-section">
 	<div class="shipment">
-		<h4><big>Shipments</big></h4>
-		<p>An email will be sent to notify the customer.</p>
+		<h4><big><?php _e('Shipments','Shopp'); ?></big></h4>
+		<p><?php _e('An email will be sent to notify the customer.','Shopp'); ?></p>
 		<input type="hidden" name="ship-notice" value="active" />
 		<ol>
 			${shipments}
@@ -60,12 +62,12 @@ function manage_meta_box ($Purchase) {
 				<span>
 				<select name="reason">
 					<option>&mdash; Select &mdash;</option>
-					<?php echo menuoptions(stripslashes_deep(shopp_setting('cancel_reasons')),false,true); ?>
+					<?php echo Shopp::menuoptions(stripslashes_deep(shopp_setting('cancel_reasons')), false, true); ?>
 				</select><br />
 				<label>${reason}</label>
 				</span>
 
-				<span><input type="text" name="amount" value="<?php echo money($Purchase->total); ?>" ${disable_amount} /><br />
+				<span><input type="text" name="amount" value="<?php echo Shopp::money($Purchase->total); ?>" ${disable_amount} /><br />
 				<label><?php _e('Amount','Shopp'); ?></label></span>
 			</div>
 		</div>
@@ -94,7 +96,7 @@ function manage_meta_box ($Purchase) {
 	<?php
 		$printurl = wp_nonce_url(admin_url('admin-ajax.php').'?action=shopp_order_receipt&amp;id='.$Purchase->id,'wp_ajax_shopp_order_receipt');
 		$controls = '<div class="alignright"><a id="print-button" href="'.esc_url($printurl).'" class="button hide-if-no-js" target="_blank">'.__('Print Order','Shopp').'</a></div>';
-		echo apply_filters('shopp_order_management_controls',$controls);
+		echo apply_filters('shopp_order_management_controls',$controls,$Purchase);
 	?>
 	</div>
 		<div class="misc-pub-section">
@@ -107,7 +109,9 @@ function manage_meta_box ($Purchase) {
 				if ('' != $UI->date()) $event[] = $UI->date();
 				echo '<p>'.join(' &mdash; ',$event).'</p>';
 			} else { ?>
+				<?php if ( ! empty($Purchase->txnid) ): ?>
 				<p><strong><?php _e('Processed by','Shopp'); ?> </strong><?php echo $Purchase->gateway; ?><?php echo (!empty($Purchase->txnid)?" ($Purchase->txnid)":""); ?></p>
+				<?php endif; ?>
 				<?php
 					$output = '';
 					if (!empty($Purchase->card) && !empty($Purchase->cardtype))
@@ -125,14 +129,15 @@ function manage_meta_box ($Purchase) {
 			?>
 			</div>
 		</div>
+		<div class="manager-ui">
 		<?php
 			$action = false;
 			if (isset($_POST['ship-notice']) && 'active' != $_POST['ship-notice']) $action = 'ship-notice';
+			elseif (isset($_POST['edit-billing-address']) || isset($_POST['edit-shipping-address'])) $action = 'edit-address';
 			elseif (isset($_POST['cancel-order']) || isset($_POST['refund-order'])) $action = 'refund-order';
 
 			if (isset($_POST['cancel-shipments']) && 'ship-notice' == $action) $action = false;
 			if (isset($_POST['cancel-refund']) && 'refund-order' == $action) $action = false;
-
 			if ('ship-notice' == $action) {
 				unset($_POST['cancel-order'],$_POST['refund-order']);
 				$default = array('tracking'=>'','carrier'=>'');
@@ -147,7 +152,7 @@ function manage_meta_box ($Purchase) {
 				global $carriers_menu;
 				foreach ($shipment as $id => $package) {
 					extract($package);
-					$menu = menuoptions($carriers_menu,$carrier,true);
+					$menu = Shopp::menuoptions($carriers_menu,$carrier,true);
 					$shipmentuis = ShoppUI::template($shipmentui, array('${id}' => $id,'${num}' => ($id+1),'${tracking}'=>$tracking,'${carriermenu}'=>$menu ));
 				}
 				echo ShoppUI::template($shipnotice_ui,array('${shipments}'=>$shipmentuis,'${shipmentnum}'=>count($shipment)+1));
@@ -177,69 +182,384 @@ function manage_meta_box ($Purchase) {
 
 				echo ShoppUI::template($refundui,$data);
 			}
+
+			if ('edit-address' == $action) {
+				if ( isset($_POST['edit-billing-address']) ) {
+					$data = array(
+						'${type}' => 'billing',
+						'${title}' => __('Edit Billing Address','Shopp'),
+						'${firstname}' => $Purchase->firstname,
+						'${lastname}' => $Purchase->lastname,
+						'${address}' => $Purchase->address,
+						'${xaddress}' => $Purchase->xaddress,
+						'${city}' => $Purchase->city,
+						'${state}' => $Purchase->state,
+						'${postcode}' => $Purchase->postcode,
+					);
+					$data['${statemenu}'] = Shopp::menuoptions($Purchase->_billing_states,$Purchase->state,true);
+					$data['${countrymenu}'] = Shopp::menuoptions($Purchase->_countries,$Purchase->country,true);
+				}
+
+				if ( isset($_POST['edit-shipping-address']) ) {
+					$shipname = explode(' ',$Purchase->shipname);
+					$shipfirst = array_shift($shipname);
+					$shiplast = join(' ',$shipname);
+					$data = array(
+						'${type}' => 'shipping',
+						'${title}' => __('Edit Shipping Address','Shopp'),
+						'${firstname}' => $shipfirst,
+						'${lastname}' => $shiplast,
+						'${address}' => $Purchase->shipaddress,
+						'${xaddress}' => $Purchase->shipxaddress,
+						'${city}' => $Purchase->shipcity,
+						'${state}' => $Purchase->shipstate,
+						'${postcode}' => $Purchase->shippostcode,
+					);
+
+					$data['${statemenu}'] = Shopp::menuoptions($Purchase->_shipping_states, $Purchase->shipstate, true);
+					$data['${countrymenu}'] = Shopp::menuoptions($Purchase->_countries, $Purchase->shipcountry, true);
+				}
+				$data['${action}'] = 'update-address';
+				echo ShoppUI::template($editaddress, $data);
+			}
 		?>
+		</div>
 	</div>
 </div>
 <?php if (!($Purchase->isvoid() && $Purchase->refunded)): ?>
 	<div id="major-publishing-actions">
 		<?php if (!$Purchase->isvoid()): ?>
 		<div class="alignleft">
-			<?php if (!$Purchase->captured): ?>
+			<?php if ( current_user_can('shopp_void') && ! $Purchase->captured ): ?>
 				<input type="submit" id="cancel-order" name="cancel-order" value="<?php _e('Cancel Order','Shopp'); ?>" class="button-secondary cancel" />
 			<?php endif; ?>
 			<?php
-			if ( ('CHARGED' == $Purchase->txnstatus) || ($Purchase->authorized && $Purchase->captured && $Purchase->refunded < $Purchase->total) ): ?>
+			if ( current_user_can('shopp_refund') && ( ('CHARGED' == $Purchase->txnstatus) || ($Purchase->authorized && $Purchase->captured && $Purchase->refunded < $Purchase->total) ) ): ?>
 				<input type="submit" id="refund-button" name="refund-order" value="<?php _e('Refund','Shopp'); ?>" class="button-secondary refund" />
 			<?php endif; ?>
 		</div>
 		<?php endif; ?>
 		&nbsp;
-		<?php if ($Purchase->shipable && 'ship-notice' != $action): ?>
-		<input type="submit" id="shipnote-button" name="ship-notice" value="<?php _e('Send Shipment Notice','Shopp'); ?>" class="button-primary" />
-		<?php endif; ?>
-		<?php if (!$Purchase->captured && $Gateway && $Gateway->captures): ?>
-		<input type="submit" name="charge" value="<?php _e('Charge Order','Shopp'); ?>" class="button-primary" />
+		<?php if ( $Purchase->authorized || 0 == $Purchase->balance ): ?>
+			<?php if ( $Purchase->shippable && 'ship-notice' != $action && is_array(shopp_setting('shipping_carriers')) ): ?>
+			<input type="submit" id="shipnote-button" name="ship-notice" value="<?php _e('Send Shipment Notice','Shopp'); ?>" class="button-primary" />
+			<?php endif; ?>
+			<?php if ( current_user_can('shopp_capture') && ! $Purchase->captured && $Gateway && $Gateway->captures ): ?>
+			<input type="submit" name="charge" value="<?php _e('Charge Order','Shopp'); ?>" class="button-primary" />
+			<?php endif; ?>
 		<?php endif; ?>
 	</div>
 <?php endif; ?>
+</form>
 <?php
 }
-add_meta_box('order-manage', __('Management','Shopp').$Admin->boxhelp('order-manager-manage'), 'manage_meta_box', 'toplevel_page_shopp-orders', 'normal', 'core',2);
+ShoppUI::addmetabox('order-manage', __('Management','Shopp') . $Admin->boxhelp('order-manager-manage'), 'manage_meta_box', 'toplevel_page_shopp-orders', 'normal', 'core');
 
+function order_address_editor () {
+	 ob_start(); ?>
+
+	<div class="editor">
+	<p class="inline-fields">
+		<span>
+		<input type="text" name="${type}[firstname]" id="${type}-firstname" value="${firstname}" /><br />
+		<label for="address-city"><?php _e('First Name','Shopp'); ?></label>
+		</span>
+		<span>
+		<input type="text" name="${type}[lastname]" id="${type}-lastname" value="${lastname}" /><br />
+		<label for="address-city"><?php _e('Last Name','Shopp'); ?></label>
+		</span>
+	</p>
+	<p>
+		<input type="text" name="${type}[address]" id="${type}-address" value="${address}" /><br />
+		<input type="text" name="${type}[xaddress]" id="${type}-xaddress" value="${xaddress}" /><br />
+		<label for="address-address"><?php _e('Street Address','Shopp'); ?></label>
+	</p>
+	<p class="inline-fields">
+		<span>
+		<input type="text" name="${type}[city]" id="${type}-city" value="${city}" size="14" /><br />
+		<label for="address-city"><?php _e('City','Shopp'); ?></label>
+		</span>
+		<span id="${type}-state-inputs">
+			<select name="${type}[state]" id="${type}-state-menu">${statemenu}</select>
+			<input type="text" name="${type}[state]" id="${type}-state" value="${state}" size="12" disabled="disabled"  class="hidden" />
+		<label for="address-state"><?php _e('State / Province','Shopp'); ?></label>
+		</span>
+		<span>
+		<input type="text" name="${type}[postcode]" id="${type}-postcode" value="${postcode}" size="10" /><br />
+		<label for="address-postcode"><?php _e('Postal Code','Shopp'); ?></label>
+		</span>
+		<span>
+			<select name="${type}[country]" id="${type}-country">${countrymenu}</select>
+			<label for="address-country"><?php _e('Country','Shopp'); ?></label>
+		</span>
+	</p>
+		<input type="submit" id="cancel-edit-address" name="cancel-edit-address" value="<?php Shopp::_e('Cancel'); ?>" class="button-secondary" />
+		<div class="alignright">
+		<input type="submit" name="submit-address" value="<?php Shopp::_e('Update'); ?>" class="button-primary" />
+		</div>
+	</div>
+
+	<?php
+	return ob_get_clean();
+}
 function billto_meta_box ($Purchase) {
+	?>
+		<script id="address-editor" type="text/x-jquery-tmpl">
+		<?php
+			$editaddress = order_address_editor();
+			echo $editaddress;
+			$address = array(
+				'${action}' => 'update-address',
+				'${type}' => 'billing',
+				'${firstname}' => $Purchase->firstname,
+				'${lastname}' => $Purchase->lastname,
+				'${address}' => $Purchase->address,
+				'${xaddress}' => $Purchase->xaddress,
+				'${city}' => $Purchase->city,
+				'${state}' => $Purchase->state,
+				'${postcode}' => $Purchase->postcode,
+				'${country}' => $Purchase->country,
+				'${statemenu}' => Shopp::menuoptions($Purchase->_billing_states, $Purchase->state, true),
+				'${countrymenu}' => Shopp::menuoptions($Purchase->_countries, $Purchase->country, true)
+			);
+			$js = preg_replace('/\${([-\w]+)}/', '$1', json_encode($address));
+			shopp_custom_script('orders', 'var address = []; address["billing"] = ' . $js . ';');
+		?>
+		</script>
+
+	<?php if ( isset($_POST['edit-billing-address']) ): ?>
+		<form action="<?php echo ShoppAdminController::url( array('page' => $page, 'id' => $Purchase->id) ); ?>" method="post" id="billing-address-editor">
+		<?php echo ShoppUI::template($editaddress, $address); ?>
+		</form>
+	<?php return; endif; ?>
+
+	<form action="<?php echo ShoppAdminController::url( array('id' => $Purchase->id) ); ?>" method="post" id="billing-address-editor"></form>
+	<div class="display">
+	<form action="<?php echo ShoppAdminController::url( array('id' => $Purchase->id) ); ?>" method="post"><?php
 	$targets = shopp_setting('target_markets');
 ?>
-	<address><big><?php echo esc_html("{$Purchase->firstname} {$Purchase->lastname}"); ?></big><br />
+		<input type="hidden" id="edit-billing-address-data" value="<?php
+			echo esc_attr(json_encode($address));
+			?>" />
+		<input type="submit" id="edit-billing-address" name="edit-billing-address" value="<?php _e('Edit','Shopp'); ?>" class="button-secondary button-edit" />
+	</form>
+
+	<address>
+	<big><?php echo esc_html("{$Purchase->firstname} {$Purchase->lastname}"); ?></big><br />
+	<?php echo ! empty($Purchase->company)?esc_html($Purchase->company)."<br />":""; ?>
 	<?php echo esc_html($Purchase->address); ?><br />
-	<?php if (!empty($Purchase->xaddress)) echo esc_html($Purchase->xaddress)."<br />"; ?>
-	<?php echo esc_html("{$Purchase->city}".(!empty($Purchase->shipstate)?', ':'')." {$Purchase->state} {$Purchase->postcode}") ?><br />
-	<?php echo $targets[$Purchase->country]; ?></address>
-	<?php if (!empty($Customer->info) && is_array($Customer->info)): ?>
+	<?php if ( ! empty($Purchase->xaddress) ) echo esc_html($Purchase->xaddress)."<br />"; ?>
+	<?php echo esc_html("{$Purchase->city}" . ( ! empty($Purchase->shipstate) ? ', ' : '') . " {$Purchase->state} {$Purchase->postcode}") ?><br />
+	<?php echo $targets[$Purchase->country]; ?>
+	</address>
+	<?php if ( ! empty($Customer->info) && is_array($Customer->info) ): ?>
 		<ul>
-			<?php foreach ($Customer->info as $name => $value): ?>
+			<?php foreach ( $Customer->info as $name => $value ): ?>
 			<li><strong><?php echo esc_html($name); ?>:</strong> <?php echo esc_html($value); ?></li>
 			<?php endforeach; ?>
 		</ul>
 	<?php endif; ?>
+	</div>
 <?php
 }
-add_meta_box('order-billing', __('Billing Address','Shopp').$Admin->boxhelp('order-manager-billing'), 'billto_meta_box', 'toplevel_page_shopp-orders', 'side', 'core');
+ShoppUI::addmetabox('order-billing', __('Billing Address','Shopp').$Admin->boxhelp('order-manager-billing'), 'billto_meta_box', 'toplevel_page_shopp-orders', 'side', 'core');
 
-function shipto_meta_box ($Purchase) {
-	$targets = shopp_setting('target_markets');
-?>
+function shipto_meta_box ( $Purchase ) { ?>
+	<?php if ( isset($_POST['edit-shipping-address']) || empty(ShoppPurchase()->shipping) ): ?>
+		<form action="<?php echo ShoppAdminController::url( array('page' => $page, 'id' => $Purchase->id) ); ?>" method="post" id="shipping-address-editor">
+		<?php
+		$names = explode(' ', $Purchase->shipname);
+		$firstname = array_shift($names);
+		$lastname = join(' ', $names);
+		$address = array(
+			'${type}' => 'shipping',
+			'${firstname}' => $firstname,
+			'${lastname}' => $lastname,
+			'${address}' => $Purchase->shipaddress,
+			'${xaddress}' => $Purchase->shipxaddress,
+			'${city}' => $Purchase->shipcity,
+			'${state}' => $Purchase->shipstate,
+			'${postcode}' => $Purchase->shippostcode,
+			'${country}' => $Purchase->shipcountry,
+			'${statemenu}' => Shopp::menuoptions($Purchase->_shipping_states,$Purchase->shipstate,true),
+			'${countrymenu}' => Shopp::menuoptions($Purchase->_countries,$Purchase->shipcountry,true)
+		);
+		echo ShoppUI::template(order_address_editor(), $address); ?>
+		</form>
+	<?php return; endif; ?>
+
+	<form action="<?php echo ShoppAdminController::url(array('id' => $Purchase->id)); ?>" method="post" id="shipping-address-editor"></form>
+	<div class="display">
+		<form action="<?php echo ShoppAdminController::url( array('id' => $Purchase->id) ); ?>" method="post">
+		<?php $targets = shopp_setting('target_markets'); ?>
+			<input type="hidden" id="edit-shipping-address-data" value="<?php
+				$shipname = explode(' ',$Purchase->shipname);
+				$shipfirst = array_shift($shipname);
+				$shiplast = join(' ',$shipname);
+				$address = array(
+					'action' => 'update-address',
+					'type' => 'shipping',
+					'firstname' => $shipfirst,
+					'lastname' => $shiplast,
+					'address' => $Purchase->shipaddress,
+					'xaddress' => $Purchase->shipxaddress,
+					'city' => $Purchase->shipcity,
+					'state' => $Purchase->shipstate,
+					'postcode' => $Purchase->shippostcode,
+					'country' => $Purchase->shipcountry,
+					'statemenu' => Shopp::menuoptions($Purchase->_shipping_states,$Purchase->shipstate,true),
+					'countrymenu' => Shopp::menuoptions($Purchase->_countries,$Purchase->shipcountry,true)
+
+				);
+				$js = preg_replace('/\${([-\w]+)}/','$1',json_encode($address));
+				shopp_custom_script('orders','address["shipping"] = '.$js.';');
+				echo esc_attr(json_encode($address));
+			?>" />
+			<input type="submit" id="edit-shipping-address" name="edit-shipping-address" value="<?php _e('Edit','Shopp'); ?>" class="button-secondary button-edit" />
+		</form>
+
 		<address><big><?php echo esc_html($Purchase->shipname); ?></big><br />
-		<?php echo !empty($Purchase->company)?esc_html($Purchase->company)."<br />":""; ?>
 		<?php echo esc_html($Purchase->shipaddress); ?><br />
-		<?php if (!empty($Purchase->shipxaddress)) echo esc_html($Purchase->shipxaddress)."<br />"; ?>
+		<?php if ( ! empty($Purchase->shipxaddress) ) echo esc_html($Purchase->shipxaddress)."<br />"; ?>
 		<?php echo esc_html("{$Purchase->shipcity}".(!empty($Purchase->shipstate)?', ':'')." {$Purchase->shipstate} {$Purchase->shippostcode}") ?><br />
 		<?php echo $targets[$Purchase->shipcountry]; ?></address>
+	</div>
 <?php
 }
-if (!empty(ShoppPurchase()->shipaddress))
-	add_meta_box('order-shipto', __('Shipping Address','Shopp').$Admin->boxhelp('order-manager-shipto'), 'shipto_meta_box', 'toplevel_page_shopp-orders', 'side', 'core');
+if ( ! empty(ShoppPurchase()->shipaddress) )
+	ShoppUI::addmetabox('order-shipping', __('Shipping Address','Shopp').$Admin->boxhelp('order-manager-shipto'), 'shipto_meta_box', 'toplevel_page_shopp-orders', 'side', 'core');
 
 function contact_meta_box ($Purchase) {
+	$screen = get_current_screen();
+	$pre = 'page_';
+	$page = substr($screen->id, strpos($screen->id, $pre) + strlen($pre));
+	?>
+	<script id="customer-editor" type="text/x-jquery-tmpl">
+	<?php ob_start(); ?>
+
+	<div class="editor ${action}">
+		<input type="hidden" name="order-action" value="${action}" />
+		<p class="inline-fields">
+			<span>
+			<input type="text" name="customer[firstname]" id="customer-firstname" value="${firstname}" /><br />
+			<label for="address-city"><?php _e('First Name','Shopp'); ?></label>
+			</span>
+			<span>
+			<input type="text" name="customer[lastname]" id="customer-lastname" value="${lastname}" /><br />
+			<label for="address-city"><?php _e('Last Name','Shopp'); ?></label>
+			</span>
+		</p>
+		<p>
+			<input type="text" name="customer[company]" id="customer-company" value="${company}" /><br />
+			<label for="address-address"><?php _e('Company','Shopp'); ?></label>
+		</p>
+		<p>
+			<input type="text" name="customer[email]" id="customer-email" value="${email}" /><br />
+			<label for="customer-email"><?php _e('Email','Shopp'); ?></label>
+		</p>
+		<p>
+			<input type="text" name="customer[phone]" id="customer-phone" value="${phone}" /><br />
+			<label for="customer-phone"><?php _e('Phone','Shopp'); ?></label>
+		</p>
+		<?php if ( 'wordpress' == shopp_setting('account_system') ): ?>
+		<p class="loginname">
+			<input type="text" name="customer[loginname]" id="customer-loginname" value="${loginname}" /><br />
+			<label for="customer-loginname"><?php _e('Login Name','Shopp'); ?></label>
+		</p>
+		<?php endif; ?>
+		<div>
+			<input type="submit" id="cancel-edit-customer" name="cancel-edit-customer" value="<?php Shopp::esc_attr_e('Cancel'); ?>" class="button-secondary" />
+			<input type="submit" name="save" value="<?php Shopp::esc_attr_e('Save Customer'); ?>" class="button-primary alignright" />
+		</div>
+		<?php if ( ! isset($_POST['select-customer']) ): ?>
+		<p class="change-button"><br class="clear" /><input type="submit" id="change-customer" name="change-customer" value="<?php _e('Change Customer','Shopp'); ?>" class="button-secondary" /></p>
+		<?php endif; ?>
+	</div>
+	<?php $editcustomer = ob_get_contents(); ob_end_clean(); echo $editcustomer;
+
+	$customer = array(
+		'${action}' => 'update-customer',
+		'${firstname}' => $Purchase->firstname,
+		'${lastname}' => $Purchase->lastname,
+		'${company}' => $Purchase->company,
+		'${email}' => $Purchase->email,
+		'${phone}' => $Purchase->phone,
+		'${marketing}' => isset($Purchase->marketing) ? $Purchase->marketing : false,
+		'${login}' => 'wordpress' == shopp_setting('account_system')
+	);
+	$js = preg_replace('/\${([-\w]+)}/','$1',json_encode($customer));
+	shopp_custom_script('orders','var customer = '.$js.';');
+	?>
+	</script>
+
+	<script id="customer-s" type="text/x-jquery-tmpl">
+	<?php
+		$s = isset($_REQUEST['s']) ? $_REQUEST['s'] : false;
+		ob_start();
+		if ( isset($_POST['select-customer']) && empty($s) )
+			$searchurl = wp_nonce_url(ShoppAdminController::url( array('page' => $page, 'id'=>$Purchase->id) ),'wp_ajax_shopp_select_customer');
+		else $searchurl = wp_nonce_url(add_query_arg(array('action' => 'shopp_select_customer', 'page' => $page, 'id' => $Purchase->id),admin_url('admin-ajax.php')), 'wp_ajax_shopp_select_customer');
+		if ( ! isset($_POST['select-customer']) || ( isset($_POST['select-customer']) && ! empty($s) ) ) $iframe = true;
+		if ( ! empty($s) ) $searchurl = add_query_arg('s', $s, $searchurl);
+	?>
+	<form id="customer-search" action="<?php echo $searchurl; ?>" method="post" <?php if ( $iframe ): ?>target="customer-search-results"<?php endif; ?>><input type="hidden" name="change-customer" value="true" /><input type="hidden" name="action" value="shopp_select_customer" /><input type="hidden" name="page" value="<?php echo esc_attr($page); ?>" /><?php wp_nonce_field('wp_ajax_shopp_select_customer'); ?><p><input type="search" name="s" value="<?php echo esc_attr($s); ?>" placeholder="<?php _e('Search...','Shopp'); ?>" /></p>
+	</form>
+	<?php if ( $iframe ): ?>
+	<iframe id="customer-search-results" name="customer-search-results" src="<?php echo esc_url($searchurl); ?>"></iframe>
+	<form action="<?php echo ShoppAdminController::url(array('page' => $page, 'id' => (int)$Purchase->id)); ?>" method="POST">
+	<div><input type="submit" id="cancel-change-customer" name="cancel-change-customer" value="<?php _e('Cancel','Shopp'); ?>" class="button-secondary" /></div>
+	</form>
+	<?php endif; ?>
+	<?php $search = ob_get_contents(); ob_end_clean(); echo $search; ?>
+	</script>
+
+	<script id="change-customer-ui" type="text/x-jquery-tmpl">
+	<?php ob_start();
+	?>
+	<h4><?php _e('Search for Customer','Shopp'); ?></h4>
+	<?php echo ShoppUI::template( $search ); ?>
+	<form id="change-customer" action="<?php echo ShoppAdminController::url(array('id' => (int)$Purchase->id)); ?>" method="POST">
+	<h4><?php _e('Add New Customer','Shopp'); ?></h4>
+	<input type="hidden" name="change-customer" value="true" />
+	<?php echo ShoppUI::template( $editcustomer, array( '${action}' => 'new-customer', '${savelabel}' => __('Add New Customer','Shopp') ) ); ?>
+	</form>
+	<?php $changecustomer = ob_get_contents(); ob_end_clean(); echo $changecustomer; ?>
+	</script>
+
+
+	<?php
+		if ( isset($_POST['select-customer']) ) $customer = array();
+		if ( isset($_REQUEST['s']) && isset($_REQUEST['select-customer']) ) {
+			echo ShoppUI::template($search);
+			return;
+		} elseif ( isset($_POST['select-customer']) ) {
+			echo ShoppUI::template($changecustomer);
+			return;
+		} elseif ( isset($_REQUEST['edit-customer'])) {
+		?>
+			<form action="<?php echo ShoppAdminController::url(array('id' => (int)$Purchase->id)); ?>" method="POST">
+			<?php echo ShoppUI::template($editcustomer,$customer); ?>
+			</form>
+		<?php
+			return;
+		}
+	?>
+	<div id="change-customer-editor"></div>
+	<form action="<?php echo ShoppAdminController::url(array('id' => (int) $Purchase->id)); ?>" method="post" id="customer-editor-form"></form>
+	<div class="display">
+		<form action="<?php echo ShoppAdminController::url(array('id' => $Purchase->id)); ?>" method="get">
+		<?php $targets = shopp_setting('target_markets'); ?>
+			<input type="hidden" id="edit-customer-data" value="<?php
+				echo esc_attr(json_encode($customer));
+			?>" />
+			<input type="hidden" name="page" value="<?php echo $page; ?>" />
+			<input type="hidden" name="id" value="<?php echo $Purchase->id; ?>" />
+			<input type="submit" id="edit-customer" name="edit-customer" value="<?php _e('Edit','Shopp'); ?>" class="button-secondary button-edit" />
+		</form>
+	<?php
+
+	$avatar = get_avatar( $Purchase->email, 64 );
+
 	$customer_url = add_query_arg(array('page'=>'shopp-customers','id'=>$Purchase->customer),admin_url('admin.php'));
 	$customer_url = apply_filters('shopp_order_customer_url',$customer_url);
 
@@ -251,42 +571,47 @@ function contact_meta_box ($Purchase) {
 
 	$accounts = shopp_setting('account_system');
 	$wp_user = false;
-	if ($accounts == "wordpress") {
-		$Customer = new Customer($Purchase->customer);
-		$wp_user = get_userdata($Customer->wpuser);
+
+	if ( 'wordpress' == $accounts ) {
+		$Customer = new ShoppCustomer($Purchase->customer);
+		$WPUser = get_userdata($Customer->wpuser);
+
 		$edituser_url = add_query_arg('user_id',$Customer->wpuser,admin_url('user-edit.php'));
 		$edituser_url = apply_filters('shopp_order_customer_wpuser_url',$edituser_url);
 	}
-
-?>
-	<p class="customer name"><a href="<?php echo esc_url($customer_url); ?>"><?php echo esc_html("{$Purchase->firstname} {$Purchase->lastname}"); ?></a><?php
-		if ($wp_user) echo ' (<a href="'.esc_url($edituser_url).'">'.esc_html($wp_user->user_login).'</a>)';
-	?></p>
-	<?php echo !empty($Purchase->company)?'<p class="customer company">'.esc_html($Purchase->company).'</p>':''; ?>
-	<?php echo !empty($Purchase->email)?'<p class="customer email"><a href="'.esc_url($email_url).'">'.esc_html($Purchase->email).'</a></p>':''; ?>
-	<?php echo !empty($Purchase->phone)?'<p class="customer phone"><a href="'.esc_attr($phone_url).'">'.esc_html($Purchase->phone).'</a></p>':''; ?>
+	?>
+	<div class="alignleft"><?php echo $avatar; ?></div>
+	<div class="alignleft">
+	<span class="fn"><a href="<?php echo esc_url($customer_url); ?>"><?php echo esc_html("{$Purchase->firstname} {$Purchase->lastname}"); ?></a></span>
+	<?php if  ( 'wordpress' == $accounts && ! empty($WPUser->user_login) ): ?><br /><span class="wplogin"><a href="<?php echo esc_attr($edituser_url); ?>"><?php echo esc_html($WPUser->user_login); ?></a></span><?php endif; ?>
+	<?php if ( ! empty($Purchase->company) ) echo '<br /> <div class="org">'.esc_html($Purchase->company).'</div>'; ?>
+	<?php if ( ! empty($Purchase->email) ) echo '<br /><span class="email"><a href="'.esc_url($email_url).'">'.esc_html($Purchase->email).'</a></span>'; ?>
+	<?php if ( ! empty($Purchase->phone) ) echo '<br /><span class="phone"><a href="'.esc_attr($phone_url).'">'.esc_html($Purchase->phone).'</a></span>'; ?>
 	<p class="customer <?php echo ($Purchase->Customer->marketing == "yes")?'marketing':'nomarketing'; ?>"><?php ($Purchase->Customer->marketing == "yes")?_e('Agreed to marketing','Shopp'):_e('No marketing','Shopp'); ?></p>
-<?php
+	</div>
+	<br class="clear" />
+	</div>
+	<?php
 }
-add_meta_box('order-contact', __('Customer','Shopp').$Admin->boxhelp('order-manager-contact'), 'contact_meta_box', 'toplevel_page_shopp-orders', 'side', 'core');
+ShoppUI::addmetabox('order-contact', __('Customer','Shopp').$Admin->boxhelp('order-manager-contact'), 'contact_meta_box', 'toplevel_page_shopp-orders', 'side', 'core');
 
 function orderdata_meta_box ($Purchase) {
-	$_[] = '<ul>';
+	$_[] = '<table>';
 	foreach ($Purchase->data as $name => $value) {
 		if (empty($value)) continue;
 		$classname = 'shopp_orderui_orderdata_'.sanitize_title_with_dashes($name);
-		$listing = '<li class="'.$classname.'"><strong>'.$name.':</strong> <span>';
+		$listing = '<tr class="'.$classname.'"><th><strong>'.$name.'</th><td>';
 		if (is_string($value) && strpos($value,"\n")) $listing .= '<textarea name="orderdata['.esc_attr($name).']" readonly="readonly" cols="30" rows="4">'.esc_html($value).'</textarea>';
 		else $listing .= esc_html($value);
-		$listing .= '</span></li>';
+		$listing .= '</td></tr>';
 		$_[] = apply_filters($classname,$listing);
 	}
-	$_[] = '</ul>';
+	$_[] = '</table>';
 	echo apply_filters('shopp_orderui_orderdata',join("\n",$_));
 }
 if (!empty(ShoppPurchase()->data) && is_array(ShoppPurchase()->data) && join("",ShoppPurchase()->data) != ""
 		|| apply_filters('shopp_orderui_show_orderdata',false)) {
-			add_meta_box('order-data', __('Details','Shopp').$Admin->boxhelp('order-manager-details'), 'orderdata_meta_box', 'toplevel_page_shopp-orders', 'normal', 'core');
+			ShoppUI::addmetabox('order-data', __('Details','Shopp').$Admin->boxhelp('order-manager-details'), 'orderdata_meta_box', 'toplevel_page_shopp-orders', 'normal', 'core');
 		}
 
 function history_meta_box ($Purchase) {
@@ -301,21 +626,21 @@ function history_meta_box ($Purchase) {
 	echo '</table>';
 }
 if (count(ShoppPurchase()->events) > 0)
-	add_meta_box('order-history', __('Order History','Shopp').$Admin->boxhelp('order-manager-history'), 'history_meta_box', 'toplevel_page_shopp-orders', 'normal', 'core');
+	ShoppUI::addmetabox('order-history', __('Order History','Shopp').$Admin->boxhelp('order-manager-history'), 'history_meta_box', 'toplevel_page_shopp-orders', 'normal', 'core');
 
 function downloads_meta_box ($Purchase) {
 ?>
 	<ul>
 	<?php foreach ($Purchase->purchased as $Item): ?>
-		<?php $price = new Price($Item->price); if ($price->type == 'Download'): ?>
+		<?php $price = new ShoppPrice($Item->price); if ($price->type == 'Download'): ?>
 		<li><strong><?php echo $Item->name; ?></strong>: <?php echo $Item->downloads.' '.__('Downloads','Shopp'); ?></li>
 		<?php endif; ?>
 	<?php endforeach; ?>
 	</ul>
 <?php
 }
-if (ShoppPurchase()->downloads !== false)
-	add_meta_box('order-downloads', __('Downloads','Shopp').$Admin->boxhelp('order-manager-downloads'), 'downloads_meta_box', 'toplevel_page_shopp-orders', 'normal', 'core');
+// if (ShoppPurchase()->downloads !== false)
+// 	ShoppUI::addmetabox('order-downloads', __('Downloads','Shopp').$Admin->boxhelp('order-manager-downloads'), 'downloads_meta_box', 'toplevel_page_shopp-orders', 'normal', 'core');
 
 function notes_meta_box ($Purchase) {
 	global $Notes;
@@ -329,6 +654,7 @@ function notes_meta_box ($Purchase) {
 	add_filter('shopp_order_note', 'wpautop');
 
 ?>
+<form action="<?php echo ShoppAdminController::url( array('id'=>$Purchase->id) ); ?>" method="post">
 <?php if (!empty($Notes->meta)): ?>
 <table>
 	<?php foreach ($Notes->meta as $Note): $User = get_userdata($Note->value->author); ?>
@@ -373,8 +699,7 @@ function notes_meta_box ($Purchase) {
 <p class="alignright" id="add-note">
 	<button type="button" name="add-note" value="add" id="add-note-button" class="button-secondary"><?php _e('Add Note','Shopp'); ?></button></p>
 	<br class="clear" />
+</form>
 <?php
 }
-add_meta_box('order-notes', __('Notes','Shopp').$Admin->boxhelp('order-manager-notes'), 'notes_meta_box', 'toplevel_page_shopp-orders', 'normal', 'core');
-
-?>
+ShoppUI::addmetabox('order-notes', __('Notes','Shopp').$Admin->boxhelp('order-manager-notes'), 'notes_meta_box', 'toplevel_page_shopp-orders', 'normal', 'core');

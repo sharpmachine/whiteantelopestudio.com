@@ -189,7 +189,7 @@ class blcContainer {
 			$field = $this->default_field;
 		}
 		
-		$w = &$this->get_wrapped_object();
+		$w = $this->get_wrapped_object();
 		return $w->$field;
 	}
 	
@@ -205,7 +205,7 @@ class blcContainer {
    * @return bool|WP_Error True on success, an error object if something went wrong.
    */
 	function update_field($field, $new_value, $old_value = ''){
-		$w = &$this->get_wrapped_object();
+		$w = $this->get_wrapped_object();
 		$w->$field = $new_value;
 		return $this->update_wrapped_object();
 	}
@@ -453,9 +453,11 @@ class blcContainer {
    * @param string $new_url
    * @param string $old_url
    * @param string $old_raw_url
+   * @param string $new_text Optional.
+   *
    * @return array|WP_Error The new value of raw_url on success, or an error object if something went wrong.
    */
-	function edit_link($field_name, $parser, $new_url, $old_url = '', $old_raw_url = ''){
+	function edit_link($field_name, $parser, $new_url, $old_url = '', $old_raw_url = '', $new_text = null){
 		//Ensure we're operating on a consistent copy of the wrapped object.
 		/* 
 		Explanation 
@@ -463,7 +465,7 @@ class blcContainer {
 		Consider this scenario where the container object wraps a blog post : 
 			1) The container object gets created and loads the post data. 
 			2) Someone modifies the DB data corresponding to the post.
-			3) The container tries to edit a link present in the post. However, the pots
+			3) The container tries to edit a link present in the post. However, the post
 			has changed since the time it was first cached, so when the container updates
 			the post with it's changes, it will overwrite whatever modifications were made
 			in step 2.
@@ -480,8 +482,12 @@ class blcContainer {
 		
 		//Have the parser modify the specified link. If successful, the parser will 
 		//return an associative array with two keys - 'content' and 'raw_url'.
-		//Otherwise we'll get an instance of WP_Error.   
-		$edit_result = $parser->edit($old_value, $new_url, $old_url, $old_raw_url);
+		//Otherwise we'll get an instance of WP_Error.
+		if ( $parser->is_link_text_editable() ) {
+			$edit_result = $parser->edit($old_value, $new_url, $old_url, $old_raw_url, $new_text);
+		} else {
+			$edit_result = $parser->edit($old_value, $new_url, $old_url, $old_raw_url);
+		}
 		if ( is_wp_error($edit_result) ){
 			return $edit_result;
 		}
@@ -693,7 +699,7 @@ class blcContainerHelper {
 				
 			$pieces = array();
 			foreach($by_type as $container_type => $container_ids){
-				$pieces[] = '( container_type = "'. $wpdb->escape($container_type) .'" AND container_id IN ('. implode(', ', $container_ids) .') )'; 
+				$pieces[] = '( container_type = "'. esc_sql($container_type) .'" AND container_id IN ('. implode(', ', $container_ids) .') )';
 			}
 			
 			$q .= implode("\n\t OR ", $pieces);
@@ -784,7 +790,7 @@ class blcContainerHelper {
 	 * @param array $container_types Associative array of timestamps, indexed by container types. 
 	 * @return bool
 	 */
-	function mark_as_unsynched_where($formats, $container_types){
+	static function mark_as_unsynched_where($formats, $container_types){
 		global $wpdb; /* @var wpdb $wpdb */
 		global $blclog;
 		
@@ -794,7 +800,7 @@ class blcContainerHelper {
 		$containers = $module_manager->get_active_by_category('container');
 		
 		foreach($containers as $module_id => $module_data){
-			if ( $container_manager = &$module_manager->get_module($module_id) ){
+			if ( $container_manager = $module_manager->get_module($module_id) ){
 				$fields = $container_manager->get_parseable_fields();
 				$container_type = $container_manager->container_type;
 				foreach($formats as $format => $timestamp){
@@ -829,9 +835,10 @@ class blcContainerHelper {
 		
 		$q .= implode(' OR ', $pieces);
 		$blclog->log('...... Executing query: ' . $q);
-		
+
+		$start_time = microtime(true);
 		$rez = ($wpdb->query($q) !== false);
-		$blclog->log(sprintf('...... %d rows affected', $wpdb->rows_affected));
+		$blclog->log(sprintf('...... %d rows affected, %.3f seconds', $wpdb->rows_affected, microtime(true) - $start_time));
 		
 		blc_got_unsynched_items();
 		
@@ -848,14 +855,16 @@ class blcContainerHelper {
 		global $blclog;
 		
 		$module_manager = blcModuleManager::getInstance();
+
+		$start = microtime(true);
 		$active_containers = $module_manager->get_escaped_ids('container');
-		
 		$q = "DELETE synch.*
 		      FROM {$wpdb->prefix}blc_synch AS synch
 		      WHERE
 	      	    synch.container_type NOT IN ({$active_containers})";
 		$rez = $wpdb->query($q);
-		$blclog->log(sprintf('... %d synch records deleted', $wpdb->rows_affected));
+		$elapsed = microtime(true) - $start;
+		$blclog->log(sprintf('... %d synch records deleted in %.3f seconds', $wpdb->rows_affected, $elapsed));
 		
 		return $rez !== false;
 	}
@@ -894,5 +903,3 @@ class blcContainerHelper {
 		}
 	}
 }
-
-?>

@@ -9,9 +9,9 @@ if (class_exists('SU_Module')) {
 
 class SU_SharingButtons extends SU_Module {
 	
-	function get_module_title() { return __('Sharing Facilitator', 'seo-ultimate'); }
+	static function get_module_title() { return __('Sharing Facilitator', 'seo-ultimate'); }
 	
-	function get_parent_module() { return 'misc'; }
+	static function get_parent_module() { return 'misc'; }
 	function get_settings_key() { return 'sharing-buttons'; }
 	
 	function init() {
@@ -66,16 +66,29 @@ class SU_SharingButtons extends SU_Module {
 	
 	function add_help_tabs($screen) {
 		
-		$screen->add_help_tab(array(
-			  'id' => 'su-sharing-buttons-overview'
-			, 'title' => $this->has_enabled_parent() ? __('Sharing Facilitator', 'seo-ultimate') : __('Overview', 'seo-ultimate')
-			, 'content' => __("
+		$overview = __("
 <ul>
 	<li><strong>What it does:</strong> Sharing Facilitator adds buttons to your posts/pages that make it easy for visitors to share your content.</li>
 	<li><strong>Why it helps:</strong> When visitors share your content on social networking sites, this can build links to your site. Sharing Facilitator makes it easy for visitors to do this.</li>
 	<li><strong>How to use it:</strong> Pick which button type you&#8217;d like to use (ShareThis or AddThis) and click Save Changes. Try enabling each button on your site and see which one you like better.</li>
 </ul>
-", 'seo-ultimate')));
+", 'seo-ultimate');
+		
+		if ($this->has_enabled_parent()) {
+			$screen->add_help_tab(array(
+			  'id' => 'su-sharing-buttons-help'
+			, 'title' => __('Sharing Facilitator', 'seo-ultimate')
+			, 'content' => 
+				'<h3>' . __('Overview', 'seo-ultimate') . '</h3>' . $overview
+			));
+		} else {
+			
+			$screen->add_help_tab(array(
+				  'id' => 'su-sharing-buttons-overview'
+				, 'title' => __('Overview', 'seo-ultimate')
+				, 'content' => $overview));
+			
+		}
 	}
 
 }

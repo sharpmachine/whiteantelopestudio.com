@@ -2,30 +2,31 @@
 Contributors: whiteshadow
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=A6P9S6CE3SRSW
 Tags: admin, dashboard, menu, security, wpmu
-Requires at least: 3.2
-Tested up to: 3.4.2
-Stable tag: 1.1.11
+Requires at least: 3.8
+Tested up to: 4.3
+Stable tag: 1.4.5
 
 Lets you edit the WordPress admin menu. You can re-order, hide or rename menus, add custom menus and more. 
 
 == Description ==
-Admin Menu Editor lets you manually edit the Dashboard menu. You can reorder the menus, show/hide specific items, change access rights, and more.
+Admin Menu Editor lets you manually edit the Dashboard menu. You can reorder the menus, show/hide specific items, change premissions, and more.
 
 **Features**
 
-* Edit menu title, access rights, URL, icon and so on. 
-* Sort menu items via drag & drop.
-* Hide/show any menu or menu item. A hidden menu is invisible to all users, including administrators.
+* Change menu titles, URLs, icons, CSS classes and so on.
+* Organize menu items via drag & drop.
+* Change menu permissions by setting the required capability or role.
 * Move a menu item to a different submenu. 
 * Create custom menus that point to any part of the Dashboard or an external URL.
+* Hide/show any menu or menu item. A hidden menu is invisible to all users, including administrators.
 
-The [Pro version](http://w-shadow.com/AdminMenuEditor/) lets you set per-role [menu permissions](http://w-shadow.com/admin-menu-editor-pro/documentation/permissions/), hide a menu from everyone except a specific user, export your admin menu, drag items between menu levels, make menus open in a new window and more.
+The [Pro version](http://w-shadow.com/AdminMenuEditor/) lets you set per-role menu permissions, hide a menu from everyone except a specific user, export your admin menu, drag items between menu levels, make menus open in a new window and more. [Try online demo](http://amedemo.com/wpdemo/demo.php).
 
 **Notes**
 
-* If you delete any of the default menus they will reappear after saving. This is by design. To get rid of a menu for good, either hide it or set it's access rights to a higher level.
-* In the free version, you can't lower a menu's required access rights, but you can change them to be more restrictive.
-* In case of emergency, you can reset the menu configuration back to the default by going to http://example.com/wp-admin/?reset\_admin\_menu=1
+* If you delete any of the default menus they will reappear after saving. This is by design. To get rid of a menu for good, either hide it or change it's access permissions.
+* In the free version, it's not possible to give a role access to a menu item that it couldn't see before. You can only restrict menu access further.
+* In case of emergency, you can reset the menu configuration back to the default by going to http://example.com/wp-admin/?reset\_admin\_menu=1 (replace example.com with your site URL). You must be logged in as an Administrator to do this.
 
 == Installation ==
 
@@ -40,7 +41,7 @@ That's it. You can access the the menu editor by going to *Settings -> Menu Edit
 
 **WP MultiSite installation**
 
-If you have WordPress set up in multisite ("Network") mode, you can also install Admin Menu Editor as a global plugin. This will enable you to edit the Dashboard menu for all sites and users at once.
+If you have WordPress set up in Multisite ("Network") mode, you can also install Admin Menu Editor as a global plugin. This will enable you to edit the Dashboard menu for all sites and users at once.
 
 1. Download the admin-menu-editor.zip file to your computer.
 1. Unzip the file.
@@ -53,7 +54,6 @@ Plugins installed in the `mu-plugins` directory are treated as "always on", so y
 *Notes* 
 * Instead of installing Admin Menu Editor in `mu-plugins`, you can also install it normally and then activate it globally via "Network Activate". However, this will make the plugin visible to normal users when it is inactive (e.g. during upgrades).
 * When Admin Menu Editor is installed in `mu-plugins` or activated via "Network Activate", only the "super admin" user can access the menu editor page. Other users will see the customized Dashboard menu, but be unable to edit it.
-* It is currently not possible to install Admin Menu Editor as both a normal and global plugin on the same site.
 
 == Screenshots ==
 
@@ -62,6 +62,114 @@ Plugins installed in the `mu-plugins` directory are treated as "always on", so y
 3. Re-ordering menu items via drag and drop
 
 == Changelog ==
+
+= 1.4.5 =
+* Fixed a `TypeError: invalid 'in' operand a` error that caused compatibility issues with WordPress 4.3.
+* Fixed a bug where the current menu item wouldn't get highlighted if its URL included %-encoded query parameters.
+* Fixed a bug in menu URL generation that could cause problems when moving a plugin menu from "Posts", "Pages" or a CPT to another menu. The URL of the menu item got changed in a way that could break some plugins.
+* Fixed a .htaccess compatiblility issue with with Apache 2.3+.
+* Fixed an incorrect directory name in an error message.
+* The "Links" menu will no longer show up in the editor unless explicitly enabled. As of WP 3.5, the "Links" menu still exists in WordPress core but is inaccessible because the Links Manager is disabled by default.
+* Tested with WordPress 4.3.
+
+= 1.4.4 =
+* Tested with WordPress 4.2.
+
+= 1.4.3 =
+* Trying to delete a non-custom menu item will now trigger a warning dialog that offers to hide the item instead. In general, it's impossible to permanently delete menus created by WordPress itself or other plugins (without editing their source code, that is).
+* Added a workaround for a bug in W3 Total Cache 0.9.4.1 that could cause menu permissions to stop working properly when the CDN or New Relic modules were activated.
+* Fixed a plugin conflict where certain menu items didn't show up in the editor because the plugin that created them used a very low priority.
+* Signigicantly improved sanitization of menu properties. 
+* Renamed the "Choose Icon" button to "Media Library".
+* Minor compatibility improvements.
+
+= 1.4.2 =
+* Tested on WP 4.1 and 4.2-alpha.
+* Fixed a bug that allowed Administrators to bypass custom permissions for the "Appearance -> Customize" menu item.
+* Fixed a regression in the menu highlighting algorithm.
+* Fixed an "array to string conversion" notice caused by passing array data in the query string. 
+* Fixed menu scrolling occasionally not working when the user moved an item from one menu to another, much larger menu (e.g. having 20+ submenu items).
+* Fixed a bug where moving a submenu item from a plugin menu that doesn't have a hook callback (i.e. an unusable menu serving as a placeholder) to a different menu would corrupt the menu item URL.
+* Other minor bug fixes.
+
+= 1.4.1 =
+* Fixed "Appearance -> Customize" always showing up as "new" and ignoring custom settings.
+* Fixed a WooCommerce 2.2.1+ compatibility issue that caused a superfluous "WooCommerce -> WooCommerce" submenu item to show up. Normally this item is invisible.
+* Fixed a bug where the plugin would fail to determine the current menu if the user tries to add a new item of a custom post type that doesn't have an "Add New" menu. Now it highlights the CPT parent menu instead.
+* Fixed a very obscure bug where certain old versions of PHP would crash if another plugin created a menu item using an absolute file name as the slug while AME was active. The crash was due to a known bug in PHP and only affected Windows systems with open_basedir enabled.
+* Added more debugging information for situations where the plugin can't save menu settings due to server configuration problems.
+* Other minor fixes.
+
+= 1.4 = 
+* Added a special target page option: "< None >". It makes the selected menu item unclickable. This could be useful for creating menu headers and so on.
+* Added a new menu editor colour scheme that's similar to the default WordPress admin colour scheme. Click the "Settings" button next to the menu editor page title to switch colour schemes.
+* Fixed strange boxes showing up in the icon selector in Internet Explorer.
+* Fixed duplicate top level menus mysteriously disappearing. Now the plugin will properly warn the user that all top level menus must have unique URLs.
+* Fixed an obscure bug where changing the "Target page" from the default setting to "Custom" and back would occasionally make some menu properties suddenly show up as modified for no apparent reason.
+* Fixed incorrect submenu item height and margins in WP 4.0-beta.
+* Fixed a minor layout bug where items with no title would be smaller than other items.
+* Fixed combo-box dropdown button height for WP 3.9.x.
+* Added a workaround for a bug in WordPress Mu Domain Mapping 0.5.4.3.
+* Added a workaround for the very unusual situation where the "user_has_cap" filter is called without a capability.
+* Fixed duplicates of bbPress menu items showing up.
+* Changed the default custom menu icon to the generic "cogwheel" icon from Dashicons.
+* Other small UI changes.
+* Raised minimum requirements to WordPress 3.8 or later. This is mainly due to the increased reliance on Dashicons as menu icons.
+
+= 1.3.2 =
+* Added a large number of menu icons based on the Dashicons icon font. 
+* Fixed default menu icons not showing up in WP 3.9. 
+* Fixed a rare "$link.attr(...) is undefined" JavaScript error.
+* Fixed a bug where a hidden submenu page with a URL like "options-general.php?page=something" would still be accessible via "admin.php?page=something".
+* Fixed several other minor bugs.
+* Tested up to WordPress 3.9-RC1. Minimum requirements increased to WP 3.5.
+
+= 1.3.1 =
+* Tested with WordPress 3.8.
+* Fixed several minor UI/layout issues related to the new 3.8 admin style.
+* Fixed a bug where moving an item to a plugin menu and then deactivating that plugin would cause the moved item to disappear.
+* Fixed deleted submenus not being restored if their original parent menu is no longer available.
+* Fixed a rare glitch where submenu separators added by certain other plugins would sometimes disappear.
+* Fixed a conflict with Shopp 1.2.9.
+* Made the plugin treat "users.php" and "profile.php" as the same parent menu. This fixes situations where it would be impossible to hide a "Users" submenu item from roles that don't have access to the "Users" menu and instead get a "Profile" menu.
+* Added extra logging for situations where a menu item is hidden because a higher-priority item with the same URL is also hidden. 
+* Minor performance improvements.
+
+= 1.3 =
+* Added a new settings page that lets you choose whether admin menu settings are per-site or network-wide, as well as specify who can access the plugin. To access this page, go to "Settings -> Menu Editor Pro" and click the small "Settings" link next to the page title.
+* Added a way to show/hide advanced menu options through the settings page in addition to the "Screen Options" panel.
+* Added a "Show menu access checks" option to make debugging menu permissions easier.
+* Added partial WPML support. Now you can translate custom menu titles with WPML.
+* The plugin will now display an error if you try to activate it when another version of it is already active.
+* Added a "Target page" dropdown as an alternative to the "URL" field. To enter a custom URL, choose "Custom" from the dropdown.
+* Fixed the "window title" setting only working for some menu items and not others.
+* Fixed a number of bugs related to moving plugin menus around.
+* Changed how the plugin stores menu settings. Note: The new format is not backwards-compatible with version 1.2.2.
+
+= 1.2.2 =
+* Replaced a number of icons from the "Silk" set with GPL-compatible alternatives.
+* Tested with WP 3.6.
+
+= 1.2.1 =
+* Fixed a rare bug where the icon selector would appear at the bottom of the page instead of right below the icon button.
+* Fixed incorrect icon alignment when running the MP6 admin UI.
+* Tested on WP 3.6-beta1-24044.
+
+= 1.2 =
+* Added an icon drop-down that lets you pick one of the default WordPress menu icons or upload your own through the media library (only in WP 3.5+).
+* Fixed misaligned button text in IE/Firefox.
+* Fixed menus that have both a custom icon URL and a "menu-icon-*" class displaying two overlapping icons. You can still get this effect if you set the class and URL manually.
+* Fixed a compatibility problem with Participants Database 1.4.5.2.
+* Tested on WP 3.5.1 and WP 3.6-alpha.
+
+= 1.1.13 =
+* Fixed a layout glitch that would cause the editor sidebar to display incorrectly in WP 3.5.
+* When trying to determine the current menu, the plugin will now ignore all links that contain nothing but an "#anchor". Various plugins use such links as separators and it wouldn't make sense to highlight them.
+* Tested on WP 3.5 (RC6).
+
+= 1.1.12 =
+* Fixed several more small CPT-related bugs that would cause the wrong menu to be marked as current. 
+* Tested on WP 3.5-beta2.
 
 = 1.1.11 =
 * Tested on WP 3.4.2 and WP 3.5-alpha-21879.

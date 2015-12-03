@@ -1,5 +1,5 @@
 <?php
-/* 
+/*
  *  Called by the TinyMCE plugin when Ignore Always is clicked (setup as an action through admin-ajax.php)
  */
 function AtD_ignore_call() {
@@ -11,6 +11,8 @@ function AtD_ignore_call() {
 
 	if ( ! $user || $user->ID == 0 )
 		return;
+
+	check_admin_referer( 'atd_ignore' );
 
 	$ignores = explode( ',', AtD_get_setting( $user->ID, 'AtD_ignored_phrases') );
 	array_push( $ignores, $_GET['phrase'] );
@@ -24,12 +26,15 @@ function AtD_ignore_call() {
 	die();
 }
 
-/* 
+/*
  *  Called when a POST occurs, used to save AtD ignored phrases
  */
 function AtD_process_unignore_update() {
 
 	if ( ! AtD_is_allowed() )
+		return;
+
+	if ( ! isset( $_POST['AtD_ignored_phrases'] ) )
 		return;
 
         $user = wp_get_current_user();
@@ -100,15 +105,15 @@ function atd_ignore () {
 
 	/* update the UI */
 	atd_show_phrases( ignored );
-	jQuery( '#AtD_add_ignore' ).val('');             
+	jQuery( '#AtD_add_ignore' ).val('');
 
 	/* show that nifteroo messaroo to the useroo */
-        jQuery( '#AtD_message' ).show(); 
+        jQuery( '#AtD_message' ).show();
 }
 
 function atd_ignore_init() {
 	jQuery( '#AtD_message' ).hide();
-	jQuery( '#atd_ignores' ).delegate( 'a', 'click', function() {
+	jQuery( '#atd_ignores' ).on( 'click', 'a', function() {
 		atd_unignore( jQuery(this).data( 'ignored' ) );
 		return false;
 	} );
@@ -124,7 +129,7 @@ else
    <input type="hidden" name="AtD_ignored_phrases" id="AtD_ignored_phrases" value="<?php echo esc_attr( $ignores ); ?>">
 
           <p style="font-weight: bold"><?php _e( 'Ignored Phrases', 'jetpack' ); ?></font>
-     
+
           <p><?php _e( 'Identify words and phrases to ignore while proofreading your posts and pages:', 'jetpack' ); ?></p>
 
           <p><input type="text" id="AtD_add_ignore" name="AtD_add_ignore"> <input type="button" value="<?php _e( 'Add', 'jetpack' ); ?>" onclick="javascript:atd_ignore()"></p>

@@ -4,19 +4,19 @@
  *
  * Set of api calls for retrieving, storing, modifying orders, and sending order events.
  *
- * @author Jonathan Davis
- * @version 1.0
  * @copyright Ingenesis Limited, June 23, 2011
  * @license GNU GPL version 3 (or later) {@see license.txt}
- * @package shopp
+ * @package Shopp/API/Order
+ * @version 1.0
  * @since 1.0
- * @subpackage shopp
  **/
+
+defined( 'WPINC' ) || header( 'HTTP/1.1 403' ) & exit; // Prevent direct access
 
 /**
  * shopp_orders - get a list of purchases
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param mixed $from (optional) mktime or SQL datetime, get purchases after this date/time.
@@ -25,98 +25,116 @@
  * @param array $customers (optional) list of int customer ids to limit the purchases to.  All customers by default.
  * @param int $limit (optional default:false) maximimum number of results to get, false for no limit
  * @param string $order (optional default:DESC) DESC or ASC, for sorting in ascending or descending order.
+ * @param string $orderby (optional) The column used to sort records
+ * @param bool $paidonly (optional) Restrict to orders where payment has been completed
+ * @param bool $downloads (optional) Restrict to orders that have downloads
  * @return array of Purchase objects
  **/
-function shopp_orders ( $from = false, $to = false, $items = true, $customers = array(), $limit = false, $order = 'DESC' ) {
-	$pt = DatabaseObject::tablename(Purchase::$table);
-	$pd = DatabaseObject::tablename(Purchased::$table);
+function shopp_orders ( $from = false, $to = false, $items = true, array $customers = array(), $limit = false, $order = 'DESC', $orderby = 'id', $paidonly = false, $downloads = false ) {
+	$pt = ShoppDatabaseObject::tablename(ShoppPurchase::$table);
+	$pd = ShoppDatabaseObject::tablename(ShoppPurchased::$table);
 
+	$op = '<';
 	$where = array();
-	if ( $from ) {
-		if ( 1 == preg_match('/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9]) (?:([0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?$/', $from) )
-			$where[] = "AND '$from' < created";
-		else if ( is_int($from) )
-			$where[] = "AND FROM_UNIXTIME($from) < created";
-	}
+	$dateregex = '/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9]) (?:([0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?$/';
+	foreach ( array($from, $to) as $datetime ) {
+		if ( ! $datetime ) continue;
 
-	if ( $to ) {
-		if ( 1 == preg_match('/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9]) (?:([0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?$/', $to) )
-			$where[] = "AND '$to' >= created";
-		else if ( is_int($from) )
-			$where[] = "AND FROM_UNIXTIME($to) >= created";
+		if ( 1 == preg_match($dateregex, $datetime) )
+			$where[] = "'$datetime' $op p.created";
+		else if ( is_int($datetime) )
+			$where[] = "FROM_UNIXTIME($datetime) $op p.created";
+
+		$op = '>=';
 	}
 
 	if ( ! empty($customers) ) {
-		$set = db::escape(implode(',',$customers));
-		$where[] = "AND 0 < FIND_IN_SET(customer,'".$set."')";
+		$set = sDB::escape(implode(',', $customers));
+		$where[] = "0 < FIND_IN_SET(p.customer,'" . $set . "')";
 	}
 
-	$where = implode(' ', $where);
+	if ( $paidonly )
+		$where[] = "p.txnstatus='captured'";
 
-	if ( $limit && is_int($limit) ) $limit = " LIMIT $limit";
+	if ( $items && $downloads )
+		$where[] = " pd.download > 0";
 
-	$query = "SELECT * FROM $pt WHERE 1 $where ORDER BY id ".('DESC' == $order ? "DESC" : "ASC").$limit;
+	$where = empty($where) ? '' : 'WHERE ' . implode(' AND ', $where);
 
-	$orders = DB::query($query, false, '_shopp_order_purchase');
-	if ( $items ) $orders = DB::query("SELECT * FROM $pd AS pd WHERE 0 < FIND_IN_SET(pd.purchase,'".implode(",", array_keys($orders))."')", false, '_shopp_order_purchased', $orders);
+	if ( (int)$limit > 0 ) $limit = " LIMIT $limit";
+	else $limit = '';
+
+	if ( ! in_array(strtolower($orderby), array('id', 'created', 'modified')) )
+		$orderby = 'id';
+
+	if ( $items ) {
+		$query = "SELECT pd.* FROM $pd AS pd INNER JOIN $pt AS p ON pd.purchase = p.id $where " . $limit;
+		$purchased = sDB::query($query, 'array', '_shopp_order_purchased');
+		$orders = sDB::query("SELECT * FROM $pt WHERE FIND_IN_SET(id,'" . join(',', array_keys($purchased)) . "') ORDER BY $orderby " . ( 'DESC' == $order ? 'DESC' : 'ASC' ), 'array', '_shopp_order_purchase', $purchased);
+	} else {
+		$query = "SELECT * FROM $pt AS p $where ORDER BY $orderby " . ( 'DESC' == $order ? 'DESC' : 'ASC' ) . $limit;
+		$orders = sDB::query($query, 'array', '_shopp_order_purchase');
+	}
 
 	return $orders;
 }
 
 /**
- * _shopp_order_purchase - helper function for shopp_orders
- *
- * @author John Dillick
+ * @ignore Helper function for shopp_orders
  * @since 1.2
- *
  **/
-function _shopp_order_purchase ( &$records, &$record ) {
-	$records[$record->id] = new Purchase();
-	$records[$record->id]->populate($record);
+function _shopp_order_purchase ( &$records, &$record, $purchased ) {
+
+	$records[ $record->id ] = new ShoppPurchase();
+	$records[ $record->id ]->populate($record);
+
+	// Load purchased if provided
+	if ( ! empty($purchased) && isset($purchased[ $record->id ]) ) {
+		$records[ $record->id ]->purchased = $purchased[ $record->id ];
+	}
+
+
 }
 
 /**
- * _shopp_order_purchased - helper function for shopp_orders
- *
- * @author John Dillick
+ * @ignore Helper function for shopp_orders
  * @since 1.2
- *
  **/
-function _shopp_order_purchased ( &$records, &$purchased, $orders ) {
-	if ( isset($orders[$purchased->purchase]) ) {
-		if ( ! isset($records[$purchased->purchase]) ) $records[$purchased->purchase] = $orders[$purchased->purchase];
+function _shopp_order_purchased ( &$records, &$record ) {
 
-		if ( ! isset($records[$purchased->purchase]->purchased) ) {
-			$records[$purchased->purchase]->purchased = array();
-		}
+	$id = $record->id;
+	$order = $record->purchase;
 
-		$records[$purchased->purchase]->purchased[$purchased->id] = new Purchased();
-		$records[$purchased->purchase]->purchased[$purchased->id]->populate($purchased);
-		if ( "yes" == $purchased->addons ) {
-			$records[$purchased->purchase]->purchased[$purchased->id]->addons = new ObjectMeta($purchased->id, 'purchased', 'addon');
-		}
-	}
+	if ( ! isset($records[ $order ]) )
+		$records[ $order ] = array();
 
+	$Purchased = new ShoppPurchased();
+	$Purchased->populate($record);
+
+	$records[ $order ][ $id ] = $Purchased;
+
+	if ( "yes" == $record->addons )
+		$records[ $order ][ $id ]->addons = new ObjectMeta($id, 'purchased', 'addon');
 }
 
 /**
  * shopp_order_count - get an order count, total or during or a time period
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param mixed $from (optional) mktime or SQL datetime, get purchases after this date/time.
  * @param mixed $to (optional) mktime or SQL datetime, get purchased before this date/time.
  * @return int number of orders found
  **/
-function shopp_order_count ($from = false, $to = false) {
+function shopp_order_count ( $from = false, $to = false ) {
 	return count( shopp_orders( $from, $to, false ) );
 }
 
 /**
  * shopp_customer_orders - get a list of orders for a particular customer
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $customer (required) the customer id to load the orders for
@@ -125,9 +143,9 @@ function shopp_order_count ($from = false, $to = false) {
  * @param bool $items (optional default:true) load purchased items into the records, slightly slower operation
  * @return array of Purchase objects
  **/
-function shopp_customer_orders ( $customer = false, $from, $to, $items ) {
+function shopp_customer_orders ( $customer = false, $from = false, $to = false, $items = true ) {
 	if ( ! $customer || ! shopp_customer_exists($customer) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: Invalid or missing customer id.",false,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: Invalid or missing customer id.");
 		return false;
 	}
 
@@ -142,7 +160,7 @@ function shopp_customer_orders ( $customer = false, $from, $to, $items ) {
 /**
  * shopp_recent_orders - load orders for a specified time range in the past
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $time number of time units (period) to go back
@@ -153,7 +171,7 @@ function shopp_recent_orders ($time = 1, $period = 'day') {
 	$periods = array('day', 'days', 'week', 'weeks', 'month', 'months', 'year', 'years');
 
 	if ( ! in_array($period, $periods) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: Invalid period $period.  Use one of (".implode(", ", $periods).")",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__." failed: Invalid period $period.  Use one of (".implode(", ", $periods).")");
 		return false;
 	}
 
@@ -167,7 +185,7 @@ function shopp_recent_orders ($time = 1, $period = 'day') {
 /**
  * shopp_recent_orders - load orders for a specified time range in the past for a particular customer
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $customer (required) the customer id to load the orders for
@@ -177,14 +195,14 @@ function shopp_recent_orders ($time = 1, $period = 'day') {
  **/
 function shopp_recent_customer_orders ($customer = false, $time = 1, $period = 'day') {
 	if ( ! $customer || ! shopp_customer_exists($customer) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: Invalid or missing customer id.",false,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: Invalid or missing customer id.");
 		return false;
 	}
 
 	$periods = array('day', 'days', 'week', 'weeks', 'month', 'months', 'year', 'years');
 
 	if ( ! in_array($period, $periods) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: Invalid period $period.  Use one of (".implode(", ", $periods).")",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__." failed: Invalid period $period.  Use one of (".implode(", ", $periods).")");
 		return false;
 	}
 
@@ -198,10 +216,10 @@ function shopp_recent_customer_orders ($customer = false, $time = 1, $period = '
 /**
  * shopp_last_order - get the most recent order
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
- * @return Purchase object or false on failure
+ * @return ShoppPurchase object or false on failure
  **/
 function shopp_last_order () {
 	$orders = shopp_orders ( false, false, true, array(), 1);
@@ -213,15 +231,15 @@ function shopp_last_order () {
 /**
  * shopp_last_customer_order - load the most recent order for a particular customer
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $customer (required) the customer id to load the order for
- * @return Purchase object or false on failure
+ * @return ShoppPurchase object or false on failure
  **/
 function shopp_last_customer_order ( $customer = false ) {
 	if ( ! $customer || ! shopp_customer_exists($customer) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: Invalid or missing customer id.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: Invalid or missing customer id.");
 		return false;
 	}
 	$orders = shopp_orders ( false, false, true, array($customer), 1);
@@ -233,16 +251,16 @@ function shopp_last_customer_order ( $customer = false ) {
 /**
  * shopp_order - load a specified order by id
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $id the order id, or the transaction id
  * @param string $by (optional default:id) lookup by 'id', or 'trans'
- * @return Purchase or false on failure
+ * @return ShoppPurchase or false on failure
  **/
 function shopp_order ( $id = false, $by = 'id' ) {
 	if ( ! $id || ! $Purchase = shopp_order_exists($id, $by) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: Invalid or missing order id.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: Invalid or missing order id.");
 		return false;
 	}
 
@@ -256,7 +274,7 @@ function shopp_order ( $id = false, $by = 'id' ) {
  *
  * get the current amount balance left uncharged on order
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $id the order id or txn id
@@ -274,7 +292,7 @@ function shopp_order_amt_balance ( $id = false, $by = 'id' ) {
  *
  * get the current amount invoiced on order
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $id the order id or txn id
@@ -292,7 +310,7 @@ function shopp_order_amt_invoiced ( $id = false, $by = 'id' ) {
  *
  * get the current amount authorized on order
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $id the order id or txn id
@@ -310,7 +328,7 @@ function shopp_order_amt_authorized ( $id = false, $by = 'id' ) {
  *
  * get the current amount captured on order
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $id the order id or txn id
@@ -328,7 +346,7 @@ function shopp_order_amt_captured ( $id = false, $by = 'id' ) {
  *
  * get the current amount refunded on order
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $id the order id or txn id
@@ -346,7 +364,7 @@ function shopp_order_amt_refunded ( $id = false, $by = 'id' ) {
  *
  * find out if the order has been voided
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $id the order id or txn id
@@ -362,7 +380,7 @@ function shopp_order_is_void ( $id = false, $by = 'id' ) {
 /**
  * shopp_order_exists - determine if an order exists with the specified id, or transaction id.
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $id the order id, or the transaction id
@@ -370,7 +388,7 @@ function shopp_order_is_void ( $id = false, $by = 'id' ) {
  * @return Purchase|bool Purchase object returned if the order exists, else returns false
  **/
 function shopp_order_exists ( $id = false, $by = 'id' ) {
-	$Purchase = new Purchase();
+	$Purchase = new ShoppPurchase();
 
 	if ( $by == 'trans' ) {
 		$Purchase->load($id,'txnid');
@@ -385,21 +403,21 @@ function shopp_order_exists ( $id = false, $by = 'id' ) {
 /**
  * shopp_add_order - create an order from the cart and associate with a customer
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $customer the customer that the order will be created for
- * @return bool|Purchase false on failure, Purchase object of recently created order on success
+ * @return bool|ShoppPurchase false on failure, Purchase object of recently created order on success
  **/
 function shopp_add_order ( $customer = false ) {
 	// check customer
 	if ( ! $Customer = shopp_customer( (int) $customer) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: Invalid customer.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: Invalid customer.");
 		return false;
 	}
 
 	if ( ! shopp_cart_items_count() ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: No items in cart.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: No items in cart.");
 		return false;
 	}
 
@@ -421,7 +439,7 @@ function shopp_add_order ( $customer = false ) {
 /**
  * shopp_rmv_order - remove an order
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param init $id id of order to remove
@@ -431,7 +449,7 @@ function shopp_rmv_order ($id) {
 	if ( $Purchase = shopp_order_exists($id) ) {
 		$Purchase->load_purchased();
 		foreach ( $Purchase->purchased as $P ) {
-			$Purchased = new Purchased();
+			$Purchased = new ShoppPurchased();
 			$Purchased->populate($P);
 			$Purchased->delete();
 		}
@@ -444,7 +462,7 @@ function shopp_rmv_order ($id) {
 /**
  * shopp_add_order_line - add a line item to an order.
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $order (required) the order id to add the line item to
@@ -473,12 +491,12 @@ function shopp_add_order_line ( $order = false, $data = array() ) {
 		);
 
 	if ( ! $Purchase = shopp_order_exists($order) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: Invalid order id.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: Invalid order id.");
 		return false;
 	}
 
-	// Create and save a new Purchased item object
-	$Purchased = new Purchased;
+	// Create and save a new ShoppPurchased item object
+	$Purchased = new ShoppPurchased;
 	if ( is_object($data) && is_a($data, 'Item') ) {
 		$Purchased->copydata($data);
 		if ($data->inventory) $data->unstock();
@@ -517,7 +535,7 @@ function shopp_add_order_line ( $order = false, $data = array() ) {
 /**
  * shopp_rmv_order_line - remove an order line by index
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $order (required) the order id to remove the line from
@@ -534,7 +552,7 @@ function shopp_rmv_order_line ( $order = false, $line = 0 ) {
 
 	if ( empty($Lines) || $line >= count($Lines) ) return false;
 
-	$Purchased = new Purchased();
+	$Purchased = new ShoppPurchased();
 	$Purchased->populate($Lines[$id]);
 	$Purchase = shopp_order($order);
 
@@ -559,11 +577,11 @@ function shopp_rmv_order_line ( $order = false, $line = 0 ) {
 /**
  * shopp_order_lines - get a list of the items associated with an order
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $order (required) the order id
- * @return bool|array false on failure, array of Purchased line item objects on success
+ * @return bool|array false on failure, array of ShoppPurchased line item objects on success
  **/
 function shopp_order_lines ( $order = false ) {
 	$Order = shopp_order( $order );
@@ -574,7 +592,7 @@ function shopp_order_lines ( $order = false ) {
 /**
  * shopp_order_line_count - get the number of line items in a specified order
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $order the order id
@@ -589,7 +607,7 @@ function shopp_order_line_count ( $order = false ) {
 /**
  * shopp_add_order_line_download - attach a download asset to a order line
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $order the order id to add the download asset to
@@ -609,11 +627,11 @@ function shopp_add_order_line_download ( $order = false, $line = 0, $download = 
 
 	$DL = new ProductDownload($download);
 	if ( empty($DL->id) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: Invalid or missing download asset id.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: Invalid or missing download asset id.");
 		return false;
 	}
 
-	$Purchased = new Purchased;
+	$Purchased = new ShoppPurchased;
 	$Purchased->populate($Lines[$id]);
 
 	$Purchased->download = $download;
@@ -625,7 +643,7 @@ function shopp_add_order_line_download ( $order = false, $line = 0, $download = 
 /**
  * shopp_rmv_order_line_download - remove a download asset from a line item
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $order the order id to remove the download asset from
@@ -640,7 +658,7 @@ function shopp_rmv_order_line_download ( $order = false, $line = 0 ) {
 		return false;
 
 	$id = $ids[$line];
-	$Purchased = new Purchased;
+	$Purchased = new ShoppPurchased;
 	$Purchased->populate($Lines[$id]);
 
 	$Purchase->download = 0;
@@ -654,7 +672,7 @@ function shopp_rmv_order_line_download ( $order = false, $line = 0 ) {
  *
  * Retrieve one or or all order data entries
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $order the order id from which to retrieve the data entry
@@ -662,7 +680,7 @@ function shopp_rmv_order_line_download ( $order = false, $line = 0 ) {
  * @return mixed one named order data value, or an array of data, false if no value can be found
  **/
 function shopp_order_data ( $order = false, $name = false ) {
-	if ( $Purchase = shopp_order_exists($order) && isset($Purchase->data) && is_array($Purchase->data) ) {
+	if ( ($Purchase = shopp_order_exists($order)) && isset($Purchase->data) && is_array($Purchase->data) ) {
 		if ( false === $name ) return $Purchase->data;
 		if ( isset($Purchase->data[$name]) ) return $Purchase->data[$name];
 	}
@@ -674,7 +692,7 @@ function shopp_order_data ( $order = false, $name = false ) {
  *
  * set an order data entry
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $order the order id to which to set the order data entry
@@ -684,7 +702,7 @@ function shopp_order_data ( $order = false, $name = false ) {
  **/
 function shopp_set_order_data ( $order = false, $name = false, $value = false ) {
 	if ( ! ( $Purchase = shopp_order_exists($order) ) || ! $name ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: Order id and name parameters are required.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: Order id and name parameters are required.");
 		return false;
 	}
 
@@ -700,7 +718,7 @@ function shopp_set_order_data ( $order = false, $name = false, $value = false ) 
  *
  * Remove one or all order data entries.
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $order the order id from which to remove the order data
@@ -709,7 +727,7 @@ function shopp_set_order_data ( $order = false, $name = false, $value = false ) 
  **/
 function shopp_rmv_order_data ( $order = false, $name = false ) {
 	if ( ! $order || ! ( $Purchase = shopp_order_exists($order) ) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: Order id parameter is required.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: Order id parameter is required.");
 		return false;
 	}
 	if ( ! $name ) $Purchase->data = array();
@@ -721,7 +739,7 @@ function shopp_rmv_order_data ( $order = false, $name = false ) {
 /**
  * shopp_order_line_data_count - return the count of the line item data array
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $order the order id
@@ -740,7 +758,7 @@ function shopp_order_line_data_count ($order = false, $line = 0 ) {
 /**
  * shopp_order_line_data - return the line item data
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $order the order id
@@ -763,7 +781,7 @@ function shopp_order_line_data ($order = false, $line = 0, $name = false) {
 /**
  * shopp_add_order_line_data - add one or more key=>value pair to the line item data array.  The specified data is merged with existing data.
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $order the order id
@@ -775,7 +793,7 @@ function shopp_add_order_line_data ( $order = false, $line = 0, $data = array() 
 	$Lines = shopp_order_lines($order);
 	if ( empty($Lines) || $line >= count($Lines) || ! isset($Lines[$line]) )
 		return false;
-	$Purchased = new Purchased();
+	$Purchased = new ShoppPurchased();
 	$Purchased->populate($Lines[$line]);
 
 	if ( ! is_array($Purchased->data) ) $Purchased->data = array();
@@ -788,7 +806,7 @@ function shopp_add_order_line_data ( $order = false, $line = 0, $data = array() 
 /**
  * shopp_rmv_order_line_data - remove all or one data key=>value pair from the order line data array
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $order (required) the order id
@@ -800,7 +818,7 @@ function shopp_rmv_order_line_data ($order = false, $line = 0, $name = false) {
 	$Lines = shopp_order_lines($order);
 	if ( empty($Lines) || $line >= count($Lines) || ! isset($Lines[$line]) )
 		return false;
-	$Purchased = new Purchased();
+	$Purchased = new ShoppPurchased();
 	$Purchased->populate($Lines[$line]);
 
 	if ( ! is_array($Purchased->data) ) $Purchased->data = array();
@@ -812,7 +830,7 @@ function shopp_rmv_order_line_data ($order = false, $line = 0, $name = false) {
 /**
  * shopp_add_order_event - log an order event
  *
- * @author John Dillick
+ * @api
  * @since 1.2
  *
  * @param int $order (conditionally required default:false) Will be false for purchase events, but needs the order id otherwise.
@@ -822,16 +840,14 @@ function shopp_rmv_order_line_data ($order = false, $line = 0, $name = false) {
  **/
 function shopp_add_order_event ( $order = false, $type = false, $message = array() ) {
 	if ( false !== $order && ! shopp_order_exists($order) ) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." '$type' failed: Invalid order id.",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " '$type' failed: Invalid order id.");
 		return false;
 	}
 
 	if ( ! $type || ! OrderEvent::handler($type)) {
-		if(SHOPP_DEBUG) new ShoppError(__FUNCTION__." failed: Missing or invalid order event type",__FUNCTION__,SHOPP_DEBUG_ERR);
+		shopp_debug(__FUNCTION__ . " failed: Missing or invalid order event type");
 		return false;
 	}
 
 	return OrderEvent::add($order,$type,$message);
 }
-
-?>

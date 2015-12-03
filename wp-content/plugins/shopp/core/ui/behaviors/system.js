@@ -1,6 +1,32 @@
-/*
+/*!
  * system.js - Description
- * Copyright ?? 2012 by Ingenesis Limited. All rights reserved.
+ * Copyright © 2012 by Ingenesis Limited. All rights reserved.
  * Licensed under the GPLv3 {@see license.txt}
  */
-jQuery(document).ready(function(e){e("#errorlog").scrollTop(e("#errorlog").attr("scrollHeight"));e.fn.storageEngineSettings=function(m,h){var l=e(m),k=l.val(),j=(engines[k]?engines[k]:false),i={context:h},g=e("#"+h+"-storage-engine").empty();if(storageset!=null&&storageset[k]!=undefined&&storageset[k]!=null){e.each(storageset[k],function(n,o){i[n]=o[h]})}ui=e.tmpl(j,i).appendTo(g).find("select").each(function(){e(this).val(e(this).attr("title"))});e(window).scrollTop(0);return l};var a=false,c=e.each(engines,function(h,g){e.template(g,e("#"+g+"-editor"))}),f=e("#image-storage").change(function(){e(this).storageEngineSettings(this,"image")}).change(),d=e("#download-storage").change(function(){e(this).storageEngineSettings(this,"download")}).change();function b(){var g=e("#progress div.bar"),i=e("#progress").outerWidth(),h=e("#reindexProcessor").get(0).contentWindow.indexProgress;if(!h){h=0}g.animate({width:Math.ceil(h*i)+"px"},100);if(h==1){return setTimeout(e.fn.colorbox.close,1000)}setTimeout(b,100)}e("#rebuild-index").click(function(){setTimeout(b,100);e.fn.colorbox({title:$sys.indexing,innerWidth:"250",innerHeight:"50",html:'<div id="progress"><div class="bar"></div><div class="gloss"></div></div><iframe id="reindexProcessor" width="0" height="0" src="'+$sys.indexurl+'"></iframe>'})})});
+
+jQuery(document).ready(function($) {
+
+	$('#errorlog').scrollTop($('#errorlog').attr('scrollHeight'));
+
+	var progressbar = false;
+	function progress () {
+		var progressbar = $('#progress div.bar'),
+			scale = $('#progress').outerWidth(),
+			p = $('#reindexProcessor').get(0).contentWindow['indexProgress'];
+		if (!p) p = 0;
+		progressbar.animate({'width': Math.ceil(p*scale) +'px'},100);
+		if (p == 1) return setTimeout($.fn.colorbox.close,1000);
+		setTimeout(progress,100);
+	};
+
+	$('#rebuild-index').click(function () {
+		setTimeout(progress,100);
+		$.colorbox({'title':$sys.indexing,
+			'innerWidth':'250',
+			'innerHeight':'50',
+			'html':
+			'<div id="progress"><div class="bar"><\/div><div class="gloss"><\/div><\/div><iframe id="reindexProcessor" width="0" height="0" src="'+$sys.indexurl+'"><\/iframe>'
+		});
+	});
+
+});

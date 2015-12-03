@@ -7,9 +7,9 @@ if (!defined('W3TC')) {
     die();
 }
 
-require_once W3TC_INC_DIR . '/functions/file.php';
-require_once W3TC_INC_DIR . '/functions/http.php';
-require_once W3TC_LIB_W3_DIR . '/Plugin.php';
+w3_require_once(W3TC_INC_DIR . '/functions/file.php');
+w3_require_once(W3TC_INC_DIR . '/functions/http.php');
+w3_require_once(W3TC_LIB_W3_DIR . '/Plugin.php');
 
 /**
  * Class W3_Plugin_CdnAdmin
@@ -20,132 +20,8 @@ class W3_Plugin_CdnAdmin extends W3_Plugin {
      *
      * @return W3_Plugin_CdnCommon
      */
-    function &_get_common() {
+    function _get_common() {
         return w3_instance('W3_Plugin_CdnCommon');
-    }
-
-    /**
-     * Activation action
-     */
-    function activate() {
-        require_once W3TC_INC_DIR . '/functions/activation.php';
-
-        global $wpdb;
-
-        $this->schedule();
-        $this->schedule_upload();
-
-        if ($this->_config->get_boolean('cdn.enabled') && !w3_is_cdn_mirror($this->_config->get_string('cdn.engine')) && !$this->table_create(true)) {
-            $error = sprintf('Unable to create table <strong>%s%s</strong>: %s', $wpdb->prefix, W3TC_CDN_TABLE_QUEUE, $wpdb->last_error);
-
-            w3_activate_error($error);
-        }
-    }
-
-    /**
-     * Deactivation action
-     */
-    function deactivate() {
-        $this->table_delete();
-        $this->unschedule_upload();
-        $this->unschedule();
-    }
-
-    /**
-     * Called from admin interface after configuration is changed
-     */
-    function after_config_change() {
-        $this->schedule();
-        $this->schedule_upload();
-    }
-
-    /**
-     * Schedules cron events
-     */
-    function schedule() {
-        if ($this->_config->get_boolean('cdn.enabled') && !w3_is_cdn_mirror($this->_config->get_string('cdn.engine'))) {
-            if (!wp_next_scheduled('w3_cdn_cron_queue_process')) {
-                wp_schedule_event(time(), 'w3_cdn_cron_queue_process', 'w3_cdn_cron_queue_process');
-            }
-        } else {
-            $this->unschedule();
-        }
-    }
-
-    /**
-     * Schedule upload event
-     */
-    function schedule_upload() {
-        if ($this->_config->get_boolean('cdn.enabled') && $this->_config->get_boolean('cdn.autoupload.enabled') && !w3_is_cdn_mirror($this->_config->get_string('cdn.engine'))) {
-            if (!wp_next_scheduled('w3_cdn_cron_upload')) {
-                wp_schedule_event(time(), 'w3_cdn_cron_upload', 'w3_cdn_cron_upload');
-            }
-        } else {
-            $this->unschedule_upload();
-        }
-    }
-
-    /**
-     * Unschedules cron events
-     */
-    function unschedule() {
-        if (wp_next_scheduled('w3_cdn_cron_queue_process')) {
-            wp_clear_scheduled_hook('w3_cdn_cron_queue_process');
-        }
-    }
-
-    /**
-     * Unschedule upload event
-     */
-    function unschedule_upload() {
-        if (wp_next_scheduled('w3_cdn_cron_upload')) {
-            wp_clear_scheduled_hook('w3_cdn_cron_upload');
-        }
-    }
-
-    /**
-     * Create queue table
-     *
-     * @param bool $drop
-     * @return int
-     */
-    function table_create($drop = false) {
-        global $wpdb;
-
-        if ($drop) {
-            $sql = sprintf('DROP TABLE IF EXISTS `%s%s`', $wpdb->prefix, W3TC_CDN_TABLE_QUEUE);
-
-            $wpdb->query($sql);
-        }
-
-        $sql = sprintf("CREATE TABLE IF NOT EXISTS `%s%s` (
-            `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-            `local_path` varchar(150) NOT NULL DEFAULT '',
-            `remote_path` varchar(150) NOT NULL DEFAULT '',
-            `command` tinyint(1) unsigned NOT NULL DEFAULT '0' COMMENT '1 - Upload, 2 - Delete, 3 - Purge',
-            `last_error` varchar(150) NOT NULL DEFAULT '',
-            `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-            PRIMARY KEY (`id`),
-            UNIQUE KEY `path` (`local_path`, `remote_path`),
-            KEY `date` (`date`)
-        ) /*!40100 CHARACTER SET latin1 */", $wpdb->prefix, W3TC_CDN_TABLE_QUEUE);
-
-        $wpdb->query($sql);
-
-        return $wpdb->result;
-    }
-
-    /**
-     * Delete queue table
-     *
-     * @return int
-     */
-    function table_delete() {
-        global $wpdb;
-
-        $sql = sprintf('DROP TABLE IF EXISTS `%s%s`', $wpdb->prefix, W3TC_CDN_TABLE_QUEUE);
-
-        return $wpdb->query($sql);
     }
 
     /**
@@ -173,7 +49,7 @@ class W3_Plugin_CdnAdmin extends W3_Plugin {
     function queue_update($queue_id, $last_error) {
         global $wpdb;
 
-        $sql = sprintf('UPDATE %s SET last_error = "%s", date = NOW() WHERE id = %d', $wpdb->prefix . W3TC_CDN_TABLE_QUEUE, $wpdb->escape($last_error), $queue_id);
+        $sql = sprintf('UPDATE %s SET last_error = "%s", date = NOW() WHERE id = %d', $wpdb->prefix . W3TC_CDN_TABLE_QUEUE, esc_sql($last_error), $queue_id);
 
         return $wpdb->query($sql);
     }
@@ -237,13 +113,16 @@ class W3_Plugin_CdnAdmin extends W3_Plugin {
      * Process queue
      *
      * @param integer $limit
+	 * @return integer
      */
     function queue_process($limit) {
+        $items = 0;
+        
         $commands = $this->queue_get($limit);
         $force_rewrite = $this->_config->get_boolean('cdn.force.rewrite');
 
         if (count($commands)) {
-            $cdn = & $this->_get_common()->get_cdn();
+            $cdn = $this->_get_common()->get_cdn();
 
             foreach ($commands as $command => $queue) {
                 $files = array();
@@ -251,13 +130,29 @@ class W3_Plugin_CdnAdmin extends W3_Plugin {
                 $map = array();
 
                 foreach ($queue as $result) {
-                    $files[$result->local_path] = $result->remote_path;
+                    $files[] = $this->_get_common()->build_file_descriptor($result->local_path, $result->remote_path);
                     $map[$result->local_path] = $result->id;
+                    $items++;
                 }
 
                 switch ($command) {
                     case W3TC_CDN_COMMAND_UPLOAD:
+                        $dispatcher = w3_instance('W3_Dispatcher');
+                        foreach ($files as $file) {
+                            $local_file_name = $file['local_path'];
+                            $remote_file_name = $file['remote_path'];
+                            if (!file_exists($local_file_name)) {
+                                $dispatcher->create_file_for_cdn($local_file_name);
+                            }
+                        }
+
                         $cdn->upload($files, $results, $force_rewrite);
+                        
+                        foreach ($results as $result) {
+                            if ($result['result'] == W3TC_CDN_RESULT_OK) {
+                                $dispatcher->on_cdn_file_upload($result['local_path']);
+                            }
+                        }
                         break;
 
                     case W3TC_CDN_COMMAND_DELETE:
@@ -278,6 +173,8 @@ class W3_Plugin_CdnAdmin extends W3_Plugin {
                 }
             }
         }
+        
+        return $items;
     }
 
     /**
@@ -309,7 +206,7 @@ class W3_Plugin_CdnAdmin extends W3_Plugin {
             LEFT JOIN
             	%spostmeta AS pm2 ON p.ID = pm2.post_ID AND pm2.meta_key = "_wp_attachment_metadata"
             WHERE
-                p.post_type = "attachment"
+                p.post_type = "attachment"  AND (pm.meta_value IS NOT NULL OR pm2.meta_value IS NOT NULL)
             GROUP BY
             	p.ID', $wpdb->prefix, $wpdb->prefix, $wpdb->prefix);
 
@@ -337,7 +234,7 @@ class W3_Plugin_CdnAdmin extends W3_Plugin {
                         $local_file = $upload_info['basedir'] . '/' . $file;
                         $remote_file = ltrim($upload_info['baseurlpath'] . $file, '/');
 
-                        $post_files[$local_file] = $remote_file;
+                        $post_files[] = $this->_get_common()->build_file_descriptor($local_file, $remote_file);
                     }
 
                     if ($post->metadata) {
@@ -534,13 +431,13 @@ class W3_Plugin_CdnAdmin extends W3_Plugin {
                                          * Check if download or copy was successful
                                          */
                                         if ($download_result) {
-                                            require_once W3TC_INC_DIR . '/functions/mime.php';
+                                            w3_require_once(W3TC_INC_DIR . '/functions/mime.php');
 
                                             $title = $dst_basename;
                                             $guid = ltrim($upload_info['baseurlpath'] . $title, ',');
                                             $mime_type = w3_get_mime_type($dst);
 
-                                            @$GLOBALS['wp_rewrite'] = & new WP_Rewrite();
+                                            $GLOBALS['wp_rewrite'] = new WP_Rewrite();
 
                                             /**
                                              * Insert attachment
@@ -714,14 +611,13 @@ class W3_Plugin_CdnAdmin extends W3_Plugin {
     function get_attachments_count() {
         global $wpdb;
 
-        $sql = sprintf('SELECT
-        		COUNT(DISTINCT p.ID)
-            FROM
-                %sposts AS p
-            JOIN
-                %spostmeta AS pm ON p.ID = pm.post_ID AND (pm.meta_key = "_wp_attached_file" OR pm.meta_key = "_wp_attachment_metadata")
-            WHERE
-                p.post_type = "attachment"', $wpdb->prefix, $wpdb->prefix);
+        $sql = sprintf('SELECT COUNT(DISTINCT p.ID)
+FROM %sposts AS p
+LEFT JOIN %spostmeta AS pm ON p.ID = pm.post_ID
+AND pm.meta_key =  "_wp_attached_file"
+LEFT JOIN %spostmeta AS pm2 ON p.ID = pm2.post_ID
+AND pm2.meta_key =  "_wp_attachment_metadata"
+WHERE p.post_type = "attachment" AND (pm.meta_value IS NOT NULL OR pm2.meta_value IS NOT NULL)', $wpdb->prefix, $wpdb->prefix, $wpdb->prefix);
 
         return $wpdb->get_var($sql);
     }
@@ -788,8 +684,116 @@ class W3_Plugin_CdnAdmin extends W3_Plugin {
         return $regexp;
     }
 
+    /**
+     * @param $error
+     */
     function update_cnames(&$error) {
         $cdn = $this->_get_common()->get_cdn();
         $cdn->update_cnames($error);
+    }
+
+
+    /**
+     * media_row_actions filter
+     *
+     * @param array $actions
+     * @param object $post
+     * @return array
+     */
+    function media_row_actions($actions, $post) {
+        $actions = array_merge($actions, array(
+            'cdn_purge' => sprintf('<a href="%s">' . __('Purge from CDN', 'w3-total-cache') . '</a>', wp_nonce_url(sprintf('admin.php?page=w3tc_dashboard&w3tc_cdn_purge_attachment&attachment_id=%d', $post->ID), 'w3tc'))
+        ));
+
+        return $actions;
+    }
+
+    /**
+     * Changes settings on MaxCDN/NetDNA site
+     */
+    function change_canonical_header() {
+        if (in_array($cdn_engine = $this->_config->get_string('cdn.engine'), array('maxcdn', 'netdna'))) {
+            w3_require_once(W3TC_LIB_NETDNA_DIR . '/NetDNA.php');
+            $authorization_key = $this->_config->get_string("cdn.$cdn_engine.authorization_key");
+            if ($authorization_key) {
+                $keys = explode('+', $authorization_key);
+                if (sizeof($keys) == 3) {
+                    list($alias, $consumer_key, $consumer_secret) =  $keys;
+                    $api = new NetDNA($alias, $consumer_key, $consumer_secret);
+                    $zone = array();
+                    $zone_id = $this->_config->get_string("cdn.$cdn_engine.zone_id");
+                    $zone['canonical_link_headers'] = $this->_config->get_boolean('cdn.canonical_header') ? 1 : 0;
+                    try {
+                        $api->update_pull_zone($zone_id, $zone);
+                    } catch (Exception $ex) {}
+                }
+            }
+        }
+    }
+
+    function is_running() {
+        /**
+         * CDN
+         */
+        $running = true;
+
+        /**
+         * Check CDN settings
+         */
+        $cdn_engine = $this->_config->get_string('cdn.engine');
+
+        switch (true) {
+            case ($cdn_engine == 'ftp' && !count($this->_config->get_array('cdn.ftp.domain'))):
+                $running = false;
+                break;
+
+            case ($cdn_engine == 's3' && ($this->_config->get_string('cdn.s3.key') == '' || $this->_config->get_string('cdn.s3.secret') == '' || $this->_config->get_string('cdn.s3.bucket') == '')):
+                $running = false;                    break;
+
+            case ($cdn_engine == 'cf' && ($this->_config->get_string('cdn.cf.key') == '' || $this->_config->get_string('cdn.cf.secret') == '' || $this->_config->get_string('cdn.cf.bucket') == '' || ($this->_config->get_string('cdn.cf.id') == '' && !count($this->_config->get_array('cdn.cf.cname'))))):
+                $running = false;
+                break;
+
+            case ($cdn_engine == 'cf2' && ($this->_config->get_string('cdn.cf2.key') == '' || $this->_config->get_string('cdn.cf2.secret') == '' || ($this->_config->get_string('cdn.cf2.id') == '' && !count($this->_config->get_array('cdn.cf2.cname'))))):
+                $running = false;
+                break;
+
+            case ($cdn_engine == 'rscf' && ($this->_config->get_string('cdn.rscf.user') == '' || $this->_config->get_string('cdn.rscf.key') == '' || $this->_config->get_string('cdn.rscf.container') == '' || !count($this->_config->get_array('cdn.rscf.cname')))):
+                $running = false;
+                break;
+
+            case ($cdn_engine == 'azure' && ($this->_config->get_string('cdn.azure.user') == '' || $this->_config->get_string('cdn.azure.key') == '' || $this->_config->get_string('cdn.azure.container') == '')):
+                $running = false;
+                break;
+
+            case ($cdn_engine == 'mirror' && !count($this->_config->get_array('cdn.mirror.domain'))):
+                $running = false;
+                break;
+
+            case ($cdn_engine == 'netdna'):
+                $running = false;
+                break;
+
+            case ($cdn_engine == 'maxcdn'):
+                $running = false;
+                break;
+
+            case ($cdn_engine == 'cotendo' && !count($this->_config->get_array('cdn.cotendo.domain'))):
+                $running = false;
+                break;
+
+            case ($cdn_engine == 'edgecast' && !count($this->_config->get_array('cdn.edgecast.domain'))):
+                $running = false;
+                break;
+
+            case ($cdn_engine == 'att' && !count($this->_config->get_array('cdn.att.domain'))):
+                $running = false;
+                break;
+
+            case ($cdn_engine == 'akamai' && !count($this->_config->get_array('cdn.akamai.domain'))):
+                $running = false;
+                break;
+        }
+        return $running;
     }
 }

@@ -16,8 +16,8 @@ class blcBookmark extends blcContainer{
 		$bookmark = $this->get_wrapped_object();
 		
 		$image = sprintf(
-			'<img src="%s/broken-link-checker/images/link.png" class="blc-small-image" title="%2$s" alt="%2$s">',
-			WP_PLUGIN_URL,
+			'<img src="%1$s" class="blc-small-image" title="%2$s" alt="%2$s">',
+			esc_attr( plugins_url('/images/font-awesome/font-awesome-link.png', BLC_PLUGIN_FILE) ),
 			__('Bookmark', 'broken-link-checker')						
 		);
 		
@@ -37,7 +37,7 @@ class blcBookmark extends blcContainer{
 	
 	function ui_get_action_links($container_field){
 		//Inline action links for bookmarks     
-		$bookmark = &$this->get_wrapped_object();
+		$bookmark = $this->get_wrapped_object();
 		
 		$delete_url = admin_url( wp_nonce_url("link.php?action=delete&link_id={$this->container_id}", 'delete-bookmark_' . $this->container_id) ); 
 		
@@ -64,7 +64,7 @@ class blcBookmark extends blcContainer{
    */
 	function get_wrapped_object($ensure_consistency = false){
 		if( $ensure_consistency || is_null($this->wrapped_object) ){
-			$this->wrapped_object = &get_bookmark($this->container_id);
+			$this->wrapped_object = get_bookmark($this->container_id);
 		}		
 		return $this->wrapped_object;
 	}
@@ -131,7 +131,7 @@ class blcBookmark extends blcContainer{
 			);
 			
 			return new WP_Error( 'delete_failed', $msg );
-		};
+		}
 	}
 	
 	function current_user_can_delete(){
@@ -176,9 +176,9 @@ class blcBookmarkManager extends blcContainerManager{
 	function init(){
 		parent::init();
 		
-        add_action('add_link', array(&$this,'hook_add_link'));
-        add_action('edit_link', array(&$this,'hook_edit_link'));
-        add_action('delete_link', array(&$this,'hook_delete_link'));
+        add_action('add_link', array($this,'hook_add_link'));
+        add_action('edit_link', array($this,'hook_edit_link'));
+        add_action('delete_link', array($this,'hook_delete_link'));
 	}
 	
   /**
@@ -222,7 +222,7 @@ class blcBookmarkManager extends blcContainerManager{
    * @return void
    */
 	function resynch($forced = false){
-		global $wpdb;
+		global $wpdb; /** @var wpdb $wpdb */
 		
 		if ( !$forced ){
 			//Usually the number of bookmarks is rather small, so it's cheap enough to always 
@@ -305,5 +305,3 @@ class blcBookmarkManager extends blcContainerManager{
 		);
 	}
 }
-
-?>

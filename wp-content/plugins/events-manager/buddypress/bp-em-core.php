@@ -15,7 +15,7 @@ class BP_EM_Component extends BP_Component {
 		$bp->active_components[$this->id] = '1';
 	}
 
-	function includes() {
+	function includes( $includes = array() ) {
 		// Files to include
 		$includes = array(
 			'buddypress/bp-em-activity.php',
@@ -39,11 +39,11 @@ class BP_EM_Component extends BP_Component {
 	/**
 	 * Sets up the global Events Manager BuddyPress Components
 	 */
-	function setup_globals() {
+	function setup_globals( $args = array() ) {
 		global $bp, $wpdb;
 		// Define a slug constant that will be used to view this components pages
 		if ( !defined( 'BP_EM_SLUG' ) )
-			define ( 'BP_EM_SLUG', EM_POST_TYPE_EVENT_SLUG );
+			define ( 'BP_EM_SLUG', str_replace('/','-', EM_POST_TYPE_EVENT_SLUG) );
 
 		// Set up the $globals array to be passed along to parent::setup_globals()
 		$globals = array(
@@ -60,7 +60,7 @@ class BP_EM_Component extends BP_Component {
 		$bp->{$this->id}->link = trailingslashit($bp->loggedin_user->domain).BP_EM_SLUG.'/';
 	}
 	
-	function setup_nav() {
+	public function setup_nav( $main_nav = array(), $sub_nav = array() ) {
 		global $blog_id; 
 		//check multisite or normal mode for correct permission checking
 		if(is_multisite() && $blog_id != BP_ROOT_BLOG){
@@ -85,7 +85,7 @@ class BP_EM_Component extends BP_Component {
 			'default_subnav_slug' => 'profile'
 		);
 
-		$em_link = trailingslashit( bp_loggedin_user_domain() . em_bp_get_slug() );
+		$em_link = trailingslashit( bp_displayed_user_domain() . em_bp_get_slug() );
 		
 		/* Create SubNav Items */
 		$sub_nav[] = array(
@@ -149,7 +149,7 @@ class BP_EM_Component extends BP_Component {
 				'name' => __( 'Events', 'dbem' ),
 				'slug' => 'group-events',
 				'parent_slug' => bp_get_groups_slug(),
-				'parent_url' =>trailingslashit( bp_loggedin_user_domain() . bp_get_groups_slug() ),
+				'parent_url' =>trailingslashit( bp_displayed_user_domain() . bp_get_groups_slug() ),
 				'screen_function' => 'bp_em_my_group_events',
 				'position' => 60,
 				'user_has_access' => bp_is_my_profile() // Only the logged in user can access this on his/her profile
@@ -158,6 +158,95 @@ class BP_EM_Component extends BP_Component {
 		
 		parent::setup_nav( $main_nav, $sub_nav );
 		add_action( 'bp_init', array(&$this, 'setup_group_nav') );
+	}
+	
+	public function setup_admin_bar( $wp_admin_nav = array() ) {
+		global $bp, $blog_id;
+	
+		// Prevent debug notices
+		$wp_admin_nav = array();
+	
+		// Menus for logged in user
+		if ( is_user_logged_in() ) {
+			//check multisite or normal mode for correct permission checking
+			if(is_multisite() && $blog_id != BP_ROOT_BLOG){
+				//FIXME MS mode doesn't seem to recognize cross subsite caps, using the proper functions, for now we use switch_blog.
+				$current_blog = $blog_id;
+				switch_to_blog(BP_ROOT_BLOG);
+				$can_manage_events = current_user_can_for_blog(BP_ROOT_BLOG, 'edit_events');
+				$can_manage_locations = current_user_can_for_blog(BP_ROOT_BLOG, 'edit_locations');
+				$can_manage_bookings = current_user_can_for_blog(BP_ROOT_BLOG, 'manage_bookings');
+				switch_to_blog($current_blog);
+			}else{
+				$can_manage_events = current_user_can('edit_events');
+				$can_manage_locations = current_user_can('edit_locations');
+				$can_manage_bookings = current_user_can('manage_bookings');
+			}
+
+			$em_link = trailingslashit( bp_loggedin_user_domain() . em_bp_get_slug() );
+			
+			/* Add 'Events' to the main user profile navigation */
+			$wp_admin_nav[] = array(
+				'parent' => $bp->my_account_menu_id,
+				'id'     => 'my-em-' . $this->id,
+				'title'  => __( 'Events', 'dbem' ),
+				'href'   => $em_link
+			);
+			
+			/* Create SubNav Items */
+			$wp_admin_nav[] = array(
+				'parent' => 'my-em-' . $this->id,
+				'id'     => 'my-em-' . $this->id .'-profile',
+				'title'  => __( 'My Profile', 'dbem' ),
+				'href'   => $em_link.'profile/'
+			);
+			
+			$wp_admin_nav[] = array(
+				'parent' => 'my-em-' . $this->id,
+				'id'     => 'my-em-' . $this->id .'-attending',
+				'title'  => __( 'Events I\'m Attending', 'dbem' ),
+				'href'   => $em_link.'attending/'
+			);
+			
+			if( $can_manage_events ){
+				$wp_admin_nav[] = array(
+					'parent' => 'my-em-' . $this->id,
+					'id'     => 'my-em-' . $this->id .'-my-events',
+					'title'  => __( 'My Events', 'dbem' ),
+					'href'   => $em_link.'my-events/'
+				);
+			}
+			
+			if( $can_manage_locations && get_option('dbem_locations_enabled') ){
+				$wp_admin_nav[] = array(
+					'parent' => 'my-em-' . $this->id,
+					'id'     => 'my-em-' . $this->id .'-my-locations',
+					'title'  => __( 'My Locations', 'dbem' ),
+					'href'   => $em_link.'my-locations/'
+				);
+			}
+			
+			if( $can_manage_bookings && get_option('dbem_rsvp_enabled') ){
+				$wp_admin_nav[] = array(
+					'parent' => 'my-em-' . $this->id,
+					'id'     => 'my-em-' . $this->id .'-my-bookings',
+					'title'  => __( 'My Event Bookings', 'dbem' ),
+					'href'   => $em_link.'my-bookings/'
+				);
+			}
+			
+			if( bp_is_active('groups') ){
+				/* Create Profile Group Sub-Nav */
+				$wp_admin_nav[] = array(
+					'parent' => 'my-account-groups',
+					'id'     => 'my-account-groups-' . $this->id ,
+					'title'  => __( 'Events', 'dbem' ),
+					'href'   => trailingslashit( bp_loggedin_user_domain() . bp_get_groups_slug() ) . 'group-events/'
+				);
+			}			
+		}
+	
+		parent::setup_admin_bar( $wp_admin_nav );
 	}
 	
 	function setup_group_nav(){
@@ -219,6 +308,23 @@ if( !is_admin() || ( defined('DOING_AJAX') && !empty($_REQUEST['is_public'])) ){
 		add_filter('em_location_get_edit_url','em_bp_rewrite_edit_location_url',10,2);
 	}
 }
+
+//CSS and JS Loading
+function bp_em_enqueue_scripts( ){
+	if( bp_is_current_component('events') || (bp_is_current_component('groups') && bp_is_current_action('group-events')) ){
+	    add_filter('option_dbem_js_limit', create_function('$args','return false;'));
+	    add_filter('option_dbem_css_limit', create_function('$args','return false;'));
+	}
+	
+}
+add_action('wp_enqueue_scripts','bp_em_enqueue_scripts',1);
+
+function bp_em_messages_js_compat() {
+	if(bp_is_messages_compose_screen()){
+		wp_deregister_script( 'events-manager' );
+	}
+}
+add_action( 'wp_print_scripts', 'bp_em_messages_js_compat', 100 );
 
 /**
  * Delete events when you delete a user.

@@ -37,8 +37,8 @@ function em_admin_menu(){
    	if( get_option('dbem_rsvp_enabled') ){
 		$plugin_pages['bookings'] = add_submenu_page('edit.php?post_type='.EM_POST_TYPE_EVENT, __('Bookings', 'dbem'), __('Bookings', 'dbem').$bookings_num, 'manage_bookings', 'events-manager-bookings', "em_bookings_page");
    	}
-	$plugin_pages['options'] = add_submenu_page('edit.php?post_type='.EM_POST_TYPE_EVENT, __('Events Manager Settings','dbem'),__('Settings','dbem'), 'activate_plugins', "events-manager-options", 'em_admin_options_page');
-	$plugin_pages['help'] = add_submenu_page('edit.php?post_type='.EM_POST_TYPE_EVENT, __('Getting Help for Events Manager','dbem'),__('Help','dbem'), 'activate_plugins', "events-manager-help", 'em_admin_help_page');
+	$plugin_pages['options'] = add_submenu_page('edit.php?post_type='.EM_POST_TYPE_EVENT, __('Events Manager Settings','dbem'),__('Settings','dbem'), 'list_users', "events-manager-options", 'em_admin_options_page');
+	$plugin_pages['help'] = add_submenu_page('edit.php?post_type='.EM_POST_TYPE_EVENT, __('Getting Help for Events Manager','dbem'),__('Help','dbem'), 'list_users', "events-manager-help", 'em_admin_help_page');
 	//If multisite global with locations set to be saved in main blogs we can force locations to be created on the main blog only
 	if( EM_MS_GLOBAL && !is_main_site() && get_site_option('dbem_ms_mainblog_locations') ){
 		include( dirname(__FILE__)."/em-ms-locations.php" );
@@ -86,14 +86,37 @@ function em_admin_menu(){
 }
 add_action('admin_menu','em_admin_menu');
 
+function em_admin_dashicon(){
+	?>
+	<style type="text/css">
+		@font-face {
+		  font-family: 'em_dashicons';
+		  src: url('../fonts/em-dashicons.eot'); // this is for IE
+		}
+		@font-face {
+		  font-family: 'em_dashicons';
+		  src: url(data:application/font-woff;charset=utf-8;base64,d09GRk9UVE8AAAVIAAoAAAAABQAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAABDRkYgAAAA9AAAAb8AAAG/+vk+uU9TLzIAAAK0AAAAYAAAAGAIIvy2Y21hcAAAAxQAAABMAAAATBpVzFdnYXNwAAADYAAAAAgAAAAIAAAAEGhlYWQAAANoAAAANgAAADYBZ6hBaGhlYQAAA6AAAAAkAAAAJAPIAeZobXR4AAADxAAAABQAAAAUAwAAM21heHAAAAPYAAAABgAAAAYABVAAbmFtZQAAA+AAAAFFAAABRVcZpu5wb3N0AAAFKAAAACAAAAAgAAMAAAEABAQAAQEBCGljb21vb24AAQIAAQA6+BwC+BsD+BgEHgoAGVP/i4seCgAZU/+LiwwHi2v4lPh0BR0AAAB2Dx0AAAB7ER0AAAAJHQAAAbYSAAYBAQgPERMWG2ljb21vb25pY29tb29udTB1MXUyMHVFNjAwAAACAYkAAwAFAgABAAQABwAKAA0BLfyUDvyUDvyUDvuUDvcu+FoVfIuAgIt9CItYBYt8loCai5mLlpaLmgiLvgWLmYCWfYsI93qLFX2Lf4CLfQiLWAWLfJeAmYuZi5eWi5oIi74Fi5l/ln2LCPth+0cVi1hYi4u+vosFpYsVvouLWFiLi74F2IsVvouLWFiLi74F14sVv4uLWFeLi74Fiz4VvouLWFiLi74FPosVv4uLWFeLi74FPosVv4uLWFeLi74FP4sVvouLWFiLi74F1z8Vv4uLV1eLi78F2IsVv4uLV1eLi78F9y33ihWGc3d5cotui3Wii6gIi5cFdI91jXiLd4t1iXWHCIt+BYtvdHRui3KLd52Go2yCdoSLi4uLi2eLfIv7lfduWYuLi4v3bb2L95WLmYuwi4uLi3aSbJQIDviUFPiUFYsMCgAAAwIAAZAABQAAAUwBZgAAAEcBTAFmAAAA9QAZAIQAAAAAAAAAAAAAAAAAAAABEAAAAAAAAAAAAAAAAAAAAABAAADmAAHg/+D/4AHgACAAAAABAAAAAAAAAAAAAAAgAAAAAAACAAAAAwAAABQAAwABAAAAFAAEADgAAAAKAAgAAgACAAEAIOYA//3//wAAAAAAIOYA//3//wAB/+MaBAADAAEAAAAAAAAAAAAAAAEAAf//AA8AAQAAAAEAAIXyBpNfDzz1AAsCAAAAAADQMTPCAAAAANAxM8IAAP/6AeYBxgAAAAgAAgAAAAAAAAABAAAB4P/gAAACAAAAAAAB5gABAAAAAAAAAAAAAAAAAAAABQAAAAAAAAAAAAAAAAEAAAACAAAzAABQAAAFAAAAAAAOAK4AAQAAAAAAAQAOAAAAAQAAAAAAAgAOAEcAAQAAAAAAAwAOACQAAQAAAAAABAAOAFUAAQAAAAAABQAWAA4AAQAAAAAABgAHADIAAQAAAAAACgA0AGMAAwABBAkAAQAOAAAAAwABBAkAAgAOAEcAAwABBAkAAwAOACQAAwABBAkABAAOAFUAAwABBAkABQAWAA4AAwABBAkABgAOADkAAwABBAkACgA0AGMAaQBjAG8AbQBvAG8AbgBWAGUAcgBzAGkAbwBuACAAMQAuADAAaQBjAG8AbQBvAG8Abmljb21vb24AaQBjAG8AbQBvAG8AbgBSAGUAZwB1AGwAYQByAGkAYwBvAG0AbwBvAG4ARgBvAG4AdAAgAGcAZQBuAGUAcgBhAHQAZQBkACAAYgB5ACAASQBjAG8ATQBvAG8AbgAuAAAAAAMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=) format('woff'), 
+		    url(data:application/x-font-ttf;charset=utf-8;base64,AAEAAAALAIAAAwAwT1MvMggi/LYAAAC8AAAAYGNtYXAaVcxXAAABHAAAAExnYXNwAAAAEAAAAWgAAAAIZ2x5ZsaoTWEAAAFwAAACFGhlYWQBZ6hBAAADhAAAADZoaGVhA8gB5gAAA7wAAAAkaG10eAMAADMAAAPgAAAAFGxvY2EAKAEeAAAD9AAAAAxtYXhwABMAowAABAAAAAAgbmFtZVcZpu4AAAQgAAABRXBvc3QAAwAAAAAFaAAAACAAAwIAAZAABQAAAUwBZgAAAEcBTAFmAAAA9QAZAIQAAAAAAAAAAAAAAAAAAAABEAAAAAAAAAAAAAAAAAAAAABAAADmAAHg/+D/4AHgACAAAAABAAAAAAAAAAAAAAAgAAAAAAACAAAAAwAAABQAAwABAAAAFAAEADgAAAAKAAgAAgACAAEAIOYA//3//wAAAAAAIOYA//3//wAB/+MaBAADAAEAAAAAAAAAAAAAAAEAAf//AA8AAQAAAAAAAAAAAAIAADc5AQAAAAABAAAAAAAAAAAAAgAANzkBAAAAAAEAAAAAAAAAAAACAAA3OQEAAAAADQAz//oB5gHGABoANQA6AD8ARABJAE4AUwBYAF0AYgBnAKAAABMiBgcOAQcXBhYXHgEzMjY3PgE3JzYmJy4BIzMiBgcOARcHHgEXHgEzMjY3PgEnNy4BJy4BIwcXIzczOwEXIzc7AQcjJzsBFyM3BzMHIycjMxcjNyMzByMnIzMXIzcXMwcjJzsBFyM3Nw4BBw4BIyImJy4BJzcuASciJiMiBiMOAQ8BFgYHDgEjIiYnLgEnDgEzIhYHHgEzIjYnNiYzIiYnmgUKAgUDAQEBBQMECAcECgMEAwEBAQUCBQgG5wYJBAMFAQEBAwUCCwQGCQQDBQEBAQMFAgsEzgE0ATIbMgE0AUw0ATIBTTMBNQEBNAEyAUwzATUBTjUBMwFLMgE0AUs1ATMBTjMBNQGYAQoGBxAKChQFCAcBAQoPCQcRBgkOCQgRBwEBCgUIEgwIEgUICAMWHgEBAQEB2QEB2gEBAQEBHBgBxgQDBAkFMwYJBAMEBAMECQYzBQkEAwQEAwQJBTMGCQQDBAQDBAkGMwUJBAMEszMzMzMzMzMzTTMzMzMzMzMzTDQ0NDT2CQ8GBQcIBwcTCwwCAgEBAQECAg0KEwcHCAcFBg8JBwkoC8FycsELKAkHAAEAAAABAACs5UCKXw889QALAgAAAAAA0DEzwgAAAADQMTPCAAD/+gHmAcYAAAAIAAIAAAAAAAAAAQAAAeD/4AAAAgAAAAAAAeYAAQAAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAAAAAABAAAAAgAAMwAAAAAACgAUAB4BCgABAAAABQChAA0AAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAADgCuAAEAAAAAAAEADgAAAAEAAAAAAAIADgBHAAEAAAAAAAMADgAkAAEAAAAAAAQADgBVAAEAAAAAAAUAFgAOAAEAAAAAAAYABwAyAAEAAAAAAAoANABjAAMAAQQJAAEADgAAAAMAAQQJAAIADgBHAAMAAQQJAAMADgAkAAMAAQQJAAQADgBVAAMAAQQJAAUAFgAOAAMAAQQJAAYADgA5AAMAAQQJAAoANABjAGkAYwBvAG0AbwBvAG4AVgBlAHIAcwBpAG8AbgAgADEALgAwAGkAYwBvAG0AbwBvAG5pY29tb29uAGkAYwBvAG0AbwBvAG4AUgBlAGcAdQBsAGEAcgBpAGMAbwBtAG8AbwBuAEYAbwBuAHQAIABnAGUAbgBlAHIAYQB0AGUAZAAgAGIAeQAgAEkAYwBvAE0AbwBvAG4ALgAAAAADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA) format('truetype');
+		  font-weight: normal;
+		  font-style: normal;
+		}
+		.menu-icon-event .dashicons-calendar:before, #toplevel_page_events-manager-options .dashicons-calendar:before {
+		  font-family: 'em_dashicons' !important;
+		  content: '\e600';
+		}
+	</style>
+	<?php
+}
+add_action('admin_head','em_admin_dashicon');
+
 function em_ms_admin_menu(){
-	add_menu_page( __('Events Manager','dbem'), __('Events Manager','dbem'), 'activate_plugins', 'events-manager-options', 'em_ms_admin_options_page', plugins_url('includes/images/calendar-16.png', dirname(dirname(__FILE__)).'/events-manager.php') );
+	add_menu_page( __('Events Manager','dbem'), __('Events Manager','dbem'), 'activate_plugins', 'events-manager-options', 'em_ms_admin_options_page', 'dashicons-calendar' );
 	add_submenu_page('events-manager-options', __('Update Blogs','dbem'),__('Update Blogs','dbem'), 'activate_plugins', "events-manager-update", 'em_ms_upgrade');	
 }
 add_action('network_admin_menu','em_ms_admin_menu');
 
 function em_admin_init(){
-	//in MS global mode
+	//in MS global mode and locations are stored in the main blog, then a user must have at least a subscriber role
 	if( EM_MS_GLOBAL && is_user_logged_in() && !is_main_site() && get_site_option('dbem_ms_mainblog_locations') ){
 		EM_Object::ms_global_switch();
 		$user = new WP_User(get_current_user_id());
@@ -142,10 +165,10 @@ function em_admin_warnings() {
 			}
 		}
 		
-		if( defined('EMP_VERSION') && EMP_VERSION < EM_PRO_MIN_VERSION ){ 
+		if( defined('EMP_VERSION') && EMP_VERSION < EM_PRO_MIN_VERSION && !defined('EMP_DISABLE_WARNINGS')){ 
 			?>
 			<div id="em_page_error" class="updated">
-				<p><?php _e('There is a newer version of Events Manager Pro which is required for this current version of Events Manager. Please go to the plugin website and download the latest update.','dbem'); ?></p>
+				<p><?php _e('There is a newer version of Events Manager Pro which is recommended for this current version of Events Manager as new features have been added. Please go to the plugin website and download the latest update.','dbem'); ?></p>
 			</div>
 			<?php
 		}
@@ -176,14 +199,36 @@ function em_admin_warnings() {
 		if( !empty($_REQUEST['page']) && 'events-manager-options' == $_REQUEST['page'] && get_option('dbem_pro_dev_updates') == 1 ){
 			?>
 			<div id="message" class="updated">
-				<p><?php echo sprintf(__('Dev Mode active: Just a friendly reminder that you are updating to development versions. Only admins see this message, and it will go away when you disable this <a href="#pro-api">here</a> in your settings.','em-pro'),'<code>define(\'EMP_DEV_UPDATES\',true);</code>'); ?></p>
+				<p><?php echo sprintf(__('Dev Mode active: Just a friendly reminder that you are updating to development versions. Only admins see this message, and it will go away when you disable this <a href="#pro-api">here</a> in your settings.','dbem'),'<code>define(\'EMP_DEV_UPDATES\',true);</code>'); ?></p>
 			</div>
 			<?php
+		}
+		if( class_exists('SitePress') && !class_exists('EM_WPML') && !get_site_option('disable_em_wpml_warning') ){
+			if( !empty($_REQUEST['disable_em_wpml_warning']) ){
+				update_site_option('disable_em_wpml_warning',1);
+			}else{
+				?>
+				<div id="message" class="updated">
+					<p><?php echo sprintf(__('It looks like you have WPML enabled on your site. We advise you also install our extra <a href="%s">Events Manager WPML Connector</a> plugin which helps the two work better together. <a href="%s">Dismiss message</a>','dbem'),'http://wordpress.org/extend/plugins/events-manager-wpml/', esc_url(add_query_arg(array('disable_em_wpml_warning'=>1)))); ?></p>
+				</div>
+				<?php
+			}
+		}
+		if( array_key_exists('dbem_disable_timthumb', wp_load_alloptions()) ){
+			if( !empty($_REQUEST['dbem_disable_timthumb']) ){
+				delete_option('dbem_disable_timthumb',1);
+			}else{
+				?>
+				<div id="message" class="updated">
+					<p>We have stopped using TimThumb for thumbnails in Events Manager, <a href="http://wp-events-plugin.com/blog/2014/12/05/bye-timthumb/">please see this post</a> for more information on how this may affect you and what options are available to you. <a href="<?php echo esc_url(add_query_arg(array('dbem_disable_timthumb'=>1))); ?>">Dismiss</a></p>
+				</div>
+				<?php
+			}		    
 		}
 	}
 	//Warn about EM page edit
 	if ( preg_match( '/(post|page).php/', $_SERVER ['SCRIPT_NAME']) && isset ( $_GET ['action'] ) && $_GET ['action'] == 'edit' && isset ( $_GET ['post'] ) && $_GET ['post'] == "$events_page_id") {
-		$message = sprintf ( __ ( "This page corresponds to <strong>Events Manager</strong> events page. Its content will be overriden by Events Manager, although if you include the word CONTENTS (exactly in capitals) and surround it with other text, only CONTENTS will be overwritten. If you want to change the way your events look, go to the <a href='%s'>settings</a> page. ", 'dbem' ), EM_ADMIN_URL .'&amp;page=events-manager-options' );
+		$message = sprintf ( __ ( "This page corresponds to the <strong>Events Manager</strong> %s page. Its content will be overriden by Events Manager, although if you include the word CONTENTS (exactly in capitals) and surround it with other text, only CONTENTS will be overwritten. If you want to change the way your events look, go to the <a href='%s'>settings</a> page. ", 'dbem' ), __('Events','dbem'), EM_ADMIN_URL .'&amp;page=events-manager-options' );
 		$notice = "<div class='error'><p>$message</p></div>";
 		echo $notice;
 	}

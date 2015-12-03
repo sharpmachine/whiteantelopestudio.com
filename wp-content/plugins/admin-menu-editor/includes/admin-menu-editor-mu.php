@@ -1,4 +1,11 @@
 <?php
+/*
+Plugin Name: Admin Menu Editor [Multisite module]
+Plugin URI: http://adminmenueditor.com/
+Description: Lets you edit the WordPress admin menu. To access the editor, go to the Dashboard of one of your network sites and open the Settings -&gt; Menu Editor page.
+Author: Janis Elsts
+Author URI: http://w-shadow.com/
+*/
 
 /**
 To install Admin Menu Editor as a global plugin in WPMU :
@@ -29,13 +36,13 @@ if ( file_exists($ws_menu_editor_filename) ) {
 }
 
 function ws_ame_installation_error(){
-	if ( !is_site_admin() ) return;
+	if ( !is_super_admin() ) return;
 ?>
 <div class="error fade"><p>
 		<strong>Admin Menu Editor is installed incorrectly!</strong>
 		</p>
 		<p>
-		Please copy the entire <code>admin-menu-directory</code> directory to your <code>mu-plugins</code> 
+		Please copy the entire <code>admin-menu-editor</code> directory to your <code>mu-plugins</code> 
 		directory, then move only the admin-menu-editor-mu.php file from
 		<code>admin-menu-editor/includes</code> to <code>mu-plugins</code>.
 		</p> 
@@ -43,4 +50,12 @@ function ws_ame_installation_error(){
 <?php
 }
 
-?>
+//Add the license management link(s) to our must-use module.
+function ws_ame_add_mu_license_link($actions) {
+	global $ameLicensingUi;
+	if ( isset($ameLicensingUi) && is_callable(array($ameLicensingUi, 'addLicenseActionLink')) ) {
+		$actions = $ameLicensingUi->addLicenseActionLink($actions);
+	}
+	return $actions;
+}
+add_filter('network_admin_plugin_action_links_' . basename(__FILE__), 'ws_ame_add_mu_license_link');

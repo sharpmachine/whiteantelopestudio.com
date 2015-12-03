@@ -10,19 +10,24 @@
 
 <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
 	<header class="entry-header">
-		<hgroup>
-			<h2 class="entry-title"><a href="<?php the_permalink(); ?>" title="<?php echo esc_attr( sprintf( __( 'Permalink to %s', 'jetpack' ), the_title_attribute( 'echo=0' ) ) ); ?>" rel="bookmark"><?php the_title(); ?></a></h2>
+		<div class="entry-heading">
+			<?php if ( '1' == get_option( 'wp_mobile_featured_images' ) && minileven_show_featured_images() ) : ?>
+				<div class="entry-thumbnail">
+					<a href="<?php the_permalink(); ?>" title="<?php echo esc_attr( sprintf( __( 'Permalink to %s', 'jetpack' ), the_title_attribute( 'echo=0' ) ) ); ?>" rel="<?php the_ID(); ?>" class="minileven-featured-thumbnail"><?php the_post_thumbnail(); ?></a>
+				</div><!-- .entry-thumbnail -->
+			<?php endif; ?>
+			<h2 class="entry-title"><a href="<?php the_permalink(); ?>" rel="bookmark"><?php the_title(); ?></a></h2>
 			<h3 class="entry-format"><?php _e( 'Gallery', 'jetpack' ); ?></h3>
-		</hgroup>
+		</div>
 	</header><!-- .entry-header -->
 
 	<div class="entry-content">
-		<?php if ( is_single() ) : ?>
+		<?php if ( is_single() || post_password_required() ) : ?>
 			<?php the_content( __( 'Continue reading <span class="meta-nav">&rarr;</span>', 'jetpack' ) ); ?>
 
 		<?php else : ?>
 			<?php
-					$images = get_children( array( 'post_parent' => $post->ID, 'post_type' => 'attachment', 'post_mime_type' => 'image', 'orderby' => 'rand', 'order' => 'ASC', 'numberposts' => 999 ) );
+					$images = minileven_get_gallery_images();
 					if ( $images ) :
 						$total_images = count( $images );
 						$large_image = array_shift( $images );
@@ -68,7 +73,7 @@
 	<footer class="entry-meta">
 		<?php minileven_posted_on(); ?>
 		<?php if ( comments_open() ) : ?>
-		<span class="comments-link"><?php comments_popup_link( '<span class="leave-reply">' . __( 'Leave a Reply', 'jetpack' ) . '</span>', __( '<b>1</b> Reply', 'minileven' , 'jetpack'), __( '<b>%</b> Replies', 'minileven' , 'jetpack') ); ?></span>
+		<span class="comments-link"><?php comments_popup_link( '<span class="leave-reply">' . __( 'Leave a Reply', 'jetpack' ) . '</span>', __( '<b>1</b> Reply', 'jetpack' ), __( '<b>%</b> Replies', 'jetpack' ) ); ?></span>
 		<?php endif; // End if comments_open() ?>
 
 		<?php edit_post_link( __( 'Edit', 'jetpack' ), '<span class="edit-link">', '</span>' ); ?>

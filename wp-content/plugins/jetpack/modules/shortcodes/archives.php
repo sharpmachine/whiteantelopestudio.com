@@ -3,7 +3,7 @@
 /*
  * Archives shortcode
  * @author bubel & nickmomrik
- * [archives limit=10] 
+ * [archives limit=10]
  */
 
 add_shortcode( 'archives', 'archives_shortcode' );
@@ -23,23 +23,37 @@ function archives_shortcode( $attr ) {
 		'after'     => '',
 		'order'     => 'desc',
 	);
-	extract( shortcode_atts( $default_atts, $attr ) );
+	extract( shortcode_atts( $default_atts, $attr, 'archives' ) );
 
-	if ( !in_array( $type, array( 'yearly', 'monthly', 'daily', 'weekly', 'postbypost' ) ) )
+	if ( ! in_array( $type, array( 'yearly', 'monthly', 'daily', 'weekly', 'postbypost' ) ) )
 		$type = 'postbypost';
 
-	if ( !in_array( $format, array( 'html', 'option', 'custom' ) ) )
-		$format =  'html';
+	if ( ! in_array( $format, array( 'html', 'option', 'custom' ) ) )
+		$format = 'html';
 
-	if ( '' != $limit )
-		$limit = (int)$limit;
+	if ( '' != $limit ) {
+		$limit = ( int ) $limit;
+		// A Limit of 0 makes no sense so revert back to the default.
+		if ( 0 == $limit ) {
+			$limit = '';
+		}
+	}
 
-	$showcount = (bool)$showcount;
+
+	$showcount = ( bool ) $showcount;
 	$before = wp_kses( $before, $allowedposttags );
 	$after = wp_kses( $after, $allowedposttags );
 
 	// Get the archives
-	$archives = wp_get_archives( 'type=' . $type . '&limit=' . $limit . '&format=' . $format . '&echo=0&show_post_count=' . $showcount . '&before=' . $before . '&after=' . $after );
+	$archives = wp_get_archives( array(
+		'type'            => $type,
+		'limit'           => $limit,
+		'format'          => $format,
+		'echo'            => false,
+		'show_post_count' => $showcount,
+		'before'          => $before,
+		'after'           => $after
+	) );
 
 	if ( 'asc' == $order )
 		$archives = implode( "\n", array_reverse( explode( "\n", $archives ) ) );

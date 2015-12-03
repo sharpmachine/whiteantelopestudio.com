@@ -3,7 +3,7 @@
 /**
  * A base class for parsers.
  *
- * In the context of this plugin, a "parser" is a class that knows how to extract or modfify 
+ * In the context of this plugin, a "parser" is a class that knows how to extract or modify
  * a specific type of links from a given piece of text. For example, there could be a "HTML Link"
  * parser that knows how to find and modify standard HTML links such as this one : 
  * <a href="http://example.com/">Example</a>
@@ -47,7 +47,15 @@ class blcParser extends blcModule {
 		parent::activated();
 		$this->resynch_relevant_containers();
 	}
-	
+
+	/**
+	 * Called when BLC is activated.
+	 */
+	function plugin_activated() {
+		//Intentionally do nothing. BLC can not parse containers while it's inactive, so we can be
+		//pretty sure that there are no already-parsed containers that need to be resynchronized.
+	}
+
 	/**
 	 * Mark containers that this parser might be interested in as unparsed.
 	 * 
@@ -130,14 +138,37 @@ class blcParser extends blcModule {
    * Sub-classes should override this method and display the link text in a way appropriate for the link type.
    *
    * @param blcLinkInstance $instance
+   * @param string $context
    * @return string HTML 
    */
 	function ui_get_link_text($instance, $context = 'display'){
 		return $instance->link_text;
 	}
+
+	/**
+	 * Check if the parser supports editing the link text.
+	 *
+	 * @return bool
+	 */
+	public function is_link_text_editable() {
+		return false;
+	}
+
+	/**
+	 * Check if the parser supports editing the link URL.
+	 *
+	 * @return bool
+	 */
+	public function is_url_editable() {
+		return true;
+	}
 	
   /**
    * Turn a relative URL into an absolute one.
+   *
+   * WordPress 3.4 has WP_Http::make_absolute_url() which is well-tested but not as comprehensive
+   * as this implementation. For example, WP_Http doesn't properly handle directory traversal with "..",
+   * and it removes #anchors for no good reason. The BLC implementation deals with both pretty well.
    * 
    * @param string $url Relative URL.
    * @param string $base_url Base URL. If omitted, the blog's root URL will be used.
@@ -162,6 +193,12 @@ class blcParser extends blcModule {
 		}
 	
 	    $parts=(parse_url($base_url));
+
+        //Protocol-relative URLs start with "//". We just need to prepend the right protocol.
+        if ( substr($url, 0, 2) === '//' ) {
+            $scheme = isset($parts['scheme']) ? $parts['scheme'] : 'http';
+            return $scheme . ':'. $url;
+        }
 	    
 	    if(substr($url,0,1)=='/') {
 	    	//Relative URL starts with a slash => ignore the base path and jump straight to the root. 
@@ -301,7 +338,7 @@ class blcParserHelper {
    *
    * @param string $format
    * @param string $container_type
-   * @return array of blcParser
+   * @return blcParser[]
    */
 	static function get_parsers( $format, $container_type ){
 		$found = array();
@@ -326,4 +363,3 @@ class blcParserHelper {
 	}
 }
 
-?>

@@ -1,27 +1,34 @@
 <?php
-/*--------------------------------------------------------------------------------------
+
+/*
+*  Export
 *
-*	ACF Export
-*
-*	@author Elliot Condon
-*	@since 3.0.2
-* 
-*-------------------------------------------------------------------------------------*/
+*  @description: 
+*  @since: 3.6
+*  @created: 25/01/13
+*/
+
+// Exit if accessed directly
+if ( !defined( 'ABSPATH' ) ) exit;
+
 
 // vars
 $defaults = array(
-	'acf_abspath' => '../../../../..',
-	'acf_posts' => array()
+	'acf_posts' => array(),
+	'nonce' => ''
 );
-$options = array_merge( $defaults, $_POST );
+$my_options = array_merge( $defaults, $_POST );
 
 
-require_once( $options['acf_abspath'] . '/wp-load.php');
-require_once( $options['acf_abspath'] . '/wp-admin/admin.php');
-		
+// validate nonce
+if( !wp_verify_nonce($my_options['nonce'], 'export') )
+{
+	wp_die(__("Error",'acf'));
+}
+
 
 // check for posts
-if( !$options['acf_posts'] )
+if( empty($my_options['acf_posts']) )
 {
 	wp_die(__("No ACF groups selected",'acf'));
 }
@@ -35,6 +42,37 @@ if( !$options['acf_posts'] )
  * @since 2.5.0
  */
 define( 'WXR_VERSION', '1.1' );
+
+
+/*
+*  fix_line_breaks
+*
+*  This function will loop through all array pieces and correct double line breaks from DB to XML
+*
+*  @type	function
+*  @date	2/12/2013
+*  @since	5.0.0
+*
+*  @param	$v (mixed)
+*  @return	$v (mixed)
+*/
+
+function fix_line_breaks( $v )
+{
+	if( is_array($v) )
+	{
+		foreach( array_keys($v) as $k )
+		{
+			$v[ $k ] = fix_line_breaks( $v[ $k ] );
+		}
+	}
+	elseif( is_string($v) )
+	{
+		$v = str_replace("\r\n", "\r", $v);
+	}
+	
+	return $v;
+}
 
 
 /**
@@ -67,7 +105,7 @@ function wxr_site_url() {
 		return network_home_url();
 	// wp: the blog url
 	else
-		return get_bloginfo_rss( 'url' );
+		return get_site_url();
 }
 
 /**
@@ -183,13 +221,16 @@ echo '<?xml version="1.0" encoding="' . get_bloginfo('charset') . "\" ?>\n";
 	<wp:base_site_url><?php echo wxr_site_url(); ?></wp:base_site_url>
 	<wp:base_blog_url><?php bloginfo_rss( 'url' ); ?></wp:base_blog_url>
 <?php wxr_authors_list(); ?>
-<?php if ( $_POST['acf_posts'] ) {
+<?php if ( $my_options['acf_posts'] ) {
 
-	global $wp_query;
+	global $wp_query, $wpdb, $post;
 	$wp_query->in_the_loop = true; // Fake being in the loop.
-
-	$where = 'WHERE ID IN (' . join( ',', $_POST['acf_posts'] ) . ')';
-	$posts = $wpdb->get_results( "SELECT * FROM {$wpdb->posts} $where" );
+	
+	// create SQL with %d placeholders
+	$where = 'WHERE ID IN (' . substr(str_repeat('%d,', count($my_options['acf_posts'])), 0, -1) . ')';
+	
+	// now prepare the SQL based on the %d + $_POST data
+	$posts = $wpdb->get_results( $wpdb->prepare("SELECT * FROM {$wpdb->posts} $where", $my_options['acf_posts']));
 
 	// Begin Loop
 	foreach ( $posts as $post ) {
@@ -214,8 +255,11 @@ echo '<?xml version="1.0" encoding="' . get_bloginfo('charset') . "\" ?>\n";
 		<wp:post_password><?php echo $post->post_password; ?></wp:post_password>
 <?php	$postmeta = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $wpdb->postmeta WHERE post_id = %d", $post->ID ) );
 		foreach( $postmeta as $meta ) : if ( $meta->meta_key != '_edit_lock' ) : 
-			$meta->meta_value = str_replace("\r\n", "\n", $meta->meta_value);
-			$meta->meta_value = str_replace("\r", "\n", $meta->meta_value);
+			
+			$meta->meta_value = maybe_unserialize( $meta->meta_value );
+				$meta->meta_value = fix_line_breaks( $meta->meta_value );
+			$meta->meta_value = maybe_serialize( $meta->meta_value );
+						
 		?>
 		<wp:postmeta>
 			<wp:meta_key><?php echo $meta->meta_key; ?></wp:meta_key>

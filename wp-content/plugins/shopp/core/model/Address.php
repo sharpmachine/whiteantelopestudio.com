@@ -6,12 +6,14 @@
  *
  * @author Jonathan Davis
  * @version 1.0
- * @copyright Ingenesis Limited, February 21, 2011
+ * @copyright Ingenesis Limited, May 2013
  * @license GNU GPL version 3 (or later) {@see license.txt}
  * @package shopp
  * @since 1.2
  * @subpackage shopp
  **/
+
+defined( 'WPINC' ) || header( 'HTTP/1.1 403' ) & exit; // Prevent direct access
 
 /**
  * Address
@@ -20,8 +22,9 @@
  * @since 1.1
  * @package shopp
  **/
-class Address extends DatabaseObject {
-	static $table = "address";
+class ShoppAddress extends ShoppDatabaseObject {
+
+	static $table = 'address';
 
 	/**
 	 * Address constructor
@@ -30,9 +33,9 @@ class Address extends DatabaseObject {
 	 *
 	 * @return void
 	 **/
-	function __construct ($id=false,$key=false) {
+	public function __construct ( $id = false, $key = 'id' ) {
 		$this->init(self::$table);
-		$this->load($id,$key);
+		$this->load($id, $key);
 	}
 
 	/**
@@ -41,11 +44,19 @@ class Address extends DatabaseObject {
 	 * @author Jonathan Davis
 	 * @since 1.2
 	 *
-	 * @return void
+	 * @param integer $id The ID to lookup the record by
+	 * @param string $key The column to use for matching the ID against
+	 * @return boolean True if successfully loaded, false otherwise
 	 **/
-	function load ($id=false,$key=false) {
-		parent::load($id,$key);
+	public function load ( $id = false, $key = 'id' ) {
+
+		if ( 'customer' == $key )
+			$loaded = parent::load( array('customer' => $id, 'type' => $this->type) );
+		else $loaded = parent::load($id, $key);
+
 		$this->locate();
+
+		return $loaded;
 	}
 
 	/**
@@ -58,18 +69,18 @@ class Address extends DatabaseObject {
 	 *
 	 * @return string
 	 **/
-	function postmap () {
-		if (empty($this->postcode) || empty($this->country)) return false;
+	public function postmap () {
+		if ( empty($this->postcode) || empty($this->country) ) return false;
 
 		$postcode = $this->postcode;
 		$patterns = Lookup::postcode_patterns();
 
-		if (!isset($patterns[$this->country]) || empty($patterns[$this->country])) return false;
+		if ( ! isset($patterns[ $this->country ]) || empty($patterns[ $this->country ]) ) return false;
 
-		$pattern = $patterns[$this->country];
+		$pattern = $patterns[ $this->country ];
 		if (!preg_match("/$pattern/",$postcode)) return false;
 
-		do_action('shopp_map_'.strtolower($this->country).'_postcode',$this);
+		do_action('shopp_map_' . strtolower($this->country) . '_postcode', $this);
 	}
 
 	/**
@@ -80,27 +91,27 @@ class Address extends DatabaseObject {
 	 *
 	 * @return void
 	 **/
-	function locate ($data=false) {
+	public function locate ( $data = false ) {
 		$base = shopp_setting('base_operations');
 		$markets = shopp_setting('target_markets');
 		$countries = Lookup::countries();
 		$regions = Lookup::regions();
 
-		if ($data) $this->updates($data);
+		if ( $data ) $this->updates($data);
 
-		// Update state if postcode changes for tax updates
-		if (isset($this->postcode))	$this->postmap();
-
-		if (empty($this->country)) {
+		if ( empty($this->country) ) {
 			// If the target markets are set to single country, use that target as default country
 			// otherwise default to the base of operations for tax and shipping estimates
 			if (1 == count($markets)) $this->country = key($markets);
 			else $this->country = $base['country'];
 		}
 
+		// Update state if postcode changes for tax updates
+		if ( isset($this->postcode) ) $this->postmap();
+
 		$this->region = false;
-		if (isset($regions[$countries[$this->country]['region']]))
-			$this->region = $regions[$countries[$this->country]['region']];
+		if ( isset($countries[ $this->country ]) && isset($regions[ $countries[ $this->country ]['region'] ]) )
+			$this->region = $regions[ $countries[ $this->country ]['region'] ];
 
 	}
 
@@ -118,41 +129,37 @@ class Address extends DatabaseObject {
  * @package address
  **/
 
-class BillingAddress extends Address {
+class BillingAddress extends ShoppAddress {
 
-	var $type = 'billing';
+	public $type = 'billing';
 
-	var $card = false;
-	var $cardtype = false;
-	var $cardexpires = false;
-	var $cardholder = false;
+	public $locale = false;
 
-	/**
-	 * Billing constructor
-	 *
-	 * @author Jonathan Davis
-	 *
-	 * @param int $id The ID of the record
-	 * @param string $key The column name for the specified ID
-	 * @return void
-	 **/
-	function __construct ($id=false,$key='customer') {
-		$this->init(self::$table);
-		if ( ! $id ) return;
-		$this->load(array($key => $id,'type' => 'billing'));
-		$this->type = 'billing';
+	public $card = false;
+	public $cardtype = false;
+	public $cardexpires = false;
+	public $cardholder = false;
+
+	public static function exportcolumns () {
+		$prefix = 'b.';
+		return array(
+			$prefix . 'address' => Shopp::__('Billing Street Address'),
+			$prefix . 'xaddress' => Shopp::__('Billing Street Address 2'),
+			$prefix . 'city' => Shopp::__('Billing City'),
+			$prefix . 'state' => Shopp::__('Billing State/Province'),
+			$prefix . 'country' => Shopp::__('Billing Country'),
+			$prefix . 'postcode' => Shopp::__('Billing Postal Code'),
+		);
 	}
 
-	function exportcolumns () {
-		$prefix = "b.";
-		return array(
-			$prefix.'address' => __('Billing Street Address','Shopp'),
-			$prefix.'xaddress' => __('Billing Street Address 2','Shopp'),
-			$prefix.'city' => __('Billing City','Shopp'),
-			$prefix.'state' => __('Billing State/Province','Shopp'),
-			$prefix.'country' => __('Billing Country','Shopp'),
-			$prefix.'postcode' => __('Billing Postal Code','Shopp'),
-			);
+	public function fromshipping () {
+		$Shipping = ShoppOrder()->Shipping;
+
+		$fields = array($this->address, $this->xaddress, $this->city);
+		$address = join('', $fields);
+
+		if ( empty($address) )
+			$this->copydata($Shipping, '', array('type'));
 	}
 
 } // end BillingAddress class
@@ -167,27 +174,11 @@ class BillingAddress extends Address {
  * @copyright Ingenesis Limited, 21 February, 2011
  * @package address
  **/
-class ShippingAddress extends Address {
+class ShippingAddress extends ShoppAddress {
 
-	var $type = 'shipping';
-	var $method = false;
-	var $residential = "on";
-
-	/**
-	 * Shipping constructor
-	 *
-	 * @author Jonathan Davis
-	 *
-	 * @param int $id The ID of the record
-	 * @param string $key The column name for the specified ID
-	 * @return void
-	 **/
-	function __construct ($id=false,$key='customer') {
-		$this->init(self::$table);
-		if ( ! $id ) return;
-		$this->load(array($key => $id,'type' => 'shipping'));
-		$this->type = 'shipping';
-	}
+	public $type = 'shipping';
+	public $method = false;
+	public $residential = 'on';
 
 	/**
 	 * Registry of supported export fields
@@ -197,15 +188,15 @@ class ShippingAddress extends Address {
 	 *
 	 * @return array
 	 **/
-	function exportcolumns () {
-		$prefix = "s.";
+	public static function exportcolumns () {
+		$prefix = 's.';
 		return array(
-			$prefix.'address' => __('Shipping Street Address','Shopp'),
-			$prefix.'xaddress' => __('Shipping Street Address 2','Shopp'),
-			$prefix.'city' => __('Shipping City','Shopp'),
-			$prefix.'state' => __('Shipping State/Province','Shopp'),
-			$prefix.'country' => __('Shipping Country','Shopp'),
-			$prefix.'postcode' => __('Shipping Postal Code','Shopp'),
+			$prefix . 'address' => Shopp::__('Shipping Street Address'),
+			$prefix . 'xaddress' => Shopp::__('Shipping Street Address 2'),
+			$prefix . 'city' => Shopp::__('Shipping City'),
+			$prefix . 'state' => Shopp::__('Shipping State/Province'),
+			$prefix . 'country' => Shopp::__('Shipping Country'),
+			$prefix . 'postcode' => Shopp::__('Shipping Postal Code'),
 		);
 	}
 
@@ -213,12 +204,43 @@ class ShippingAddress extends Address {
 
 class PostcodeMapping {
 
-	static function uszip ($Address) {
-		PostcodeMapping::prefixcode(substr($Address->postcode,0,3),$Address);
+	public static function uszip ($Address) {
+		PostcodeMapping::prefixcode(substr($Address->postcode, 0, 3), $Address);
 	}
 
-	static function capost ($Address) {
-		PostcodeMapping::prefixcode(strtoupper($Address->postcode{0}),$Address);
+	public static function capost ($Address) {
+		PostcodeMapping::prefixcode(strtoupper($Address->postcode{0}), $Address);
+	}
+
+	public static function aupost ($Address) {
+		PostcodeMapping::numericrange($Address);
+	}
+
+	/**
+	 * Lookup and determine the state/region based on numeric postcode ranges.
+	 *
+	 * @param ShoppAddress $Address
+	 */
+	public static function numericrange (Address $Address) {
+		$postcode = $Address->postcode;
+		$postcodes = Lookup::postcodes();
+		if ( ! isset($postcodes[$Address->country]) ) return;
+
+		foreach ( $postcodes[$Address->country] as $state => $ranges ) {
+			$ranges = (array) $ranges; // One or more ranges may be provided
+
+			foreach ( $ranges as $range ) {
+				list($min, $max) = explode('-', $range);
+				if ( $postcode >= $min && $postcode <= $max ) {
+					$match = $state;
+					break;
+				}
+			}
+
+			if ( isset($match) ) break;
+		}
+
+		if ( isset($match) ) $Address->state = $match;
 	}
 
 	/**
@@ -228,26 +250,31 @@ class PostcodeMapping {
 	 * @since 1.2
 	 *
 	 * @param string $prefix The postal code prefix
+	 * @param ShoppAddress $Address
 	 * @return void
 	 **/
-	static function prefixcode ($prefix,$Address) {
+	public static function prefixcode ($prefix, ShoppAddress $Address) {
 		$postcodes = Lookup::postcodes();
-		if (!isset($postcodes[$Address->country])) return;
+		if ( ! isset($postcodes[ $Address->country ]) ) return;
 
-		$codemap =& $postcodes[$Address->country];
-		$state = isset($codemap[strtoupper($prefix)])?$codemap[$prefix]:false;
+		$codemap =& $postcodes[ $Address->country ];
+		$state = isset($codemap[ strtoupper($prefix) ]) ? $codemap[ $prefix ] : false;
 
-		if (!$state) return;
+		if ( is_array($state) ) { // Handle multiple states in the same postal code prefix. Props msigley
+			if ( in_array($Address->state, $state) ) $state = false; // Don't replace current state if it is in the postcode prefix
+			else $state = $state[0];
+		}
+
+		if ( ! $state) return;
 
 		$Address->state = $state;
 
 	}
 
-}
+} // class PostcodeMapping
 
-add_action('shopp_map_us_postcode',array('PostcodeMapping','uszip'));
-add_action('shopp_map_usaf_postcode',array('PostcodeMapping','uszip'));
-add_action('shopp_map_usat_postcode',array('PostcodeMapping','uszip'));
-add_action('shopp_map_ca_postcode',array('PostcodeMapping','capost'));
-
-?>
+add_action('shopp_map_au_postcode',   array('PostcodeMapping', 'aupost'));
+add_action('shopp_map_us_postcode',   array('PostcodeMapping', 'uszip'));
+add_action('shopp_map_usaf_postcode', array('PostcodeMapping', 'uszip'));
+add_action('shopp_map_usat_postcode', array('PostcodeMapping', 'uszip'));
+add_action('shopp_map_ca_postcode',   array('PostcodeMapping', 'capost'));

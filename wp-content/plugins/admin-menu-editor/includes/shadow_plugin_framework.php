@@ -2,7 +2,7 @@
 
 /**
  * @author W-Shadow
- * @copyright 2008-2011
+ * @copyright 2008-2012
  */
  
 //Load JSON functions for PHP < 5.2
@@ -141,7 +141,7 @@ class MenuEd_ShadowPluginFramework {
    * ShadowPluginFramework::save_options()
    * Saves the $options array to the database.
    *
-   * @return void
+   * @return bool
    */
 	function save_options(){
 		if ($this->option_name) {
@@ -151,20 +151,21 @@ class MenuEd_ShadowPluginFramework {
 			}
 			
 			if ( $this->sitewide_options ) {
-				update_site_option($this->option_name, $stored_options);
+				return update_site_option($this->option_name, $stored_options);
 			} else {
-				update_option($this->option_name, $stored_options);
+				return update_option($this->option_name, $stored_options);
 			}
 		}
+		return false;
 	}
 	
 	
   /**
-   * Backwards fompatible json_decode.
+   * Backwards compatible json_decode.
    *
    * @param string $data
    * @param bool $assoc Decode objects as associative arrays.
-   * @return string
+   * @return mixed
    */
     function json_decode($data, $assoc=false){
     	if ( function_exists('json_decode') ){
@@ -179,11 +180,12 @@ class MenuEd_ShadowPluginFramework {
     		return $json->decode($data);
     	} else {
     		trigger_error('No JSON parser available', E_USER_ERROR);
+		    return null;
     	}    
     }
 
   /**
-   * Backwards fompatible json_encode.
+   * Backwards compatible json_encode.
    *
    * @param mixed $data
    * @return string
@@ -200,6 +202,7 @@ class MenuEd_ShadowPluginFramework {
     		return $json->encode($data);
     	} else {
     		trigger_error('No JSON parser available', E_USER_ERROR);
+		    return '';
    		}        
     }    
 
@@ -214,7 +217,7 @@ class MenuEd_ShadowPluginFramework {
 		$class = new ReflectionClass(get_class($this));
 		$methods = $class->getMethods();
 		
-		foreach ($methods as $method){
+		foreach ($methods as $method){ /** @var ReflectionMethod $method */
 			//Check if the method name starts with "hook_"
 			if (strpos($method->name, 'hook_') === 0){
 				//Get the hook's tag from the method name 
@@ -231,12 +234,12 @@ class MenuEd_ShadowPluginFramework {
 
   /**
    * ShadowPluginFramework::activate()
-   * Stub function for the activation hook. Simply stores the default configuration.
+   * Stub function for the activation hook.
    *
    * @return void
    */
 	function activate(){
-		$this->save_options();
+
 	}
 	
   /**
@@ -335,7 +338,20 @@ class MenuEd_ShadowPluginFramework {
 	
 		return false;
 	}
+
+	/**
+	 * Check whether the plugin is active.
+	 *
+	 * @see self::is_plugin_active_for_network
+	 *
+	 * @param string $plugin
+	 * @return bool
+	 */
+	function is_plugin_active($plugin) {
+		if ( function_exists('is_plugin_active') ) {
+			return is_plugin_active($plugin);
+		}
+		return in_array( $plugin, (array) get_option('active_plugins', array()) ) || $this->is_plugin_active_for_network($plugin);
+	}
 	
 }
-
-?>

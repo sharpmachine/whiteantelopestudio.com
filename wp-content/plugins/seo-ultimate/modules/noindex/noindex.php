@@ -16,12 +16,12 @@ add_filter('su_settings_export_array', 'su_noindex_export_filter');
 
 class SU_Noindex extends SU_Module {
 	
-	function get_module_title() { return __('Noindex Manager', 'seo-ultimate'); }
+	static function get_module_title() { return __('Noindex Manager', 'seo-ultimate'); }
 	function get_module_subtitle() { return __('Noindex', 'seo-ultimate'); }
 	
-	function get_parent_module() { return 'meta-robots'; }
+	static function get_parent_module() { return 'meta-robots'; }
 	function get_settings_key() { return 'noindex'; }
-	function is_independent_module() { return false; }
+	static function is_independent_module() { return false; }
 	
 	function init() {
 		
@@ -93,7 +93,7 @@ class SU_Noindex extends SU_Module {
 		//If global noindex tags are enabled, these settings will be moot, so notify the user.
 		if (!get_option('blog_public'))
 			$this->queue_message('error',
-				__('Note: The current <a href="options-privacy.php">privacy settings</a> will block indexing of the entire site, regardless of which options are set below.', 'seo-ultimate') );
+				__('Note: The <a href="options-reading.php">&#8220;discourage search engines&#8221; checkbox</a> will block indexing of the entire site, regardless of which options are set below.', 'seo-ultimate') );
 		
 		$this->admin_form_table_start();
 		$this->admin_form_subheader(__('Prevent indexing of...', 'seo-ultimate'));
@@ -167,7 +167,7 @@ class SU_Noindex extends SU_Module {
 		echo "\t<meta name=\"robots\" content=\"noindex\" />\n";
 	}
 	
-	function postmeta_fields($fields) {
+	function postmeta_fields($fields, $screen) {
 		$fields['30|meta_robots_noindex|meta_robots_nofollow'] = $this->get_postmeta_checkboxes(array(
 			  'meta_robots_noindex' => __('Noindex: Tell search engines not to index this webpage.', 'seo-ultimate')
 			, 'meta_robots_nofollow' => __('Nofollow: Tell search engines not to spider links on this webpage.', 'seo-ultimate')

@@ -191,7 +191,7 @@ class blcModuleManager {
 			$modules = $this->get_active_by_category($category);
 		}
 		
-		$modules = array_map(array(&$wpdb, 'escape'), array_keys($modules));
+		$modules = array_map('esc_sql', array_keys($modules));
 		$modules = "'" . implode("', '", $modules) . "'";
 		
 		return $modules;
@@ -483,15 +483,22 @@ class blcModuleManager {
 		
 		//Ensure all active modules have the latest headers
 		$blclog->log('... Updating module cache');
+		$start = microtime(true);
 		$this->refresh_active_module_cache();
+		$blclog->info(sprintf('... Cache refresh took %.3f seconds', microtime(true) - $start));
 		
 		//Notify them that we've been activated
+		$blclog->log('... Loading modules');
+		$start = microtime(true);
+		$this->load_modules();
+		$blclog->info(sprintf('... %d modules loaded in %.3f seconds', count($this->loaded), microtime(true) - $start));
+
 		$active = $this->get_active_modules();
 		foreach($active as $module_id => $module_data){
 			$blclog->log( sprintf('... Notifying module "%s"', $module_id) );
 			$module = $this->get_module($module_id);
 			if ( $module ){
-				$module->activated();
+				$module->plugin_activated();
 			} else {
 				$blclog->warn(sprintf('... Module "%s" failed to load!', $module_id));
 			}
@@ -848,8 +855,6 @@ class blcModuleManager {
 			}
 		}
 		
-		return "<?php\n" . implode("\n", $strings) . "\n?>";
+		return "<?php\n" . implode("\n", $strings) . "\n";
 	}
 }
-
-?>

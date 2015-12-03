@@ -1,9 +1,9 @@
 <div class="wrap shopp">
 
 	<div class="icon32"></div>
-	<h2><?php _e('Product Editor','Shopp'); ?></h2>
+	<h2><?php _e('Product Editor','Shopp'); ?> <a href="<?php echo esc_url( add_query_arg(array('page'=>$this->Admin->pagename('products'),'id'=>'new'),admin_url('admin.php'))); ?>" class="add-new-h2"><?php _e('Add New','Shopp'); ?></a> </h2>
 
-	<?php do_action('shopp_admin_notice'); ?>
+	<?php do_action('shopp_admin_notices'); ?>
 
 	<div id="ajax-response"></div>
 	<form name="product" id="product" action="<?php echo esc_url($this->url); ?>" method="post">
@@ -33,7 +33,7 @@
 					<div class="inside">
 						<?php if ('' != get_option('permalink_structure') && !empty($Product->id)): ?>
 							<div id="edit-slug-box"><strong><?php _e('Permalink','Shopp'); ?>:</strong>
-							<span id="sample-permalink"><?php echo $permalink; ?><span id="editable-slug" title=<?php _jse('Click to edit this part of the permalink','Shopp'); ?>><?php echo esc_attr($Product->slug); ?></span><span id="editable-slug-full"><?php echo esc_attr($Product->slug); ?></span><?php echo user_trailingslashit(""); ?></span>
+							<span id="sample-permalink"><?php echo $permalink; ?><span id="editable-slug" title=<?php Shopp::_jse('Click to edit this part of the permalink','Shopp'); ?>><?php echo esc_attr($Product->slug); ?></span><span id="editable-slug-full"><?php echo esc_attr($Product->slug); ?></span><?php echo user_trailingslashit(""); ?></span>
 							<span id="edit-slug-buttons">
 								<button type="button" class="edit button"><?php _e('Edit','Shopp'); ?></button><?php if ($Product->status == "publish"): ?><a href="<?php echo esc_url(shopp($Product,'get-url')); ?>" id="view-product" class="view button"><?php _e('View','Shopp'); ?></a><?php endif; ?></span>
 							<span id="editor-slug-buttons">
@@ -49,8 +49,14 @@
 						<?php endif; ?>
 					</div>
 				</div>
+				
+				<?php do_action( 'edit_form_after_title', $Product ); ?>
+
 				<div id="<?php echo user_can_richedit() ? 'postdivrich' : 'postdiv'; ?>" class="postarea">
-				<?php the_editor($Product->description,'content','Description', false); ?>
+				<?php
+					$media_buttons = ( defined('SHOPP_EDITOR_MEDIA_BTNS') && SHOPP_EDITOR_MEDIA_BTNS );
+					wp_editor($Product->description, 'content', array( 'media_buttons' => $media_buttons ));
+				?>
 				</div>
 			<?php
 			do_meta_boxes(get_current_screen()->id, 'normal', $Product);
@@ -62,7 +68,7 @@
 			?>
 			</div>
 			</div>
-
+			<div class="clear">&nbsp;</div>
 		</div> <!-- #poststuff -->
 	</form>
 </div>
@@ -79,21 +85,20 @@ var flashuploader = <?php echo ($uploader == 'flash' && !(false !== strpos(strto
 	priceTypes = <?php echo json_encode($priceTypes) ?>,
 	billPeriods = <?php echo json_encode($billPeriods) ?>,
 	shiprates = <?php echo json_encode($shiprates); ?>,
-	buttonrsrc = '<?php echo includes_url('images/upload.png'); ?>',
 	uidir = '<?php echo SHOPP_ADMIN_URI; ?>',
 	siteurl = '<?php bloginfo('url'); ?>',
 	screenid = '<?php echo get_current_screen()->id; ?>',
-	canonurl = '<?php echo trailingslashit(shoppurl()); ?>',
-	adminurl = '<?php echo SHOPP_WPADMIN_URL; ?>',
+	canonurl = '<?php echo trailingslashit(Shopp::url()); ?>',
+	adminurl = '<?php echo admin_url(); ?>',
 	sugg_url = '<?php echo wp_nonce_url(admin_url('admin-ajax.php'), "wp_ajax_shopp_storage_suggestions"); ?>',
 	tagsugg_url = '<?php echo wp_nonce_url(admin_url('admin-ajax.php'), "wp_ajax_shopp_suggestions"); ?>',
 	spectemp_url = '<?php echo wp_nonce_url(admin_url('admin-ajax.php'), "wp_ajax_shopp_spec_template"); ?>',
 	opttemp_url = '<?php echo wp_nonce_url(admin_url('admin-ajax.php'), "wp_ajax_shopp_options_template"); ?>',
-	addcategory_url = '<?php echo wp_nonce_url(SHOPP_WPADMIN_URL."admin-ajax.php", "wp_ajax_shopp_add_category"); ?>',
-	editslug_url = '<?php echo wp_nonce_url(SHOPP_WPADMIN_URL."admin-ajax.php", "wp_ajax_shopp_edit_slug"); ?>',
-	fileverify_url = '<?php echo wp_nonce_url(SHOPP_WPADMIN_URL."admin-ajax.php", "wp_ajax_shopp_verify_file"); ?>',
-	fileimport_url = '<?php echo wp_nonce_url(SHOPP_WPADMIN_URL."admin-ajax.php", "wp_ajax_shopp_import_file"); ?>',
-	imageul_url = '<?php echo wp_nonce_url(SHOPP_WPADMIN_URL."admin-ajax.php", "wp_ajax_shopp_upload_image"); ?>',
+	addcategory_url = '<?php echo wp_nonce_url(admin_url()."admin-ajax.php", "wp_ajax_shopp_add_category"); ?>',
+	editslug_url = '<?php echo wp_nonce_url(admin_url()."admin-ajax.php", "wp_ajax_shopp_edit_slug"); ?>',
+	fileverify_url = '<?php echo wp_nonce_url(admin_url()."admin-ajax.php", "wp_ajax_shopp_verify_file"); ?>',
+	fileimport_url = '<?php echo wp_nonce_url(admin_url()."admin-ajax.php", "wp_ajax_shopp_import_file"); ?>',
+	imageul_url = '<?php echo wp_nonce_url(admin_url()."admin-ajax.php", "wp_ajax_shopp_upload_image"); ?>',
 	adminpage = '<?php echo $this->Admin->pagename('products'); ?>',
 	request = <?php echo json_encode(stripslashes_deep($_GET)); ?>,
 	filesizeLimit = <?php echo wp_max_upload_size(); ?>,

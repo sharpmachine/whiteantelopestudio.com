@@ -1,13 +1,17 @@
 <div class="wrap shopp">
-	<?php if (!empty($updated)): ?><div id="message" class="updated fade"><p><?php echo $updated; ?></p></div><?php endif; ?>
-
-	<form action="<?php echo esc_url($this->url); ?>" id="taxrates" method="post" enctype="multipart/form-data" accept="text/plain,text/xml">
 	<div class="icon32"></div>
-	<h2><?php _e('Tax Rates','Shopp'); ?></h2>
+	<?php
+
+		shopp_admin_screen_tabs();
+		do_action('shopp_admin_notices');
+
+	?>
+
 
 	<?php if (count(shopp_setting('target_markets')) == 0) echo '<div class="error"><p>'.__('No target markets have been selected in your store setup.','Shopp').'</p></div>'; ?>
 
 	<?php $this->taxes_menu(); ?>
+	<form action="<?php echo esc_url($this->url); ?>" id="taxrates" method="post" enctype="multipart/form-data" accept="text/plain,text/xml">
 
 	<div>
 		<?php wp_nonce_field('shopp-settings-taxrates'); ?>
@@ -26,11 +30,11 @@
 			'product-category' => __('Product in category','Shopp'),
 			'customer-type' => __('Customer type is','Shopp')
 		);
-		echo menuoptions($propertymenu,false,true);
+		echo Shopp::menuoptions($propertymenu,false,true);
 	?></script>
 
 	<script id="countries-menu" type="text/x-jquery-tmpl"><?php
-		echo menuoptions($countries,false,true);
+		echo Shopp::menuoptions($countries,false,true);
 	?></script>
 
 
@@ -55,12 +59,13 @@
 		<td colspan="5"><input type="hidden" name="id" value="${id}" /><input type="hidden" name="editing" value="true" />
 		<table id="taxrate-editor">
 			<tr>
-			<td scope="row" valign="top" class="rate"><input type="text" name="settings[taxrates][${id}][rate]" id="tax-rate" value="${rate}" size="6" class="selectall" /><br /><label for="tax-rate"><?php _e('Tax Rate','Shopp'); ?></label></td>
+			<td scope="row" valign="top" class="rate"><input type="text" name="settings[taxrates][${id}][rate]" id="tax-rate" value="${rate}" size="7" class="selectall" tabindex="1" /><br /><label for="tax-rate"><?php _e('Tax Rate','Shopp'); ?></label><br />
+			<input type="hidden" name="settings[taxrates][${id}][compound]" value="off" /><label><input type="checkbox" id="tax-compound" name="settings[taxrates][${id}][compound]" value="on" ${compounded} tabindex="4" />&nbsp;<?php Shopp::_e('Compound'); ?></label></td>
 			<td scope="row" class="conditions">
-			<select name="settings[taxrates][${id}][country]" class="country">${countries}</select><select name="settings[taxrates][${id}][zone]" class="zone no-zones">${zones}</select>
+			<select name="settings[taxrates][${id}][country]" class="country" tabindex="2">${countries}</select><select name="settings[taxrates][${id}][zone]" class="zone no-zones" tabindex="3">${zones}</select>
 			<?php echo ShoppUI::button('add','addrule'); ?>
 			<?php
-				$options = array('any'=>__('any','Shopp'),'all'=>__('all','Shopp'));
+				$options = array('any' => Shopp::__('any'), 'all' => strtolower(Shopp::__('All')));
 				$menu = '<select name="settings[taxrates][${id}][logic]" class="logic">'.menuoptions($options,false,true).'</select>';
 			?>
 				<div class="conditionals no-conditions">
@@ -72,16 +77,16 @@
 			</td>
 				<td>
 					<div class="local-rates panel subpanel no-local-rates">
-						<div class="label"><label><?php _e('Local Rates','Shopp'); ?> <span class="counter"></span><input type="hidden" name="settings[taxrates][${id}][haslocals]" value="${haslocals}" class="has-locals" /></label></div>
+						<div class="label"><label><?php _e('Local Rates','Shopp'); echo ShoppAdmin()->boxhelp('settings-taxes-localrates'); ?> <span class="counter"></span><input type="hidden" name="settings[taxrates][${id}][haslocals]" value="${haslocals}" class="has-locals" /></label></div>
 						<div class="ui">
-							<p class="instructions"><?php _e('No local regions have been setup for this location. Local regions can be specified by uploading a formatted local rates file.','Shopp'); ?></p>
+							<p class="instructions"><?php Shopp::_e('No local regions have been setup for this location. Local regions can be specified by uploading a formatted local rates file.'); ?></p>
 							${errors}
 							<ul>${localrates}</ul>
 							<div class="upload">
-								<h3><?php _e('Upload Local Tax Rates'); // @todo Add help icon to link to documentation ?></h3>
+								<h3><?php Shopp::_e('Upload Local Tax Rates'); ?></h3>
 								<input type="hidden" name="MAX_FILE_SIZE" value="1048576" />
 								<input type="file" name="ratefile" class="hide-if-js" />
-								<button type="submit" name="upload" class="button-secondary upload"><?php _e('Upload','Shopp'); ?></button>
+								<button type="submit" name="upload" class="button-secondary upload"><?php Shopp::_e('Upload'); ?></button>
 							</div>
 						</div>
 					</div>
@@ -90,10 +95,10 @@
 			<tr>
 				<td colspan="3">
 				<p class="textright">
-				<a href="<?php echo $this->url; ?>" class="button-secondary cancel alignleft"><?php _e('Cancel','Shopp'); ?></a>
-				<button type="submit" name="add-locals" class="button-secondary locals-toggle add-locals has-local-rates"><?php _e('Add Local Rates','Shopp'); ?></button>
-				<button type="submit" name="remove-locals" class="button-secondary locals-toggle rm-locals no-local-rates"><?php _e('Remove Local Rates','Shopp'); ?></button>
-				<input type="submit" class="button-primary" name="submit" value="<?php _e('Save Changes','Shopp'); ?>" />
+				<a href="<?php echo $this->url; ?>" class="button-secondary cancel alignleft"><?php Shopp::_e('Cancel'); ?></a>
+				<button type="submit" name="add-locals" class="button-secondary locals-toggle add-locals has-local-rates"><?php Shopp::_e('Add Local Rates'); ?></button>
+				<button type="submit" name="remove-locals" class="button-secondary locals-toggle rm-locals no-local-rates"><?php Shopp::_e('Remove Local Rates'); ?></button>
+				<input type="submit" class="button-primary" name="submit" value="<?php Shopp::_e('Save Changes'); ?>" />
 				</p>
 				</td>
 			</tr>
@@ -119,7 +124,8 @@
 					'zone' => false,
 					'rules' => array(),
 					'locals' => array(),
-					'haslocals' => false
+					'haslocals' => false,
+					'compound' => false
 				);
 				extract($defaults);
 				echo ShoppUI::template($editor,array(
@@ -131,7 +137,7 @@
 					'${haslocals}' => $haslocals,
 					'${localrates}' => join('',$localrates),
 					'${instructions}' => $localerror ? '<p class="error">'.$localerror.'</p>' : $instructions,
-					'${cancel_href}' => $this->url
+					'${compounded}' => Shopp::str_true($compound) ? 'checked="checked"' : ''
 				));
 			}
 
@@ -154,7 +160,7 @@
 				$taxrate = array_merge($defaults,$taxrate);
 				extract($taxrate);
 
-				$rate = percentage($rate,array('precision'=>4));
+				$rate = Shopp::percentage(Shopp::floatval($rate), array('precision'=>4));
 				$location = $countries[ $country ];
 
 				if (isset($zone) && !empty($zone))
@@ -198,6 +204,7 @@
 						'${haslocals}' => $haslocals,
 						'${localrates}' => join('',$localrates),
 						'${errors}' => $localerror ? '<p class="error">'.$localerror.'</p>' : '',
+						'${compounded}' => Shopp::str_true($compound) ? 'checked="checked"' : '',
 						'${cancel_href}' => $this->url
 					);
 					if ($conditions) $data['no-conditions'] = '';
@@ -221,10 +228,10 @@
 				</div>
 			</td>
 			<td class="local column-local">
-				<div class="checkbox"><?php if ($haslocals): ?><div class="checked">&nbsp;</div><?php else: ?>&nbsp;<?php endif; ?></div>
+				<div class="checkbox <?php if ( $haslocals ) echo 'checked'; ?>">&nbsp;</div>
 			</td>
 			<td class="conditional column-conditional">
-				<div class="checkbox"><?php if (count($rules) > 0): ?><div class="checked">&nbsp;</div><?php else: ?>&nbsp;<?php endif; ?></div>
+				<div class="checkbox <?php if ( count($rules) > 0 ) echo 'checked'; ?>">&nbsp;</div>
 			</td>
 		</tr>
 		<?php endforeach; ?>

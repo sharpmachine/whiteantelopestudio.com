@@ -2,7 +2,7 @@
 /**
  * Class for working with PO files
  *
- * @version $Id: po.php 589 2010-12-18 01:40:57Z nbachiyski $
+ * @version $Id: po.php 718 2012-10-31 00:32:02Z nbachiyski $
  * @package pomo
  * @subpackage po
  */
@@ -18,7 +18,7 @@ ini_set('auto_detect_line_endings', 1);
  */
 if ( !class_exists( 'PO' ) ):
 class PO extends Gettext_Translations {
-	
+
 	var $comments_before_headers = '';
 
 	/**
@@ -80,10 +80,10 @@ class PO extends Gettext_Translations {
 		if (false === $res) return false;
 		return fclose($fh);
 	}
-	
+
 	/**
 	 * Text to include as a comment before the start of the PO contents
-	 * 
+	 *
 	 * Doesn't need to include # in the beginning of lines, these are added automatically
 	 */
 	function set_comment_before_headers( $text ) {
@@ -120,10 +120,10 @@ class PO extends Gettext_Translations {
 		$po = str_replace("$newline$quote$quote", '', $po);
 		return $po;
 	}
-	
+
 	/**
 	 * Gives back the original string from a PO-formatted string
-	 * 
+	 *
 	 * @static
 	 * @param string $string PO-formatted string
 	 * @return string enascaped string
@@ -153,7 +153,7 @@ class PO extends Gettext_Translations {
 	}
 
 	/**
-	 * Inserts $with in the beginning of every new line of $string and 
+	 * Inserts $with in the beginning of every new line of $string and
 	 * returns the modified string
 	 *
 	 * @static
@@ -189,8 +189,8 @@ class PO extends Gettext_Translations {
 	 * Builds a string from the entry for inclusion in PO file
 	 *
 	 * @static
-	 * @param object &$entry the entry to convert to po string
-	 * @return string|bool PO-style formatted string for the entry or
+	 * @param Translation_Entry &$entry the entry to convert to po string
+	 * @return false|string PO-style formatted string for the entry or
 	 * 	false if the entry is empty
 	 */
 	function export_entry(&$entry) {
@@ -215,6 +215,10 @@ class PO extends Gettext_Translations {
 		return implode("\n", $po);
 	}
 
+	/**
+	 * @param string $filename
+	 * @return boolean
+	 */
 	function import_from_file($filename) {
 		$f = fopen($filename, 'r');
 		if (!$f) return false;
@@ -229,9 +233,20 @@ class PO extends Gettext_Translations {
 			}
 		}
 		PO::read_line($f, 'clear');
-		return $res !== false;
+		if ( false === $res ) {
+			return false;
+		}
+		if ( ! $this->headers && ! $this->entries ) {
+			return false;
+		}
+		return true;
 	}
-	
+
+	/**
+	 * @param resource $f
+	 * @param int      $lineno
+	 * @return null|false|array
+	 */
 	function read_entry($f, $lineno = 0) {
 		$entry = new Translation_Entry();
 		// where were we in the last step
@@ -268,7 +283,7 @@ class PO extends Gettext_Translations {
 					return false;
 				}
 				// add comment
-				$this->add_comment_to_entry($entry, $line);;
+				$this->add_comment_to_entry($entry, $line);
 			} elseif (preg_match('/^msgctxt\s+(".*")/', $line, $m)) {
 				if ($is_final($context)) {
 					PO::read_line($f, 'put-back');
@@ -336,7 +351,15 @@ class PO extends Gettext_Translations {
 		}
 		return array('entry' => $entry, 'lineno' => $lineno);
 	}
-	
+
+	/**
+	 * @staticvar string   $last_line
+	 * @staticvar boolean  $use_last_line
+	 * 
+	 * @param     resource $f
+	 * @param     string   $action
+	 * @return boolean
+	 */
 	function read_line($f, $action = 'read') {
 		static $last_line = '';
 		static $use_last_line = false;
@@ -349,11 +372,16 @@ class PO extends Gettext_Translations {
 			return true;
 		}
 		$line = $use_last_line? $last_line : fgets($f);
+		$line = ( "\r\n" == substr( $line, -2 ) ) ? rtrim( $line, "\r\n" ) . "\n" : $line;
 		$last_line = $line;
 		$use_last_line = false;
 		return $line;
 	}
-	
+
+	/**
+	 * @param Translation_Entry $entry
+	 * @param string            $po_comment_line
+	 */
 	function add_comment_to_entry(&$entry, $po_comment_line) {
 		$first_two = substr($po_comment_line, 0, 2);
 		$comment = trim(substr($po_comment_line, 2));
@@ -367,7 +395,11 @@ class PO extends Gettext_Translations {
 			$entry->translator_comments = trim($entry->translator_comments . "\n" . $comment);
 		}
 	}
-	
+
+	/**
+	 * @param string $s
+	 * @return sring
+	 */
 	function trim_quotes($s) {
 		if ( substr($s, 0, 1) == '"') $s = substr($s, 1);
 		if ( substr($s, -1, 1) == '"') $s = substr($s, 0, -1);

@@ -2,306 +2,484 @@
 /*
 Plugin Name: Advanced Custom Fields
 Plugin URI: http://www.advancedcustomfields.com/
-Description: Fully customise WordPress edit screens with powerful fields. Boasting a professional interface and a powerfull API, it’s a must have for any web developer working with WordPress. Field types include: Wysiwyg, text, textarea, image, file, select, checkbox, page link, post object, date picker, color picker, repeater, flexible content, gallery and more!
-Version: 3.5.0
+Description: Customise WordPress with powerful, professional and intuitive fields
+Version: 4.4.3
 Author: Elliot Condon
 Author URI: http://www.elliotcondon.com/
 License: GPL
 Copyright: Elliot Condon
 */
 
-include('core/api.php');
+if( !class_exists('acf') ):
 
-$acf = new Acf();
-
-class Acf
-{ 
-	var $dir,
-		$path,
-		$version,
-		$upgrade_version,
-		$fields,
-		$cache,
+class acf
+{
+	// vars
+	var $settings;
 		
-		// controllers
-		$upgrade,
-		$settings,
-		$field_groups,
-		$field_group,
-		$input,
-		$options_page,
-		$everything_fields;
-	
 	
 	/*
 	*  Constructor
 	*
-	*  @description: 
-	*  @since 1.0.0
-	*  @created: 23/06/12
+	*  This function will construct all the neccessary actions, filters and functions for the ACF plugin to work
+	*
+	*  @type	function
+	*  @date	23/06/12
+	*  @since	1.0.0
+	*
+	*  @param	N/A
+	*  @return	N/A
 	*/
 	
-	function Acf()
+	function __construct()
 	{
-
+		// helpers
+		add_filter('acf/helpers/get_path', array($this, 'helpers_get_path'), 1, 1);
+		add_filter('acf/helpers/get_dir', array($this, 'helpers_get_dir'), 1, 1);
+		
+		
 		// vars
-		$this->path = plugin_dir_path(__FILE__);
-		$this->dir = plugins_url('',__FILE__);
-		$this->version = '3.5.0';
-		$this->upgrade_version = '3.4.1'; // this is the latest version which requires an upgrade
-		$this->cache = array(); // basic array cache to hold data throughout the page load
+		$this->settings = array(
+			'path'				=> apply_filters('acf/helpers/get_path', __FILE__),
+			'dir'				=> apply_filters('acf/helpers/get_dir', __FILE__),
+			'hook'				=> basename( dirname( __FILE__ ) ) . '/' . basename( __FILE__ ),
+			'version'			=> '4.4.3',
+			'upgrade_version'	=> '3.4.1',
+			'include_3rd_party'	=> false
+		);
 		
 		
 		// set text domain
-		load_plugin_textdomain('acf', false, basename(dirname(__FILE__)).'/lang' );
-		
-		
-		// controllers
-		$this->setup_controllers();
+		load_textdomain('acf', $this->settings['path'] . 'lang/acf-' . get_locale() . '.mo');
 		
 		
 		// actions
-		add_action('init', array($this, 'init'));
-		add_filter('post_updated_messages', array($this, 'post_updated_messages'));
-		add_filter('manage_edit-acf_columns', array($this, 'acf_columns_filter'));
-		
-		add_action('admin_menu', array($this,'admin_menu'));
-		add_action('admin_head', array($this,'admin_head'));
-		add_action('acf_save_post', array($this, 'acf_save_post'), 10); // save post, called from many places (api, input, everything, options)
-		
-		
-		// ajax
-		add_action('wp_ajax_get_input_metabox_ids', array($this, 'get_input_metabox_ids'));
+		add_action('init', array($this, 'init'), 1);
+		add_action('acf/pre_save_post', array($this, 'save_post_lock'), 0);
+		add_action('acf/pre_save_post', array($this, 'save_post_unlock'), 999);
+		add_action('acf/save_post', array($this, 'save_post_lock'), 0);
+		add_action('acf/save_post', array($this, 'save_post'), 10);
+		add_action('acf/save_post', array($this, 'save_post_unlock'), 999);
+		add_action('acf/create_fields', array($this, 'create_fields'), 1, 2);
 		
 		
-		return true;
+		// filters
+		add_filter('acf/get_info', array($this, 'get_info'), 1, 1);
+		add_filter('acf/parse_types', array($this, 'parse_types'), 1, 1);
+		add_filter('acf/get_post_types', array($this, 'get_post_types'), 1, 3);
+		add_filter('acf/get_taxonomies_for_select', array($this, 'get_taxonomies_for_select'), 1, 2);
+		add_filter('acf/get_image_sizes', array($this, 'get_image_sizes'), 1, 1);
+		add_filter('acf/get_post_id', array($this, 'get_post_id'), 1, 1);
+		
+		
+		// includes
+		$this->include_before_theme();
+		add_action('after_setup_theme', array($this, 'include_after_theme'), 1);
+		add_action('after_setup_theme', array($this, 'include_3rd_party'), 1);
+		
 	}
 	
 	
 	/*
-	*  get_cache
+	*  helpers_get_path
 	*
-	*  @description: Simple ACF (once per page) cache
-	*  @since 3.1.9
-	*  @created: 23/06/12
+	*  This function will calculate the path to a file
+	*
+	*  @type	function
+	*  @date	30/01/13
+	*  @since	3.6.0
+	*
+	*  @param	$file (file) a reference to the file
+	*  @return	(string)
 	*/
-	
-	function get_cache($key = false)
-	{
-		// key is required
-		if( !$key )
-			return false;
-		
-		
-		// does cache at key exist?
-		if( !isset($this->cache[$key]) )
-			return false;
-		
-		
-		// return cahced item
-		return $this->cache[$key];
-	}
+    
+    function helpers_get_path( $file )
+    {
+        return trailingslashit(dirname($file));
+    }
+    
+    
+    /*
+	*  helpers_get_dir
+	*
+	*  This function will calculate the directory (URL) to a file
+	*
+	*  @type	function
+	*  @date	30/01/13
+	*  @since	3.6.0
+	*
+	*  @param	$file (file) a reference to the file
+	*  @return	(string)
+	*/
+    
+    function helpers_get_dir( $file )
+    {
+        $dir = trailingslashit(dirname($file));
+        $count = 0;
+        
+        
+        // sanitize for Win32 installs
+        $dir = str_replace('\\' ,'/', $dir); 
+        
+        
+        // if file is in plugins folder
+        $wp_plugin_dir = str_replace('\\' ,'/', WP_PLUGIN_DIR); 
+        $dir = str_replace($wp_plugin_dir, plugins_url(), $dir, $count);
+        
+        
+        if( $count < 1 )
+        {
+	        // if file is in wp-content folder
+	        $wp_content_dir = str_replace('\\' ,'/', WP_CONTENT_DIR); 
+	        $dir = str_replace($wp_content_dir, content_url(), $dir, $count);
+        }
+        
+        
+        if( $count < 1 )
+        {
+	        // if file is in ??? folder
+	        $wp_dir = str_replace('\\' ,'/', ABSPATH); 
+	        $dir = str_replace($wp_dir, site_url('/'), $dir);
+        }
+        
+
+        return $dir;
+    }
 	
 	
 	/*
-	*  set_cache
+	*  acf/get_post_id
 	*
-	*  @description: Simple ACF (once per page) cache
-	*  @since 3.1.9
-	*  @created: 23/06/12
+	*  A helper function to filter the post_id variable.
+	*
+	*  @type	filter
+	*  @date	27/05/13
+	*
+	*  @param	{mixed}	$post_id
+	*  @return	{mixed}	$post_id
 	*/
 	
-	function set_cache($key = false, $value = null)
+	function get_post_id( $post_id )
 	{
-		// key is required
-		if( !$key )
-			return false;
-		
-		
-		// update the cache array
-		$this->cache[$key] = $value;
-		
-		
-		// return true. Probably not needed
-		return true;
-	}
-	
-	
-	/*
-	*  setup_fields
-	*
-	*  @description: Create an array of field objects, including custom registered field types
-	*  @since 1.0.0
-	*  @created: 23/06/12
-	*/
-	
-	function setup_fields()
-	{
-		// vars
-		$return = array();
-		
-		
-		// include parent field
-		include_once('core/fields/acf_field.php');
-		
-		
-		// include child fields
-		include_once('core/fields/acf_field.php');
-		include_once('core/fields/text.php');
-		include_once('core/fields/textarea.php');
-		include_once('core/fields/wysiwyg.php');
-		include_once('core/fields/image.php');
-		include_once('core/fields/file.php');
-		include_once('core/fields/number.php');
-		include_once('core/fields/select.php');
-		include_once('core/fields/checkbox.php');
-		include_once('core/fields/radio.php');
-		include_once('core/fields/true_false.php');
-		include_once('core/fields/page_link.php');
-		include_once('core/fields/post_object.php');
-		include_once('core/fields/relationship.php');
-		include_once('core/fields/date_picker/date_picker.php');
-		include_once('core/fields/color_picker.php');
-		
-		
-		// add child fields
-		$return['text'] = new acf_Text($this); 
-		$return['textarea'] = new acf_Textarea($this); 
-		$return['wysiwyg'] = new acf_Wysiwyg($this); 
-		$return['image'] = new acf_Image($this); 
-		$return['file'] = new acf_File($this); 
-		$return['number'] = new acf_Number($this); 
-		$return['select'] = new acf_Select($this); 
-		$return['checkbox'] = new acf_Checkbox($this);
-		$return['radio'] = new acf_Radio($this);
-		$return['true_false'] = new acf_True_false($this);
-		$return['page_link'] = new acf_Page_link($this);
-		$return['post_object'] = new acf_Post_object($this);
-		$return['relationship'] = new acf_Relationship($this);
-		$return['date_picker'] = new acf_Date_picker($this);
-		$return['color_picker'] = new acf_Color_picker($this);
-		
-		
-		// add repeater
-		if($this->is_field_unlocked('repeater'))
+		// set post_id to global
+		if( !$post_id )
 		{
-			include_once('core/fields/repeater.php');
-			$return['repeater'] = new acf_Repeater($this);
-		}
-		
-		
-		// add flexible content
-		if($this->is_field_unlocked('flexible_content'))
-		{
-			include_once('core/fields/flexible_content.php');
-			$return['flexible_content'] = new acf_Flexible_content($this);
-		}
-		
-		
-		// add gallery
-		if($this->is_field_unlocked('gallery'))
-		{
-			include_once('core/fields/gallery.php');
-			$return['gallery'] = new acf_Gallery($this);
-		}
-		
-		
-		// hook to load in third party fields
-		$custom = apply_filters('acf_register_field',array());
-		if(!empty($custom))
-		{
-			foreach($custom as $v)
+			global $post;
+			
+			if( $post )
 			{
-				//var_dump($v['url']);
-				include($v['url']);
-				$name = $v['class'];
-				$custom_field = new $name($this);
-				$return[$custom_field->name] = $custom_field;
+				$post_id = intval( $post->ID );
 			}
 		}
 		
 		
-		// set all the fields
-		$this->fields = $return;
+		// allow for option == options
+		if( $post_id == "option" )
+		{
+			$post_id = "options";
+		}
+		
+		
+		// object
+		if( is_object($post_id) )
+		{
+			if( isset($post_id->roles, $post_id->ID) )
+			{
+				$post_id = 'user_' . $post_id->ID;
+			}
+			elseif( isset($post_id->taxonomy, $post_id->term_id) )
+			{
+				$post_id = $post_id->taxonomy . '_' . $post_id->term_id;
+			}
+			elseif( isset($post_id->ID) )
+			{
+				$post_id = $post_id->ID;
+			}
+		}
+		
+		
+		/*
+		*  Override for preview
+		*  
+		*  If the $_GET['preview_id'] is set, then the user wants to see the preview data.
+		*  There is also the case of previewing a page with post_id = 1, but using get_field
+		*  to load data from another post_id.
+		*  In this case, we need to make sure that the autosave revision is actually related
+		*  to the $post_id variable. If they match, then the autosave data will be used, otherwise, 
+		*  the user wants to load data from a completely different post_id
+		*/
+		
+		if( isset($_GET['preview_id']) )
+		{
+			$autosave = wp_get_post_autosave( $_GET['preview_id'] );
+			if( $autosave->post_parent == $post_id )
+			{
+				$post_id = intval( $autosave->ID );
+			}
+		}
+		
+		
+		// return
+		return $post_id;
 	}
 	
 	
 	/*
-	*  setup_fields
+	*  get_info
 	*
-	*  @description: 
-	*  @since 3.2.6
-	*  @created: 23/06/12
+	*  This function will return a setting from the settings array
+	*
+	*  @type	function
+	*  @date	24/01/13
+	*  @since	3.6.0
+	*
+	*  @param	$i (string) the setting to get
+	*  @return	(mixed)
 	*/
-
-	function setup_controllers()
+	
+	function get_info( $i )
 	{
-		// Settings
-		include_once('core/controllers/settings.php');
-		$this->settings = new acf_settings($this);
+		// vars
+		$return = false;
 		
 		
-		// upgrade
-		include_once('core/controllers/upgrade.php');
-		$this->upgrade = new acf_upgrade($this);
+		// specific
+		if( isset($this->settings[ $i ]) )
+		{
+			$return = $this->settings[ $i ];
+		}
 		
 		
-		// field_groups
-		include_once('core/controllers/field_groups.php');
-		$this->field_groups =  new acf_field_groups($this);
+		// all
+		if( $i == 'all' )
+		{
+			$return = $this->settings;
+		}
 		
 		
-		// field_group
-		include_once('core/controllers/field_group.php');
-		$this->field_group = new acf_field_group($this);
-		
-		
-		// input
-		include_once('core/controllers/input.php');
-		$this->input = new acf_input($this);
-		
-		
-		// options page
-		include_once('core/controllers/options_page.php');
-		$this->options_page = new acf_options_page($this);
-		
-		
-		// everthing fields
-		include_once('core/controllers/everything_fields.php');
-		$this->everything_fields = new acf_everything_fields($this);
+		// return
+		return $return;
 	}
 	
 	
 	/*
-	*  admin_menu
+	*  parse_types
 	*
-	*  @description: 
-	*  @since 1.0.0
-	*  @created: 23/06/12
+	*  @description: helper function to set the 'types' of variables
+	*  @since: 2.0.4
+	*  @created: 9/12/12
 	*/
 	
-	function admin_menu() {
+	function parse_types( $value )
+	{
+		// vars
+		$restricted = array(
+			'label',
+			'name',
+			'_name',
+			'value',
+			'instructions'
+		);
+		
+		
+		// is value another array?
+		if( is_array($value) )
+		{
+			foreach( $value as $k => $v )
+			{
+				// bail early for restricted pieces
+				if( in_array($k, $restricted, true) )
+				{
+					continue;
+				}
+				
+				
+				// filter piece
+				$value[ $k ] = apply_filters( 'acf/parse_types', $v );
+			}	
+		}
+		else
+		{
+			// string
+			if( is_string($value) )
+			{
+				$value = trim( $value );
+			}
+			
+			
+			// numbers
+			if( is_numeric($value) )
+			{
+				// check for non numeric characters
+				if( preg_match('/[^0-9]/', $value) )
+				{
+					// leave value if it contains such characters: . + - e
+					//$value = floatval( $value );
+				}
+				else
+				{
+					$value = intval( $value );
+				}
+			}
+		}
+		
+		
+		// return
+		return $value;
+	}
 	
-		// add acf page to options menu
-		add_utility_page(__("Custom Fields",'acf'), __("Custom Fields",'acf'), 'manage_options', 'edit.php?post_type=acf');
+	
+	/*
+	*  include_before_theme
+	*
+	*  This function will include core files before the theme's functions.php file has been excecuted.
+	*  
+	*  @type	action (plugins_loaded)
+	*  @date	3/09/13
+	*  @since	4.3.0
+	*
+	*  @param	N/A
+	*  @return	N/A
+	*/
+	
+	function include_before_theme()
+	{
+		// incudes
+		include_once('core/api.php');
+		
+		include_once('core/controllers/input.php');
+		include_once('core/controllers/location.php');
+		include_once('core/controllers/field_group.php');
+		
+		
+		// admin only includes
+		if( is_admin() )
+		{
+			include_once('core/controllers/post.php');
+			include_once('core/controllers/revisions.php');
+			include_once('core/controllers/everything_fields.php');	
+			include_once('core/controllers/field_groups.php');
+		}
+		
+		
+		// register fields
+		include_once('core/fields/_functions.php');
+		include_once('core/fields/_base.php');
+		
+		include_once('core/fields/text.php');
+		include_once('core/fields/textarea.php');
+		include_once('core/fields/number.php');
+		include_once('core/fields/email.php');
+		include_once('core/fields/password.php');
+		
+		include_once('core/fields/wysiwyg.php');
+		include_once('core/fields/image.php');
+		include_once('core/fields/file.php');
+		
+		include_once('core/fields/select.php');
+		include_once('core/fields/checkbox.php');
+		include_once('core/fields/radio.php');
+		include_once('core/fields/true_false.php');
+		
+		include_once('core/fields/page_link.php');
+		include_once('core/fields/post_object.php');
+		include_once('core/fields/relationship.php');
+		include_once('core/fields/taxonomy.php');
+		include_once('core/fields/user.php');
+		
+		include_once('core/fields/google-map.php');
+		include_once('core/fields/date_picker/date_picker.php');
+		include_once('core/fields/color_picker.php');
+		
+		include_once('core/fields/message.php');
+		include_once('core/fields/tab.php');
+
+	}
+	
+	
+	/*
+	*  include_3rd_party
+	*
+	*  This function will include 3rd party add-ons
+	*
+	*  @type	function
+	*  @date	29/01/2014
+	*  @since	5.0.0
+	*
+	*  @param	N/A
+	*  @return	N/A
+	*/
+	
+	function include_3rd_party() {
+		
+		// run only once
+		if( $this->settings['include_3rd_party'] )
+		{
+			return false;
+		}
+		
+		
+		// update setting
+		$this->settings['include_3rd_party'] = true;
+		
+		
+		// include 3rd party fields
+		do_action('acf/register_fields');
 		
 	}
 	
 	
 	/*
-	*  Init
+	*  include_after_theme
 	*
-	*  @description: 
-	*  @since 1.0.0
-	*  @created: 23/06/12
+	*  This function will include core files after the theme's functions.php file has been excecuted.
+	*  
+	*  @type	action (after_setup_theme)
+	*  @date	3/09/13
+	*  @since	4.3.0
+	*
+	*  @param	N/A
+	*  @return	N/A
+	*/
+	
+	function include_after_theme() {
+		
+		// bail early if user has defined LITE_MODE as true
+		if( defined('ACF_LITE') && ACF_LITE )
+		{
+			return;
+		}
+		
+		
+		// admin only includes
+		if( is_admin() )
+		{
+			include_once('core/controllers/export.php');
+			include_once('core/controllers/addons.php');
+			include_once('core/controllers/third_party.php');
+			include_once('core/controllers/upgrade.php');
+		}
+		
+	}
+	
+	
+	/*
+	*  init
+	*
+	*  This function is called during the 'init' action and will do things such as:
+	*  create post_type, register scripts, add actions / filters
+	*
+	*  @type	action (init)
+	*  @date	23/06/12
+	*  @since	1.0.0
+	*
+	*  @param	N/A
+	*  @return	N/A
 	*/
 	
 	function init()
-	{	
-		// setup fields
-		$this->setup_fields();
+	{
 		
-
 		// Create ACF post type
 		$labels = array(
 		    'name' => __( 'Field&nbsp;Groups', 'acf' ),
@@ -330,7 +508,75 @@ class Acf
 			),
 			'show_in_menu'	=> false,
 		));
-
+		
+		
+		// min
+		$min = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+		
+		
+		// register acf scripts
+		$scripts = array();
+		$scripts[] = array(
+			'handle'	=> 'acf-field-group',
+			'src'		=> $this->settings['dir'] . "js/field-group{$min}.js",
+			'deps'		=> array('jquery')
+		);
+		$scripts[] = array(
+			'handle'	=> 'acf-input',
+			'src'		=> $this->settings['dir'] . "js/input{$min}.js",
+			'deps'		=> array('jquery', 'jquery-ui-core', 'jquery-ui-datepicker')
+		);
+		
+		
+		foreach( $scripts as $script )
+		{
+			wp_register_script( $script['handle'], $script['src'], $script['deps'], $this->settings['version'] );
+		}
+		
+		
+		// register acf styles
+		$styles = array(
+			'acf'				=> $this->settings['dir'] . 'css/acf.css',
+			'acf-field-group'	=> $this->settings['dir'] . 'css/field-group.css',
+			'acf-global'		=> $this->settings['dir'] . 'css/global.css',
+			'acf-input'			=> $this->settings['dir'] . 'css/input.css',
+			'acf-datepicker'	=> $this->settings['dir'] . 'core/fields/date_picker/style.date_picker.css',
+		);
+		
+		foreach( $styles as $k => $v )
+		{
+			wp_register_style( $k, $v, false, $this->settings['version'] ); 
+		}
+		
+		
+		// bail early if user has defined LITE_MODE as true
+		if( defined('ACF_LITE') && ACF_LITE )
+		{
+			return;
+		}
+		
+		
+		// admin only
+		if( is_admin() )
+		{
+			add_action('admin_menu', array($this,'admin_menu'));
+			add_action('admin_head', array($this,'admin_head'));
+			add_filter('post_updated_messages', array($this, 'post_updated_messages'));
+		}
+	}
+	
+	
+	/*
+	*  admin_menu
+	*
+	*  @description: 
+	*  @since 1.0.0
+	*  @created: 23/06/12
+	*/
+	
+	function admin_menu()
+	{
+		add_menu_page(__("Custom Fields",'acf'), __("Custom Fields",'acf'), 'manage_options', 'edit.php?post_type=acf', false, false, '80.025');
 	}
 	
 	
@@ -362,26 +608,7 @@ class Acf
 		);
 	
 		return $messages;
-	}
-	
-	
-	/*
-	*  acf_columns_filter
-	*
-	*  @description: Custom Columns for ACF
-	*  @since 1.0.0
-	*  @created: 23/06/12
-	*/
-	
-	function acf_columns_filter($columns)
-	{
-		$columns = array(
-			'cb'	 	=> '<input type="checkbox" />',
-			'title' 	=> __("Title"),
-		);
-		return $columns;
-	}
-	
+	}	
 	
 	
 	/*--------------------------------------------------------------------------------------
@@ -395,1263 +622,29 @@ class Acf
 	
 	function admin_head()
 	{
-		// vars
-		global $post, $pagenow;
-		
-		
-		// hide upgrade page from nav
-		echo '<style type="text/css"> 
-			#toplevel_page_edit-post_type-acf a[href="edit.php?post_type=acf&page=acf-upgrade"]{ display:none; }
-			#toplevel_page_edit-post_type-acf .wp-menu-image { background: url("../wp-admin/images/menu.png") no-repeat scroll 0 -33px transparent; }
-			#toplevel_page_edit-post_type-acf:hover .wp-menu-image { background-position: 0 -1px; }
-			#toplevel_page_edit-post_type-acf .wp-menu-image img { display:none; }
-		</style>';
-		
-	}
-	
-
-	/*--------------------------------------------------------------------------------------
-	*
-	*	get_field_groups
-	*
-	*	This function returns an array of post objects found in the get_posts and the 
-	*	register_field_group calls.
-	*
-	*	@author Elliot Condon
-	*	@since 3.0.6
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function get_field_groups()
-	{
-		// return cache
-		$cache = $this->get_cache('acf_field_groups');
-		if($cache != false)
-		{
-			return $cache;
-		}
-		
-		// vars
-		$acfs = array();
-		
-		// get acf's
-		$result = get_posts(array(
-			'numberposts' 	=> -1,
-			'post_type' 	=> 'acf',
-			'orderby' 		=> 'menu_order title',
-			'order' 		=> 'asc',
-			'suppress_filters' => false,
-		));
-
-		
-		// populate acfs
-		if($result)
-		{
-			foreach($result as $acf)
-			{
-				$acfs[] = array(
-					'id' => $acf->ID,
-					'title' => get_the_title($acf->ID),
-					'fields' => $this->get_acf_fields($acf->ID),
-					'location' => $this->get_acf_location($acf->ID),
-					'options' => $this->get_acf_options($acf->ID),
-					'menu_order' => $acf->menu_order,
-				);
-			}
-		}
-		
-		// hook to load in registered field groups
-		$acfs = apply_filters('acf_register_field_group', $acfs);
-		
-		// update cache
-		$this->set_cache('acf_field_groups', $acfs);
-		
-		// return
-		if(empty($acfs))
-		{
-			return false;
-		}
-		
-		
-		return $acfs;
-	}
-	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	get_acf_fields
-	*	- returns an array of fields for a acf object
-	*
-	*	@author Elliot Condon
-	*	@since 1.0.0
-	* 
-	*-------------------------------------------------------------------------------------*/
-
-	function get_acf_fields($post_id)
-	{
-		// vars
-		global $wpdb;
-		
-		$return = array();
-		
-		
-		// get field from postmeta
-		$rows = $wpdb->get_results( $wpdb->prepare("SELECT meta_key FROM $wpdb->postmeta WHERE post_id = %d AND meta_key LIKE %s", $post_id, 'field\_%'), ARRAY_A);
-		
-		if( $rows )
-		{
-			foreach( $rows as $row )
-			{
-				$field = $this->get_acf_field( $row['meta_key'], $post_id );
-	
-			 	$return[ $field['order_no'] ] = $field;
-			}
-		 	
-		 	ksort($return);
-	 	}
-	 	
-	 	
-	 	// return
-		return $return;
-		
-	}
-	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	get_acf_field
-	*	- returns a field
-	*	- $post_id can be passed to make sure the correct field is loaded. Eg: a duplicated
-	*	field group may have the same field_key, but a different post_id
-	*
-	*	@author Elliot Condon
-	*	@since 1.0.0
-	* 
-	*-------------------------------------------------------------------------------------*/
-
-	function get_acf_field( $field_key, $post_id = false )
-	{
-		// return cache
-		$cache = $this->get_cache('acf_field_' . $field_key);
-		if($cache != false)
-		{
-			return $cache;
-		}
-		
-		
-		// vars
-		global $wpdb;
-		
-		
-		// get field from postmeta
-		$sql = $wpdb->prepare("SELECT post_id, meta_value FROM $wpdb->postmeta WHERE meta_key = %s", $field_key);
-		
-		if( $post_id )
-		{
-			$sql .= $wpdb->prepare("AND post_id = %d", $post_id);
-		}
-
-		$row = $wpdb->get_results( $sql, ARRAY_A );
-		
-		
-		if( $row )
-		{
-			$row = $row[0];
-			
-			
-			// return field if it is not in a trashed field group
-			if( get_post_status( $row['post_id'] ) != "trash" )
-			{
-				$row['meta_value'] = maybe_unserialize( $row['meta_value'] );
-				$row['meta_value'] = maybe_unserialize( $row['meta_value'] ); // run again for WPML
-				
-			
-				// set cache
-				$this->set_cache('acf_field_' . $field_key, $row['meta_value']);
-				
-				return $row['meta_value'];
-			}
-		}
-		
-
-
-		// hook to load in registered field groups
-		$acfs = apply_filters('acf_register_field_group', array());
-		if($acfs)
-		{
-			// loop through acfs
-			foreach($acfs as $acf)
-			{
-				// loop through fields
-				if($acf['fields'])
-				{
-					foreach($acf['fields'] as $field)
-					{
-						if($field['key'] == $field_key)
-						{
-							// set cache
-							$this->set_cache('acf_field_' . $field_key, $field);
-			
-							return $field;
-						}
-					}
-				}
-				// if($acf['fields'])
-			}
-			// foreach($acfs as $acf)
-		}
-		// if($acfs)
-
- 		
- 		return null;
-	}
-	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	create_field
-	*
-	*	@author Elliot Condon
-	*	@since 1.0.0
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function create_field($field)
-	{
-		if(!isset($this->fields[$field['type']]) || !is_object($this->fields[$field['type']]))
-		{
-			_e('Error: Field Type does not exist!','acf');
-			return false;
-		}
-		
-		
-		// defaults
-		if( !isset($field['class']) )
-		{
-			$field['class'] = $field['type'];
-		}
-		
-		
-		$this->fields[ $field['type'] ]->create_field($field);
-	}
-	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	get_acf_location
-	*
-	*	@author Elliot Condon
-	*	@since 1.0.0
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function get_acf_location($post_id)
-	{
-		// defaults
-		$return = array(
-	 		'rules'		=>	array(),
-	 		'allorany'	=>	'all', 
-	 	);
-		
-		
-		// vars
-		$allorany = get_post_meta($post_id, 'allorany', true);
-		if( $allorany )
-		{
-			$return['allorany'] = $allorany;
-		}
-		
-		
-		// get all fields
-	 	$rules = get_post_meta($post_id, 'rule', false);
-	 	
-
-	 	if($rules)
-	 	{
-	 		
-		 	foreach($rules as $rule)
-		 	{
-		 		// if field group was duplicated, it may now be a serialized string!
-		 		$rule = maybe_unserialize($rule);
-		
-		
-		 		$return['rules'][$rule['order_no']] = $rule;
-		 	}
-	 	}
-	 	
-	 	
-	 	// sort
-	 	ksort($return['rules']);
-	 	
-	 	
-	 	// return fields
-		return $return;
-	 	
-	}
-	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	get_acf_options
-	*
-	*	@author Elliot Condon
-	*	@since 1.0.0
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function get_acf_options($post_id)
-	{
-		
-		// defaults
-	 	$options = array(
-	 		'position'			=>	'normal',
-	 		'layout'			=>	'no_box',
-	 		'hide_on_screen'	=>	array(),
-	 	);
-	 	
-	 	
-	 	// vars
-	 	$position = get_post_meta($post_id, 'position', true);
-	 	if( $position )
-		{
-			$options['position'] = $position;
-		}
-		
-		$layout = get_post_meta($post_id, 'layout', true);
-	 	if( $layout )
-		{
-			$options['layout'] = $layout;
-		}
-		
-		$hide_on_screen = get_post_meta($post_id, 'hide_on_screen', true);
-	 	if( $hide_on_screen )
-		{
-			$hide_on_screen = maybe_unserialize($hide_on_screen);
-			$options['hide_on_screen'] = $hide_on_screen;
-		}
-		
-	 	
-	 	// return
-	 	return $options;
-	}
-	
-	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	get_value
-	*
-	*	@author Elliot Condon
-	*	@since 3.0.0
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function get_value($post_id, $field)
-	{
-		if(!isset($this->fields[$field['type']]) || !is_object($this->fields[$field['type']]))
-		{
-			return false;
-		}
-		
-		return $this->fields[$field['type']]->get_value($post_id, $field);
-	}
-	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	get_value_for_api
-	*
-	*	@author Elliot Condon
-	*	@since 3.0.0
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function get_value_for_api($post_id, $field)
-	{
-		if( !isset($field['type'], $this->fields[ $field['type'] ]) )
-		{
-			return '';
-		}
-		
-		return $this->fields[$field['type']]->get_value_for_api($post_id, $field);
-	}
-	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	update_value
-	*
-	*	@author Elliot Condon
-	*	@since 3.0.0
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function update_value($post_id, $field, $value)
-	{
-		if( isset($field['type'], $this->fields[ $field['type'] ]) )
-		{
-			$this->fields[$field['type']]->update_value($post_id, $field, $value);
-		}
-	}
-	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	update_field
-	*
-	*	@author Elliot Condon
-	*	@since 3.0.0
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function update_field($post_id, $field)
-	{
-		// format the field (select, repeater, etc)
-		$field = $this->pre_save_field($field);
-		
-		// save it!
-		update_post_meta($post_id, $field['key'], $field);
-	}
-	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	pre_save_field
-	*
-	*	@author Elliot Condon
-	*	@since 3.0.0
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function pre_save_field($field)
-	{
-		// format the field (select, repeater, etc)
-		return $this->fields[$field['type']]->pre_save_field($field);
-	}
-	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	format_value_for_api
-	*
-	*	@author Elliot Condon
-	*	@since 3.0.0
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function format_value_for_api($value, $field)
-	{
-		return $this->fields[$field['type']]->format_value_for_api($value, $field);
-	}
-	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	create_format_data
-	*
-	*	@author Elliot Condon
-	*	@since 3.0.0
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function create_format_data($field)
-	{
-		return $this->fields[$field['type']]->create_format_data($field);
+		?>
+<style type="text/css"> 
+	#adminmenu #toplevel_page_edit-post_type-acf a[href="edit.php?post_type=acf&page=acf-upgrade"]{ display: none; }
+	#adminmenu #toplevel_page_edit-post_type-acf .wp-menu-image { background-position: 1px -33px; }
+	#adminmenu #toplevel_page_edit-post_type-acf:hover .wp-menu-image,
+	#adminmenu #toplevel_page_edit-post_type-acf.wp-menu-open .wp-menu-image { background-position: 1px -1px; }
+</style>
+		<?php
 	}
 	
 	
 	/*
-	*  render_fields_for_input
+	*  get_taxonomies_for_select
 	*
 	*  @description: 
-	*  @since 3.1.6
-	*  @created: 23/06/12
+	*  @since: 3.6
+	*  @created: 27/01/13
 	*/
 	
-	function render_fields_for_input($fields, $post_id)
-	{
-		// vars
-		$defaults = array(
-			'key'	=>	'',
-			'label'	=>	'',
-			'name'	=>	'',
-			'type'	=>	'',
-			'instructions'	=>	'',
-			'required'	=>	'0',
-			'order_no'	=>	'0',
-			'value'	=>	'',
-		);
-		
-			
-		// create fields
-		if($fields)
-		{
-			foreach($fields as $field)
-			{
-				// give defaults
-				
-				$field = array_merge($defaults, $field);
-				
-				
-				// if they didn't select a type, skip this field
-				if(!$field['type'] || $field['type'] == 'null') continue;
-				
-				
-				// set value
-				$field['value'] = $this->get_value($post_id, $field);
-				
-				$required_class = "";
-				$required_label = "";
-				
-				if($field['required'] == "1")
-				{
-					$required_class = ' required';
-					$required_label = ' <span class="required">*</span>';
-				}
-				
-				echo '<div id="acf-' . $field['name'] . '" class="field field-' . $field['type'] . $required_class . '">';
-
-					echo '<p class="label">';
-						echo '<label for="fields[' . $field['key'] . ']">' . $field['label'] . $required_label . '</label>';
-						echo $field['instructions'];
-					echo '</p>';
-					
-					$field['name'] = 'fields[' . $field['key'] . ']';
-					$this->create_field($field);
-				
-				echo '</div>';
-				
-			}
-			// foreach($fields as $field)
-		}
-		// if($fields)
-		
-	}
-	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	get_input_metabox_ids
-	*	- called by function.fields to hide / show metaboxes
-	*	
-	*	@author Elliot Condon
-	*	@since 2.0.5
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function get_input_metabox_ids($overrides = array(), $json = true)
-	{
-		// overrides
-		if(isset($_POST))
-		{
-			$override_keys = array(
-				'post_id',
-				'post_type',
-				'page_template',
-				'page_parent',
-				'page_type',
-				'page',
-				'post',
-				'post_category',
-				'post_format',
-				'taxonomy',
-				'lang',
-			);
-
-			foreach( $override_keys as $override_key )
-			{
-				if( isset($_POST[ $override_key ]) && $_POST[ $override_key ] != 'false' )
-				{
-					$overrides[ $override_key ] = $_POST[ $override_key ];
-				}
-			}
-
-		}
-		
-
-		// WPML
-		if( isset($overrides['lang']) )
-		{
-			global $sitepress;
-			$sitepress->switch_lang( $overrides['lang'] );
-		}
-		
-		
-		// create post object to match against
-		$post = isset($overrides['post_id']) ? get_post($overrides['post_id']) : false;
-		
-		
-		// find all acf objects
-		$acfs = $this->get_field_groups();
-		
-		
-		// blank array to hold acfs
-		$return = array();
-		
-		if($acfs)
-		{
-			foreach($acfs as $acf)
-			{
-				$add_box = false;
-
-				if($acf['location']['allorany'] == 'all')
-				{
-					// ALL
-					$add_box = true;
-					
-					if($acf['location']['rules'])
-					{
-						foreach($acf['location']['rules'] as $rule)
-						{
-							
-							// if any rules dont return true, dont add this acf
-							if(!$this->match_location_rule($post, $rule, $overrides))
-							{
-								$add_box = false;
-							}
-						}
-					}
-					
-				}
-				elseif($acf['location']['allorany'] == 'any')
-				{
-					// ANY
-					
-					$add_box = false;
-					
-					if($acf['location']['rules'])
-					{
-						foreach($acf['location']['rules'] as $rule)
-						{
-							// if any rules return true, add this acf
-							if($this->match_location_rule($post, $rule, $overrides))
-							{
-								$add_box = true;
-							}
-						}
-					}
-				}
-							
-				if($add_box == true)
-				{
-					$return[] = $acf['id'];
-				}
-				
-			}
-		}
-		
-		if($json)
-		{
-			echo json_encode($return);
-			die;
-		}
-		else
-		{
-			return $return;
-		}
-		
-		
-	}
-	
-	
-	
-	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	match_location_rule
-	*
-	*	@author Elliot Condon
-	*	@since 2.0.0
-	* 
-	*-------------------------------------------------------------------------------------*/
-
-	function match_location_rule($post = null, $rule = array(), $overrides = array())
-	{
-		
-		// no post? Thats okay if you are one of the bellow exceptions. Otherwise, return false
-		if(!$post)
-		{
-			$exceptions = array(
-				'user_type',
-				'options_page',
-				'ef_taxonomy',
-				'ef_user',
-				'ef_media',
-				'post_type',
-			);
-			
-			if( !in_array($rule['param'], $exceptions) )
-			{
-				return false;
-			}
-		}
-		
-		
-		if(!isset($rule['value']))
-		{
-			return false;
-		}
-		
-		
-		switch ($rule['param']) {
-		
-			// POST TYPE
-		    case "post_type":
-		    
-		    	$post_type = isset($overrides['post_type']) ? $overrides['post_type'] : get_post_type($post);
-		        
-		        if($rule['operator'] == "==")
-		        {
-		        	if($post_type == $rule['value'])
-		        	{
-		        		return true; 
-		        	}
-		        	
-		        	return false;
-		        }
-		        elseif($rule['operator'] == "!=")
-		        {
-		        	if($post_type != $rule['value'])
-		        	{
-		        		return true; 
-		        	}
-		        	
-		        	return false;
-		        }
-		        
-		        break;
-		        
-		    // PAGE
-		    case "page":
-		        
-		        $page = isset($overrides['page']) ? $overrides['page'] : $post->ID;
-		        
-		        if($rule['operator'] == "==")
-		        {
-		        	if($page == $rule['value'])
-		        	{
-		        		return true; 
-		        	}
-		        	
-		        	return false;
-		        }
-		        elseif($rule['operator'] == "!=")
-		        {
-		        	if($page != $rule['value'])
-		        	{
-		        		return true; 
-		        	}
-		        	
-		        	return false;
-		        }
-		        
-		        break;
-		        
-			// PAGE
-		    case "page_type":
-		        
-		        $page_type = isset($overrides['page_type']) ? $overrides['page_type'] : $post->post_parent;
-		        
-		        if($rule['operator'] == "==")
-		        {
-		        	if($rule['value'] == "parent" && $page_type == "0")
-		        	{
-		        		return true; 
-		        	}
-		        	
-		        	if($rule['value'] == "child" && $page_type != "0")
-		        	{
-		        		return true; 
-		        	}
-		        	
-		        	return false;
-		        }
-		        elseif($rule['operator'] == "!=")
-		        {
-		        	if($rule['value'] == "parent" && $page_type != "0")
-		        	{
-		        		return true; 
-		        	}
-		        	
-		        	if($rule['value'] == "child" && $page_type == "0")
-		        	{
-		        		return true; 
-		        	}
-		        	
-		        	return false;
-		        }
-		        
-		        break;
-		        
-		    // PAGE PARENT
-		    case "page_parent":
-		        
-		        $page_parent = isset($overrides['page_parent']) ? $overrides['page_parent'] : $post->post_parent;
-		        
-		        if($rule['operator'] == "==")
-		        {
-		        	if($page_parent == $rule['value'])
-		        	{
-		        		return true; 
-		        	}
-		        	
-		        	return false;
-		        	
-		        }
-		        elseif($rule['operator'] == "!=")
-		        {
-		        	if($page_parent != $rule['value'])
-		        	{
-		        		return true; 
-		        	}
-		        	
-		        	return false;
-		        }
-		        
-		        break;
-		    
-		    // PAGE
-		    case "page_template":
-		        
-		        $page_template = isset($overrides['page_template']) ? $overrides['page_template'] : get_post_meta($post->ID,'_wp_page_template',true);
-		        
-		        if($rule['operator'] == "==")
-		        {
-		        	if($page_template == $rule['value'])
-		        	{
-		        		return true; 
-		        	}
-		        	
-		        	if($rule['value'] == "default" && !$page_template)
-		        	{
-		        		return true;
-		        	}
-		        	
-		        	return false;
-		        }
-		        elseif($rule['operator'] == "!=")
-		        {
-		        	if($page_template != $rule['value'])
-		        	{
-		        		return true; 
-		        	}
-		        	
-		        	return false;
-		        }
-		        
-		        break;
-		       
-		    // POST
-		    case "post":
-		        
-		        $post_id = isset($overrides['post']) ? $overrides['post'] : $post->ID;
-		        
-		        if($rule['operator'] == "==")
-		        {
-		        	if($post_id == $rule['value'])
-		        	{
-		        		return true; 
-		        	}
-		        	
-		        	return false;
-		        }
-		        elseif($rule['operator'] == "!=")
-		        {
-		        	if($post_id != $rule['value'])
-		        	{
-		        		return true; 
-		        	}
-		        	
-		        	return false;
-		        }
-		        
-		        break;
-		        
-		    // POST CATEGORY
-		    case "post_category":
-		        
-		        $cats = array();
-		        
-		        if(isset($overrides['post_category']))
-		        {
-		        	$cats = $overrides['post_category'];
-		        }
-		        else
-		        {
-		        	$all_cats = get_the_category($post->ID);
-		        	foreach($all_cats as $cat)
-					{
-						$cats[] = $cat->term_id;
-					}
-		        }
-		        if($rule['operator'] == "==")
-		        {
-		        	if($cats)
-					{
-						if(in_array($rule['value'], $cats))
-						{
-							return true; 
-						}
-					}
-		        	
-		        	return false;
-		        }
-		        elseif($rule['operator'] == "!=")
-		        {
-		        	if($cats)
-					{
-						if(!in_array($rule['value'], $cats))
-						{
-							return true; 
-						}
-					}
-		        	
-		        	return false;
-		        }
-		        
-		        break;
-			
-			
-			// USER TYPE
-		    case "user_type":
-		        		
-		        if($rule['operator'] == "==")
-		        {
-		        	if(current_user_can($rule['value']))
-		        	{
-		        		return true;
-		        	}
-		        	
-		        	return false;
-		        }
-		        elseif($rule['operator'] == "!=")
-		        {
-		        	if(!current_user_can($rule['value']))
-		        	{
-		        		return true;
-		        	}
-		        	
-		        	return false;
-		        }
-		        
-		        break;
-		    
-		    // Options Page
-		    case "options_page":
-	
-				if(!function_exists('get_admin_page_title'))
-				{
-					return false;
-				}
-				
-				// value has changed in 3.2.6 to a sanitized string
-				if( strpos( $rule['value'] ,'options-') === false )
-				{
-					$rule['value'] = 'options-' . sanitize_title( $rule['value'] );
-				}
-				
-				// generate the page title to match against
-				$page_title = 'options-' . sanitize_title( get_admin_page_title() );
-				
-		        if($rule['operator'] == "==")
-		        {
-		        	if( $page_title == $rule['value'] )
-		        	{
-		        		return true;
-		        	}
-		        	
-		        	return false;
-		        }
-		        elseif($rule['operator'] == "!=")
-		        {
-		        	if( $page_title == $rule['value'] )
-		        	{
-		        		return true;
-		        	}
-		        	
-		        	return false;
-		        }
-		        
-		        break;
-		    
-		    
-		    // Post Format
-		    case "post_format":
-		        
-		       	
-		       	$post_format = isset($overrides['post_format']) ? $overrides['post_format'] : get_post_format( $post->ID );
-		        if($post_format == "0") $post_format = "standard";
-		        
-		        if($rule['operator'] == "==")
-		        {
-		        	if($post_format == $rule['value'])
-		        	{
-		        		return true; 
-		        	}
-		        	
-		        	return false;
-		        }
-		        elseif($rule['operator'] == "!=")
-		        {
-		        	if($post_format != $rule['value'])
-		        	{
-		        		return true; 
-		        	}
-		        	
-		        	return false;
-		        }
-		        
-		        
-		        break;
-		    
-		    // Taxonomy
-		    case "taxonomy":
-		        
-		        $terms = array();
-
-		        if(isset($overrides['taxonomy']))
-		        {
-		        	$terms = $overrides['taxonomy'];
-		        }
-		        else
-		        {
-		        	$taxonomies = get_object_taxonomies($post->post_type);
-		        	if($taxonomies)
-		        	{
-			        	foreach($taxonomies as $tax)
-						{
-							$all_terms = get_the_terms($post->ID, $tax);
-							if($all_terms)
-							{
-								foreach($all_terms as $all_term)
-								{
-									$terms[] = $all_term->term_id;
-								}
-							}
-						}
-					}
-		        }
-		        
-		        if($rule['operator'] == "==")
-		        {
-		        	if($terms)
-					{
-						if(in_array($rule['value'], $terms))
-						{
-							return true; 
-						}
-					}
-		        	
-		        	return false;
-		        }
-		       elseif($rule['operator'] == "!=")
-		        {
-		        	if($terms)
-					{
-						if(!in_array($rule['value'], $terms))
-						{
-							return true; 
-						}
-					}
-		        	
-		        	return false;
-		        }
-		        
-		        
-		        break;
-			
-			// Everything Fields: Taxonomy
-		    case "ef_taxonomy":
-		       	
-		       	if( !isset($overrides['ef_taxonomy']) )
-		       	{
-		       		return false;
-		       	}
-		       	
-		       	$ef_taxonomy = $overrides['ef_taxonomy'];
-				
-		        if($rule['operator'] == "==")
-		        {
-		        	if( $ef_taxonomy == $rule['value'] || $rule['value'] == "all" )
-		       		{
-		       			return true; 
-		       		}
-		        	
-		        	return false;
-		        }
-		        elseif($rule['operator'] == "!=")
-		        {
-		        	if( $ef_taxonomy != $rule['value'] || $rule['value'] == "all" )
-		       		{
-		       			return true; 
-		       		}
-		        	
-		        	return false;
-		        }
-		        
-		        
-		        break;
-			
-			// Everything Fields: User
-		    case "ef_user":
-		       	
-		       	if( !isset($overrides['ef_user']) )
-		       	{
-		       		return false;
-		       	}
-		       	
-		       	$ef_user = $overrides['ef_user'];
-				
-		        if($rule['operator'] == "==")
-		        {
-		        	if( user_can($ef_user, $rule['value']) || $rule['value'] == "all" )
-		       		{
-		       			return true; 
-		       		}
-		        	
-		        	return false;
-		        }
-		        elseif($rule['operator'] == "!=")
-		        {
-		        	if( user_can($ef_user, $rule['value']) || $rule['value'] == "all" )
-		       		{
-		       			return true; 
-		       		}
-		        	
-		        	return false;
-		        }
-		        
-		        
-		        break;
-			
-			// Everything Fields: Media
-		    case "ef_media":
-		       	
-		       	if( !isset($overrides['ef_media']) )
-		       	{
-		       		return false;
-		       	}
-		       	
-		       	$ef_media = $overrides['ef_media'];
-				
-		        if($rule['operator'] == "==")
-		        {
-		        	if( $rule['value'] == "all" )
-		       		{
-		       			return true; 
-		       		}
-		        	
-		        	return false;
-		        }
-		        elseif($rule['operator'] == "!=")
-		        {
-		        	if( $rule['value'] == "all" )
-		       		{
-		       			return true; 
-		       		}
-		        	
-		        	return false;
-		        }
-		        
-		        
-		        break;
-		}
-		
-	}
-	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	is_field_unlocked
-	*
-	*	@author Elliot Condon
-	*	@since 3.0.0
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function is_field_unlocked($field_name)
-	{
-		$hashes = array(
-			'repeater'			=> 'bbefed143f1ec106ff3a11437bd73432',
-			'options_page'		=> '1fc8b993548891dc2b9a63ac057935d8',
-			'flexible_content'	=> 'd067e06c2b4b32b1c1f5b6f00e0d61d6',
-			'gallery'			=> '69f4adc9883195bd206a868ffa954b49',
-		);
-			
-		$hash = md5( $this->get_license_key($field_name) );
-		
-		if( $hashes[$field_name] == $hash )
-		{
-			return true;
-		}
-		
-		return false;
-		
-	}
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	is_field_unlocked
-	*
-	*	@author Elliot Condon
-	*	@since 3.0.0
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function get_license_key($field_name)
-	{
-		return get_option('acf_' . $field_name . '_ac');
-	}
-	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	admin_message
-	*
-	*	@author Elliot Condon
-	*	@since 2.0.5
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function admin_message($message = "", $type = 'updated')
-	{
-		$GLOBALS['acf_mesage'] = $message;
-		$GLOBALS['acf_mesage_type'] = $type;
-		
-		add_action('admin_notices', array($this, 'acf_admin_notice'));
-	}
-	
-	function acf_admin_notice()
-	{
-	    echo '<div class="' . $GLOBALS['acf_mesage_type'] . '" id="message">'.$GLOBALS['acf_mesage'].'</div>';
-	}
-		
-	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	get_taxonomies_for_select
-	*
-	*---------------------------------------------------------------------------------------
-	*
-	*	returns a multidimentional array of taxonomies grouped by the post type / taxonomy
-	*
-	*	@author Elliot Condon
-	*	@since 3.0.2
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function get_taxonomies_for_select( $args = array() )
+	function get_taxonomies_for_select( $choices, $simple_value = false )
 	{	
 		// vars
 		$post_types = get_post_types();
-		$choices = array();
-		$defaults = array(
-			'simple_value'	=>	false,
-		);
-		
-		$options = array_merge($defaults, $args);
 		
 		
 		if($post_types)
@@ -1672,7 +665,7 @@ class Acf
 							{
 								$value = $taxonomy . ':' . $term->term_id;
 								
-								if( $options['simple_value'] )
+								if( $simple_value )
 								{
 									$value = $term->term_id;
 								}
@@ -1689,104 +682,258 @@ class Acf
 	}
 	
 	
-
 	/*
-	*  get_all_image_sizes
+	*  get_post_types
+	*
+	*  @description: 
+	*  @since: 3.5.5
+	*  @created: 16/12/12
+	*/
+	
+	function get_post_types( $post_types, $exclude = array(), $include = array() )
+	{
+		// get all custom post types
+		$post_types = array_merge($post_types, get_post_types());
+		
+		
+		// core include / exclude
+		$acf_includes = array_merge( array(), $include );
+		$acf_excludes = array_merge( array( 'acf', 'revision', 'nav_menu_item' ), $exclude );
+	 
+		
+		// include
+		foreach( $acf_includes as $p )
+		{					
+			if( post_type_exists($p) )
+			{							
+				$post_types[ $p ] = $p;
+			}
+		}
+		
+		
+		// exclude
+		foreach( $acf_excludes as $p )
+		{
+			unset( $post_types[ $p ] );
+		}
+		
+		
+		return $post_types;
+		
+	}
+	
+	
+	/*
+	*  get_image_sizes
 	*
 	*  @description: returns an array holding all the image sizes
 	*  @since 3.2.8
 	*  @created: 6/07/12
 	*/
 	
-	function get_all_image_sizes()
+	function get_image_sizes( $sizes )
 	{
 		// find all sizes
 		$all_sizes = get_intermediate_image_sizes();
 		
 		
 		// define default sizes
-		$image_sizes = array(
+		$sizes = array_merge($sizes, array(
 			'thumbnail'	=>	__("Thumbnail",'acf'),
 			'medium'	=>	__("Medium",'acf'),
 			'large'		=>	__("Large",'acf'),
 			'full'		=>	__("Full",'acf')
-		);
+		));
 		
 		
 		// add extra registered sizes
-		foreach($all_sizes as $size)
+		foreach( $all_sizes as $size )
 		{
-			if (!isset($image_sizes[$size]))
+			if( !isset($sizes[ $size ]) )
 			{
-				$image_sizes[$size] = ucwords( str_replace('-', ' ', $size) );
+				$sizes[ $size ] = ucwords( str_replace('-', ' ', $size) );
 			}
 		}
 		
 		
 		// return array
-		return $image_sizes;
+		return $sizes;
 	}
 	
 	
 	/*
-	*  acf_save_post
+	*  render_fields_for_input
 	*
 	*  @description: 
-	*  @created: 4/09/12
+	*  @since 3.1.6
+	*  @created: 23/06/12
 	*/
 	
-	function acf_save_post( $post_id )
+	function create_fields( $fields, $post_id )
 	{
+		if( is_array($fields) ){ foreach( $fields as $field ){
+			
+			// if they didn't select a type, skip this field
+			if( !$field || !$field['type'] || $field['type'] == 'null' )
+			{
+				continue;
+			}
+			
+			
+			// set value
+			if( !isset($field['value']) )
+			{
+				$field['value'] = apply_filters('acf/load_value', false, $post_id, $field);
+				$field['value'] = apply_filters('acf/format_value', $field['value'], $post_id, $field);
+			}
+			
+			
+			// required
+			$required_class = "";
+			$required_label = "";
+			
+			if( $field['required'] )
+			{
+				$required_class = ' required';
+				$required_label = ' <span class="required">*</span>';
+			}
+			
+			
+			echo '<div id="acf-' . $field['name'] . '" class="field field_type-' . $field['type'] . ' field_key-' . $field['key'] . $required_class . '" data-field_name="' . $field['name'] . '" data-field_key="' . $field['key'] . '" data-field_type="' . $field['type'] . '">';
 
+				echo '<p class="label">';
+					echo '<label for="' . $field['id'] . '">' . $field['label'] . $required_label . '</label>';
+					echo $field['instructions'];
+				echo '</p>';
+				
+				$field['name'] = 'fields[' . $field['key'] . ']';
+				do_action('acf/create_field', $field, $post_id);
+			
+			echo '</div>';
+			
+		}}
+				
+	}
+	
+	
+	/*
+	*  save_post_lock
+	*
+	*  This action sets a global variable which locks the ACF save functions to this ID.
+	*  This prevents an inifinite loop if a user was to hook into the save and create a new post
+	*
+	*  @type	function
+	*  @date	16/07/13
+	*
+	*  @param	{int}	$post_id
+	*  @return	{int}	$post_id
+	*/
+	
+	function save_post_lock( $post_id )
+	{
+		$GLOBALS['acf_save_lock'] = $post_id;
+		
+		return $post_id;
+	}
+	
+	
+	/*
+	*  save_post_unlock
+	*
+	*  This action sets a global variable which unlocks the ACF save functions to this ID.
+	*  This prevents an inifinite loop if a user was to hook into the save and create a new post
+	*
+	*  @type	function
+	*  @date	16/07/13
+	*
+	*  @param	{int}	$post_id
+	*  @return	{int}	$post_id
+	*/
+	
+	function save_post_unlock( $post_id )
+	{
+		$GLOBALS['acf_save_lock'] = false;
+		
+		return $post_id;
+	}
+	
+	
+	/*
+	*  save_post
+	*
+	*  @description: 
+	*  @since: 3.6
+	*  @created: 28/01/13
+	*/
+	
+	function save_post( $post_id )
+	{
+		
 		// load from post
 		if( !isset($_POST['fields']) )
 		{
-			return false;
+			return $post_id;
 		}
 		
-		
+
 		// loop through and save
-		if( $_POST['fields'] )
+		if( !empty($_POST['fields']) )
 		{
-			foreach( $_POST['fields'] as $key => $value )
+			// loop through and save $_POST data
+			foreach( $_POST['fields'] as $k => $v )
 			{
 				// get field
-				$field = $this->get_acf_field($key);
+				$f = apply_filters('acf/load_field', false, $k );
 				
-				$this->update_value($post_id, $field, $value);
+				// update field
+				do_action('acf/update_value', $v, $post_id, $f );
+				
 			}
 			// foreach($fields as $key => $value)
 		}
 		// if($fields)
 		
 		
-		return true;
+		return $post_id;
+	}
+
+	
+}
+
+
+/*
+*  acf
+*
+*  The main function responsible for returning the one true acf Instance to functions everywhere.
+*  Use this function like you would a global variable, except without needing to declare the global.
+*
+*  Example: <?php $acf = acf(); ?>
+*
+*  @type	function
+*  @date	4/09/13
+*  @since	4.3.0
+*
+*  @param	N/A
+*  @return	(object)
+*/
+
+function acf()
+{
+	global $acf;
+	
+	if( !isset($acf) )
+	{
+		$acf = new acf();
 	}
 	
-	
-	
-	/*
-	*  get_post_language
-	*
-	*  @description: finds the translation code for a post
-	*  @since 3.3.9
-	*  @created: 17/08/12
-	*/
-	
-	/*function get_post_language( $post )
-	{
-		// global
-		global $wpdb;
-
-
-		// vars
-		$table = $wpdb->prefix.'icl_translations';
-		$element_type = 'post_' . $post->post_type;
-		$element_id = $post->ID;
-		
-		$lang = $wpdb->get_var("SELECT language_code FROM $table WHERE element_type = '$element_type' AND element_id = '$element_id'");
-		
-		return ' (' . $lang . ')';
-	}*/
+	return $acf;
 }
+
+
+// initialize
+acf();
+
+
+endif; // class_exists check
+
 ?>

@@ -1,12 +1,16 @@
 <div class="wrap shopp">
-	<?php if (!empty($updated)): ?><div id="message" class="updated fade"><p><?php echo $updated; ?></p></div><?php endif; ?>
-
 	<div class="icon32"></div>
-	<h2><?php _e('Shipping Rates','Shopp'); ?></h2>
+	<?php
+
+		shopp_admin_screen_tabs();
+		do_action('shopp_admin_notices');
+
+	?>
+
 
 	<script id="delivery-menu" type="text/x-jquery-tmpl"><?php
 		$deliverymenu = Lookup::timeframes_menu();
-		echo menuoptions($deliverymenu,false,true);
+		echo Shopp::menuoptions($deliverymenu,false,true);
 	?></script>
 
 	<?php $this->shipping_menu(); ?>
@@ -21,7 +25,7 @@
 		<div class="actions">
 			<select name="id" id="shipping-option-menu">
 			<option value=""><?php _e('Add a shipping method&hellip;','Shopp'); ?></option>
-			<?php echo menuoptions($installed,false,true); ?>
+			<?php echo Shopp::menuoptions($installed,false,true); ?>
 			</select>
 			<button type="submit" name="add-shipping-option" id="add-shipping-option" class="button-secondary hide-if-js" tabindex="9999"><?php _e('Add Shipping Option','Shopp'); ?></button>
 		</div>
@@ -37,10 +41,10 @@
 		<tbody id="shiprates" class="list">
 		<?php
 
-			if ($edit && !isset($shiprates[$edit])) {
+			if ( $edit && ! isset($shiprates[ $edit ]) ) {
 				$template_data = array(
-					'${mindelivery_menu}' => menuoptions($deliverymenu,false,true),
-					'${maxdelivery_menu}' => menuoptions($deliverymenu,false,true),
+					'${mindelivery_menu}' => Shopp::menuoptions($deliverymenu,false,true),
+					'${maxdelivery_menu}' => Shopp::menuoptions($deliverymenu,false,true),
 					'${cancel_href}' => $this->url
 				);
 				$editor = str_replace(array_keys($template_data),$template_data,$editor);
@@ -59,7 +63,7 @@
 			foreach ($shiprates as $setting => $module):
 				$shipping = shopp_setting($setting);
 				$service = $Shipping->modules[$module]->name;
-				if (str_true($shipping['fallback'])) $service = '<big title="'.__('Fallback shipping real-time rate lookup failures','Shopp').'">&#9100;</big>  '.$service;
+				if ( isset($shipping['fallback']) && Shopp::str_true($shipping['fallback']) ) $service = '<big title="'.__('Fallback shipping real-time rate lookup failures','Shopp').'">&#9100;</big>  '.$service;
 				$destinations = array();
 
 				$min = $max = false;

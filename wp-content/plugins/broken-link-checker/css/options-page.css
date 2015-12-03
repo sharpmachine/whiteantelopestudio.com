@@ -43,13 +43,23 @@ Sidebar
 }
 
 #themefuse-ad .inside,
-#managewp-ad .inside
+#managewp-ad .inside,
+#embedplus-ad .inside
 {
 	padding: 2px 0 0 0;
 	margin: 0;
 	text-align: center;
 }
 
+#embedplus-ad .inside {
+	padding-top: 0;
+}
+
+#embedplus-ad {
+	border-style: none;
+	background-color: transparent;
+	box-shadow: none;
+}
 
 
 #link_checker_options .form-table th {
@@ -81,7 +91,7 @@ Sidebar
 	border-color: gray;
 	border-style: solid;
 	
-	border-spacing: 0px;
+	border-spacing: 0;
 	border-collapse: collapse;
 }
 
@@ -164,7 +174,9 @@ ul.ui-tabs-nav li {
 	max-width: 25%;
 }
 
-ul.ui-tabs-nav li.ui-tabs-selected {
+ul.ui-tabs-nav li.ui-tabs-selected,
+ul.ui-tabs-nav li.ui-tabs-active
+{
 	background: white;
 	color: black;
 	border-bottom-color: white;
@@ -178,8 +190,14 @@ ul.ui-tabs-nav li a {
 	padding: 0.5em 1em 0.6em 1em;
 }
 
-ul.ui-tabs-nav li.ui-tabs-selected a {
+ul.ui-tabs-nav li a:focus {
+	outline: none;
+}
+
+ul.ui-tabs-nav li.ui-tabs-selected a,
+ul.ui-tabs-nav li.ui-tabs-active a {
 	color: black;
+	outline: none;
 }
 
 /* Tab panels */
@@ -209,8 +227,17 @@ ul.ui-tabs-nav li.ui-tabs-selected a {
 	-webkit-border-bottom-left-radius: 6px;
 }
 
+.blc-section table.form-table th {
+    padding-left: 10px;
+}
+
 /* Right sidebar */
 
 #blc-settings-wrap .hndle {
 	cursor: default;
+}
+
+/* Miscellaneous */
+td:target, label:target {
+	background: #ffffaa;
 }

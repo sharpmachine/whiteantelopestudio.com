@@ -165,13 +165,17 @@ class HTTP_ConditionalGet
                 case 'cache':
                     $this->_headers['Cache-Control'] = 'public';
                     break;
-                
+
+                case 'cache_public_maxage':
+                    $this->_headers['Cache-Control'] = "max-age={$maxAge}, public";
+                    break;
+
                 case 'cache_validation':
                     $this->_headers['Cache-Control'] = 'public, must-revalidate, proxy-revalidate';
                     break;
                 
                 case 'cache_noproxy':
-                    $this->_headers['Cache-Control'] = 'public, must-revalidate';
+                    $this->_headers['Cache-Control'] = 'private, must-revalidate';
                     break;
                 
                 case 'cache_maxage':

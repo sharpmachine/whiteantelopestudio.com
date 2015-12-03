@@ -5,45 +5,54 @@
  * Provides shipping calculations based on the total quantity of items ordered
  *
  * @author Jonathan Davis
- * @version 1.2
  * @copyright Ingenesis Limited, 27 April, 2008
  * @package shopp
+ * @version 1.2
  * @since 1.2
- * @subpackage ItemQuantity
  *
- * $Id: ItemQuantity.php 2825 2012-01-04 21:46:40Z jond $
  **/
+
+defined( 'WPINC' ) || header( 'HTTP/1.1 403' ) & exit; // Prevent direct access
 
 class ItemQuantity extends ShippingFramework implements ShippingModule {
 
-	var $items = 0;
+	public $items = 0;
 
-	function methods () {
-		return __('Item Quantity Tiers','Shopp');
+	public function methods () {
+		return Shopp::__('Item Quantity Tiers');
 	}
 
-	function init () {
+	public function init () {
 		$this->items = 0;
 	}
 
-	function calcitem ($id,$Item) {
+	public function calcitem ( $id, $Item ) {
+		if ( $Item->shipsfree ) return;
 		$this->items += $Item->quantity;
 	}
 
-	function calculate ($options,$Order) {
+	public function calculate ( &$options, $Order ) {
 
-		foreach ($this->methods as $slug => $method) {
+		foreach ( $this->methods as $slug => $method ) {
 
-			$tiers = $this->tablerate($method['table']);
-			if ($tiers === false) continue; // Skip methods that don't match at all
+			$tiers = isset($method['table']) ? $this->tablerate($method['table']) : false;
+			if ( $tiers === false ) continue; // Skip methods that don't match at all
 
 			$amount = 0;
+			$matched = false;
 			$tiers = array_reverse($tiers);
-			foreach ($tiers as $tier) {
+
+			foreach ( $tiers as $tier ) {
 				extract($tier);
-				$amount = floatvalue($rate);			// Capture the rate amount
-				if ((int)$this->items >= (int)$threshold) break;
+				$amount = Shopp::floatval($rate);			// Capture the rate amount
+
+				if ( (int)$this->items >= (int)$threshold ) {
+					$matched = true;
+					break;
+				}
 			}
+
+			if ( ! $matched ) return $options;
 
 			$rate = array(
 				'slug' => $slug,
@@ -53,22 +62,23 @@ class ItemQuantity extends ShippingFramework implements ShippingModule {
 				'items' => false
 			);
 
-			$options[$slug] = new ShippingOption($rate);
+			$options[ $slug ] = new ShippingOption($rate);
 
 		}
 
 		return $options;
 	}
 
-	function settings () {
-		$this->ui->tablerates(0,array(
-			'unit' => array(__('Item Quantity','Shopp'),__('items','Shopp')),
+	public function settings () {
+
+		$this->setup('table');
+
+		$this->ui->tablerates(0, array(
+			'unit' => array(Shopp::__('Item Quantity'), Shopp::__('items')),
 			'table' => $this->settings['table'],
 			'rate_class' => 'money'
-
 		));
+
 	}
 
-} // end FlatRates class
-
-?>
+}

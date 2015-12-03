@@ -7,8 +7,8 @@ if (!defined('W3TC')) {
     die();
 }
 
-require_once W3TC_INC_DIR . '/functions/file.php';
-require_once W3TC_LIB_W3_DIR . '/Plugin.php';
+w3_require_once(W3TC_INC_DIR . '/functions/file.php');
+w3_require_once(W3TC_LIB_W3_DIR . '/Plugin.php');
 
 /**
  * Class W3_Plugin_Cdn
@@ -21,6 +21,7 @@ class W3_Plugin_Cdn extends W3_Plugin {
      * @var string
      */
     var $cdn_reject_reason = '';
+    var $replaced_urls;
 
     /**
      * Run plugin
@@ -70,14 +71,23 @@ class W3_Plugin_Cdn extends W3_Plugin {
             ));
         }
 
+        if (is_admin()) {
+            add_action('w3tc_saving_options-w3tc_cdn', array($this, 'change_canonical_header'),0,0);
+            add_filter('w3tc_module_is_running-cdn', array($this, 'cdn_is_running'));
+        }
+
         /**
          * Start rewrite engine
          */
         if ($this->can_cdn()) {
-            ob_start(array(
+            w3tc_add_ob_callback('cdn', array($this,'ob_callback'));
+        }
+
+        if (is_admin() && w3_can_cdn_purge($cdn_engine)) {
+            add_filter('media_row_actions', array(
                 &$this,
-                'ob_callback'
-            ));
+                'media_row_actions'
+            ), 0, 2);
         }
     }
 
@@ -86,7 +96,7 @@ class W3_Plugin_Cdn extends W3_Plugin {
      *
      * @return W3_Plugin_CdnAdmin
      */
-    function &_get_admin() {
+    function get_admin() {
         return w3_instance('W3_Plugin_CdnAdmin');
     }
 
@@ -95,22 +105,8 @@ class W3_Plugin_Cdn extends W3_Plugin {
      *
      * @return W3_Plugin_CdnCommon
      */
-    function &_get_common() {
+    function _get_common() {
         return w3_instance('W3_Plugin_CdnCommon');
-    }
-
-    /**
-     * Activate plugin action (called by W3_PluginProxy)
-     */
-    function activate() {
-        $this->_get_admin()->activate();
-    }
-
-    /**
-     * Deactivate plugin action (called by W3_PluginProxy)
-     */
-    function deactivate() {
-        $this->_get_admin()->deactivate();
     }
 
     /**
@@ -118,7 +114,7 @@ class W3_Plugin_Cdn extends W3_Plugin {
      */
     function cron_queue_process() {
         $queue_limit = $this->_config->get_integer('cdn.queue.limit');
-        $this->_get_admin()->queue_process($queue_limit);
+        return $this->get_admin()->queue_process($queue_limit);
     }
 
     /**
@@ -126,13 +122,16 @@ class W3_Plugin_Cdn extends W3_Plugin {
      */
     function cron_upload() {
         $files = $this->get_files();
-        $document_root = w3_get_document_root();
 
         $upload = array();
         $results = array();
 
+        $w3_plugin_cdncommon = w3_instance('W3_Plugin_CdnCommon');
+
         foreach ($files as $file) {
-            $upload[$document_root . '/' . $file] = $file;
+            $local_path = $w3_plugin_cdncommon->docroot_filename_to_absolute_path($file);
+            $remote_path = $w3_plugin_cdncommon->uri_to_cdn_uri($w3_plugin_cdncommon->docroot_filename_to_uri($file));
+            $upload[] = $w3_plugin_cdncommon->build_file_descriptor($local_path, $remote_path);
         }
 
         $this->_get_common()->upload($upload, true, $results);
@@ -246,25 +245,35 @@ class W3_Plugin_Cdn extends W3_Plugin {
                 $regexps = array();
                 $site_path = w3_get_site_path();
                 $domain_url_regexp = w3_get_domain_url_regexp();
+                $site_domain_url_regexp = false;
+                if ($domain_url_regexp != w3_get_url_regexp(w3_get_domain(w3_get_site_url())))
+                    $site_domain_url_regexp = w3_get_url_regexp(w3_get_domain(w3_get_site_url()));
 
                 if ($this->_config->get_boolean('cdn.uploads.enable')) {
-                    require_once W3TC_INC_DIR . '/functions/http.php';
+                    w3_require_once(W3TC_INC_DIR . '/functions/http.php');
 
                     $upload_info = w3_upload_info();
 
                     if ($upload_info) {
-                        if (preg_match('~' . $domain_url_regexp . '~i', $upload_info['baseurl'])) {
-                            $regexps[] = '~(["\'])((' . $domain_url_regexp . ')?(' . w3_preg_quote($upload_info['baseurlpath']) . '([^"\'>]+)))~';
-                        } else {
-                            $regexps[] = '~(["\'])((' . w3_preg_quote($upload_info['baseurl']) . ')(([^"\'>]+)))~';
+                        $baseurl = $upload_info['baseurl'];
+
+                        if (defined('DOMAIN_MAPPING') && DOMAIN_MAPPING) {
+                            $parsed = @parse_url($upload_info['baseurl']);
+                            $baseurl = home_url() . $parsed['path'];
                         }
+
+                        $regexps = $this->make_uploads_regexes($domain_url_regexp, $baseurl, $upload_info, $regexps);
+                        if ($site_domain_url_regexp)
+                            $regexps = $this->make_uploads_regexes($site_domain_url_regexp, $baseurl, $upload_info, $regexps);
                     }
                 }
 
                 if ($this->_config->get_boolean('cdn.includes.enable')) {
                     $mask = $this->_config->get_string('cdn.includes.files');
                     if ($mask != '') {
-                        $regexps[] = '~(["\'])((' . $domain_url_regexp . ')?(' . w3_preg_quote($site_path . WPINC) . '/(' . $this->get_regexp_by_mask($mask) . ')))~';
+                        $regexps[] = '~(["\'(])\s*((' . $domain_url_regexp . ')?(' . w3_preg_quote($site_path . WPINC) . '/(' . $this->get_regexp_by_mask($mask) . ')))~';
+                        if ($site_domain_url_regexp)
+                            $regexps[] = '~(["\'(])\s*((' . $site_domain_url_regexp . ')?(' . w3_preg_quote($site_path . WPINC) . '/(' . $this->get_regexp_by_mask($mask) . ')))~';
                     }
                 }
 
@@ -274,20 +283,18 @@ class W3_Plugin_Cdn extends W3_Plugin {
                     $mask = $this->_config->get_string('cdn.theme.files');
 
                     if ($mask != '') {
-                        $regexps[] = '~(["\'])((' . $domain_url_regexp . ')?(' . w3_preg_quote($theme_dir) . '/(' . $this->get_regexp_by_mask($mask) . ')))~';
-                    }
-                }
-
-                if ($this->_config->get_boolean('cdn.minify.enable')) {
-                    if ($this->_config->get_boolean('minify.auto')) {
-                        $regexps[] = '~(["\'])((' . $domain_url_regexp . ')?(' . w3_preg_quote($site_path . W3TC_CONTENT_MINIFY_DIR_NAME) . '/[a-f0-9]+\.[a-f0-9]+\.(css|js)))~U';
-                    } else {
-                        $regexps[] = '~(["\'])((' . $domain_url_regexp . ')?(' . w3_preg_quote($site_path . W3TC_CONTENT_MINIFY_DIR_NAME) . '/[a-f0-9]+/.+\.include(-(footer|body))?(-nb)?\.[a-f0-9]+\.(css|js)))~U';
+                        $regexps[] = '~(["\'(])\s*((' . $domain_url_regexp . ')?(' . w3_preg_quote($theme_dir) . '/(' . $this->get_regexp_by_mask($mask) . ')))~';
+                        if ($site_domain_url_regexp) {
+                            $theme_dir2 = preg_replace('~' . $site_domain_url_regexp. '~i', '', get_theme_root_uri());
+                            $regexps[] = '~(["\'(])\s*((' . $site_domain_url_regexp . ')?(' . w3_preg_quote($theme_dir) . '/(' . $this->get_regexp_by_mask($mask) . ')))~';
+                            $regexps[] = '~(["\'(])\s*((' . $site_domain_url_regexp . ')?(' . w3_preg_quote($theme_dir2) . '/(' . $this->get_regexp_by_mask($mask) . ')))~';
+                        }
                     }
                 }
 
                 if ($this->_config->get_boolean('cdn.custom.enable')) {
                     $masks = $this->_config->get_array('cdn.custom.files');
+                    $masks = array_map(array($this, '_replace_folder_placeholders'), $masks);
                     $masks = array_map('w3_parse_path', $masks);
 
                     if (count($masks)) {
@@ -300,7 +307,9 @@ class W3_Plugin_Cdn extends W3_Plugin {
                             }
                         }
 
-                        $regexps[] = '~(["\'])((' . $domain_url_regexp . ')?(' . w3_preg_quote($site_path) . '(' . implode('|', $mask_regexps) . ')))~i';
+                        $regexps[] = '~(["\'(])\s*((' . $domain_url_regexp . ')?(' . w3_preg_quote($site_path) . '(' . implode('|', $mask_regexps) . ')))~i';
+                        if ($site_domain_url_regexp)
+                            $regexps[] = '~(["\'(])\s*((' . $site_domain_url_regexp . ')?(' . w3_preg_quote($site_path) . '(' . implode('|', $mask_regexps) . ')))~i';
                     }
                 }
 
@@ -309,6 +318,28 @@ class W3_Plugin_Cdn extends W3_Plugin {
                         &$this,
                         'link_replace_callback'
                     ), $buffer);
+                }
+
+                if ($this->_config->get_boolean('cdn.minify.enable')) {
+                    if ($this->_config->get_boolean('minify.auto')) {
+                        $regexp = '~(["\'(])\s*' .
+                            $this->_minify_url_regexp('/[a-zA-Z0-9-_]+\.(css|js)') .
+                            '~U';
+                        if (w3_is_cdn_mirror($this->_config->get_string('cdn.engine')))
+                            $processor = 'link_replace_callback';
+                        else
+                            $processor = 'minify_auto_pushcdn_link_replace_callback';
+                    } else {
+                        $regexp = '~(["\'(])\s*' .
+                            $this->_minify_url_regexp('/[a-z0-9]+/.+\.include(-(footer|body))?(-nb)?\.[a-f0-9]+\.(css|js)') .
+                            '~U';
+                        $processor = 'link_replace_callback';
+                    }
+
+                    $buffer = preg_replace_callback($regexp, array(
+                        &$this,
+                        $processor),
+                        $buffer);
                 }
             }
 
@@ -320,6 +351,28 @@ class W3_Plugin_Cdn extends W3_Plugin {
         return $buffer;
     }
 
+    /**
+     * Gets regexp for minified files
+     *
+     * @return string
+     */
+    function _minify_url_regexp($filename_mask) {
+        $minify_base_url = w3_filename_to_url(w3_cache_blog_dir('minify'));
+        $matches = null;
+        if (!preg_match('~((https?://)?([^/]+))(.+)~i', $minify_base_url, $matches))
+            return '';
+
+        $protocol_domain_regexp = w3_get_url_regexp($matches[1]);
+        $path_regexp = w3_preg_quote($matches[4]);
+
+        $regexp =
+            '(' .
+                '(' . $protocol_domain_regexp . ')?' .
+                '(' . $path_regexp . $filename_mask . ')' .
+            ')';
+        return $regexp;
+    }
+    
     /**
      * Returns array of files to upload
      *
@@ -354,8 +407,8 @@ class W3_Plugin_Cdn extends W3_Plugin {
      */
     function get_files_includes() {
         $includes_root = w3_path(ABSPATH . WPINC);
-        $site_root = w3_get_site_root();
-        $includes_path = ltrim(str_replace($site_root, rtrim(w3_get_site_path(), '/'), $includes_root), '/');
+        $doc_root = w3_get_document_root();
+        $includes_path = ltrim(str_replace($doc_root, '', $includes_root), '/');
 
         $files = $this->search_files($includes_root, $includes_path, $this->_config->get_string('cdn.includes.files'));
 
@@ -379,9 +432,8 @@ class W3_Plugin_Cdn extends W3_Plugin {
         }
 
         $themes_root = w3_path($themes_root);
-        $site_root = w3_get_site_root();
-        $themes_path = ltrim(str_replace($site_root, rtrim(w3_get_site_path(), '/'), $themes_root), '/');
-
+        $site_root = w3_get_document_root();
+        $themes_path = ltrim(str_replace($site_root, '', $themes_root), '/');
         $files = $this->search_files($themes_root, $themes_path, $this->_config->get_string('cdn.theme.files'));
 
         return $files;
@@ -395,16 +447,14 @@ class W3_Plugin_Cdn extends W3_Plugin {
     function get_files_minify() {
         $files = array();
 
-        if (W3TC_PHP5 && $this->_config->get_boolean('minify.rewrite') && (!$this->_config->get_boolean('minify.auto') || w3_is_cdn_mirror($this->_config->get_string('cdn.engine')))) {
-            require_once W3TC_INC_DIR . '/functions/http.php';
+        if ($this->_config->get_boolean('minify.rewrite') && (!$this->_config->get_boolean('minify.auto') || w3_is_cdn_mirror($this->_config->get_string('cdn.engine')))) {
+            w3_require_once(W3TC_INC_DIR . '/functions/http.php');
 
-            $minify = & w3_instance('W3_Plugin_Minify');
+            $minify = w3_instance('W3_Plugin_Minify');
 
             $document_root = w3_get_document_root();
-            $site_root = w3_get_site_root();
-            $minify_root = w3_path(W3TC_CACHE_FILE_MINIFY_DIR);
-            $minify_path = ltrim(str_replace($site_root, rtrim(w3_get_site_path(), '/'), $minify_root), '/');
-
+            $minify_root = w3_cache_blog_dir('minify');
+            $minify_path = ltrim(str_replace($document_root, '', $minify_root), '/');
             $urls = $minify->get_urls();
 
             if ($this->_config->get_string('minify.engine') == 'file') {
@@ -449,18 +499,36 @@ class W3_Plugin_Cdn extends W3_Plugin {
         $document_root = w3_get_document_root();
         $custom_files = $this->_config->get_array('cdn.custom.files');
         $custom_files = array_map('w3_parse_path', $custom_files);
+        $site_root = w3_get_site_root();
+        $path = w3_get_site_path();
+        $site_root_dir = str_replace($document_root, '', $site_root);
+        if (strstr(WP_CONTENT_DIR, w3_get_site_root()) === false) {
+            $site_root = w3_get_document_root();
+            $path = '';
+        }
+
+        $content_path = trim(str_replace(WP_CONTENT_DIR, '', $site_root),'/\\');
 
         foreach ($custom_files as $custom_file) {
             if ($custom_file != '') {
+                $custom_file = $this->_replace_folder_placeholders($custom_file);
                 $custom_file = w3_normalize_file($custom_file);
-                $dir = trim(dirname($custom_file), '/\\');
 
-                if ($dir == '.') {
-                    $dir = '';
+                if (!w3_is_multisite()) {
+                    $dir = trim(dirname($custom_file), '/\\');
+                    $rel_path = trim(dirname($custom_file), '/\\');
+                } else
+                    $rel_path = $dir = trim(dirname($custom_file), '/\\');
+
+                if (strpos($dir, '<currentblog>') != false) {
+                   $rel_path = $dir = str_replace('<currentblog>', 'blogs.dir/' . w3_get_blog_id(), $dir);
                 }
 
+                if ($dir == '.') {
+                    $rel_path = $dir = '';
+                }
                 $mask = basename($custom_file);
-                $files = array_merge($files, $this->search_files($document_root . '/' . $dir, $dir, $mask));
+                $files = array_merge($files, $this->search_files($document_root . '/' . $dir, $rel_path, $mask));
             }
         }
 
@@ -474,12 +542,67 @@ class W3_Plugin_Cdn extends W3_Plugin {
      * @return string
      */
     function link_replace_callback($matches) {
-        global $wpdb;
-        static $queue = null, $reject_files = null;
+        list($match, $quote, $url, , , , $path) = $matches;
+        $path = ltrim($path, '/');
+        $r = $this->_link_replace_callback_checks($match, $quote, $url, $path);
+        if (is_null($r)) {
+            $r = $this->_link_replace_callback_ask_cdn($match, $quote, $url, $path);
+        }
+
+        return $r;
+    }
+
+    /**
+     * Link replace callback for urls from minify module using auto mode and in cdn of push type
+     *
+     * @param array $matches
+     * @return string
+     */
+    function minify_auto_pushcdn_link_replace_callback($matches) {
+        static $dispatcher = null;
 
         list($match, $quote, $url, , , , $path) = $matches;
-
         $path = ltrim($path, '/');
+        $r = $this->_link_replace_callback_checks($match, $quote, $url, $path);
+
+        /**
+         * Check if we can replace that URL (for auto mode it should be uploaded)
+         */
+        if (is_null($dispatcher)) {
+            $dispatcher = w3_instance('W3_Dispatcher');
+        }
+
+        if (!$dispatcher->is_url_cdn_uploaded($url)) {
+            /*
+             * file not yet uploaded (rare case) - push to queue
+             */
+            $this->_get_common()->queue_upload_url($url);
+
+            return $match;
+        }
+
+        if (is_null($r)) {
+            $r = $this->_link_replace_callback_ask_cdn($match, $quote, $url, $path);
+        }
+
+        return $r;
+    }
+
+    /**
+     * Link replace callback, basic checks step
+     *
+     * @param $match
+     * @param $quote
+     * @param $url
+     * @param $path
+     * @return null|string
+     */
+    function _link_replace_callback_checks($match, $quote, $url, $path) {
+        /**
+         * @var wpdb $wpdb
+         */
+        global $wpdb;
+        static $queue = null, $reject_files = null;
 
         /**
          * Check if URL was already replaced
@@ -497,7 +620,10 @@ class W3_Plugin_Cdn extends W3_Plugin {
 
         foreach ($reject_files as $reject_file) {
             if ($reject_file != '') {
+                $reject_file = $this->_replace_folder_placeholders($reject_file);
+
                 $reject_file = w3_normalize_file($reject_file);
+
                 $reject_file_regexp = '~^(' . $this->get_regexp_by_mask($reject_file) . ')~i';
 
                 if (preg_match($reject_file_regexp, $path)) {
@@ -511,25 +637,41 @@ class W3_Plugin_Cdn extends W3_Plugin {
          */
         if ($queue === null) {
             if (!w3_is_cdn_mirror($this->_config->get_string('cdn.engine'))) {
-                $sql = sprintf('SELECT remote_path FROM %s', $wpdb->prefix . W3TC_CDN_TABLE_QUEUE);
-                $queue = $wpdb->get_col($sql);
+                $sql = $wpdb->prepare('SELECT remote_path FROM ' . $wpdb->prefix . W3TC_CDN_TABLE_QUEUE . ' WHERE remote_path = %s', $path);
+                $queue = $wpdb->get_var($sql);
             } else {
                 $queue = false;
             }
         }
 
-        if ($queue && in_array($path, $queue)) {
+        if ($queue) {
             return $match;
         }
 
+        return null;
+    }
+
+    /**
+     * Link replace callback, url replacement using cdn engine
+     *
+     * @param $match
+     * @param $quote
+     * @param $url
+     * @param $path
+     * @return null|string
+     */
+    function _link_replace_callback_ask_cdn($match, $quote, $url, $path) {
         /**
          * Do replacement
          */
-        $cdn = & $this->_get_common()->get_cdn();
+        $cdn = $this->_get_common()->get_cdn();
 
-        $new_url = $cdn->format_url($path);
+        $remote_path = $this->_get_common()->uri_to_cdn_uri($path);
+
+        $new_url = $cdn->format_url($remote_path);
 
         if ($new_url) {
+            $new_url = apply_filters('w3tc_cdn_url', $new_url, $url);
             $this->replaced_urls[$url] = $new_url;
 
             return $quote . $new_url;
@@ -610,8 +752,8 @@ class W3_Plugin_Cdn extends W3_Plugin {
             '@ASTERISK@',
             '@QUESTION@'
         ), array(
-            '[^\\?\\*:\\|"<>]*',
-            '[^\\?\\*:\\|"<>]'
+            '[^\\?\\*:\\|\'"<>]*',
+            '[^\\?\\*:\\|\'"<>]'
         ), $mask);
 
         return $regexp;
@@ -678,8 +820,17 @@ class W3_Plugin_Cdn extends W3_Plugin {
         /**
          * Check request URI
          */
-        if (!$this->check_request_uri()) {
+        if (!$this->_check_request_uri()) {
             $this->cdn_reject_reason = 'request URI is rejected';
+
+            return false;
+        }
+
+        /**
+         * Do not replace urls if SSL and SSL support is do not replace
+         */
+        if (w3_is_https() && $this->_config->get_boolean('cdn.reject.ssl')) {
+            $this->cdn_reject_reason = 'SSL is rejected';
 
             return false;
         }
@@ -713,10 +864,10 @@ class W3_Plugin_Cdn extends W3_Plugin {
         }
 
         /**
-         * Check logged in admin
+         * Check logged users roles
          */
-        if ($this->_config->get_boolean('cdn.reject.admins') && current_user_can('manage_options')) {
-            $this->cdn_reject_reason = 'logged in admin is rejected';
+        if ($this->_config->get_boolean('cdn.reject.logged_roles') && !$this->_check_logged_in_role_allowed()) {
+            $this->cdn_reject_reason = 'logged in role is rejected';
 
             return false;
         }
@@ -735,8 +886,9 @@ class W3_Plugin_Cdn extends W3_Plugin {
         ));
 
         foreach ($uas as $ua) {
-            if (isset($_SERVER['HTTP_USER_AGENT']) && stristr($_SERVER['HTTP_USER_AGENT'], $ua) !== false) {
-                return false;
+            if (!empty($ua)) {
+                if (isset($_SERVER['HTTP_USER_AGENT']) && stristr($_SERVER['HTTP_USER_AGENT'], $ua) !== false)
+                    return false;
             }
         }
 
@@ -748,18 +900,7 @@ class W3_Plugin_Cdn extends W3_Plugin {
      *
      * @return boolean
      */
-    function check_request_uri() {
-        $auto_reject_uri = array(
-            'wp-login',
-            'wp-register'
-        );
-
-        foreach ($auto_reject_uri as $uri) {
-            if (strstr($_SERVER['REQUEST_URI'], $uri) !== false) {
-                return false;
-            }
-        }
-
+    function _check_request_uri() {
         $reject_uri = $this->_config->get_array('cdn.reject.uri');
         $reject_uri = array_map('w3_parse_path', $reject_uri);
 
@@ -770,6 +911,112 @@ class W3_Plugin_Cdn extends W3_Plugin {
             }
         }
 
+        w3_require_once(W3TC_LIB_W3_DIR . '/Request.php');
+        if (W3_Request::get_string('wp_customize'))
+            return false;
+
         return true;
     }
+    /**
+     * Check if logged in user role is allwed to use CDN
+     *
+     * @return boolean
+     */
+    private function _check_logged_in_role_allowed() {
+        global $current_user;
+
+        if (!is_user_logged_in())
+            return true;
+
+        $roles = $this->_config->get_array('cdn.reject.roles');
+
+        if (empty($roles))
+            return true;
+
+        $role = array_shift( $current_user->roles );
+
+        if (in_array($role, $roles)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function _replace_folder_placeholders($file) {
+        static $content_dir, $plugin_dir, $upload_dir;
+        if (empty($content_dir)) {
+            $content_dir = str_replace(w3_get_document_root(), '', WP_CONTENT_DIR);
+            $content_dir = substr($content_dir, strlen(w3_get_site_path()));
+            $content_dir = trim($content_dir, '/');
+            if (defined('WP_PLUGIN_DIR')) {
+                $plugin_dir = str_replace(w3_get_document_root(), '', WP_PLUGIN_DIR);
+                $plugin_dir = trim($plugin_dir, '/');
+            } else {
+                $plugin_dir = str_replace(w3_get_document_root(), '', WP_CONTENT_DIR . '/plugins');
+                $plugin_dir = trim($plugin_dir, '/');
+            }
+            $upload_dir = wp_upload_dir();
+            $upload_dir = str_replace(w3_get_document_root(), '', $upload_dir['basedir']);
+            $upload_dir = trim($upload_dir, '/');
+        }
+        $file = str_replace('{wp_content_dir}', $content_dir, $file);
+        $file = str_replace('{plugins_dir}', $plugin_dir, $file);
+        $file = str_replace('{uploads_dir}', $upload_dir, $file);
+
+        return $file;
+    }
+
+
+
+    /**
+     * media_row_actions filter
+     *
+     * @param array $actions
+     * @param object $post
+     * @return array
+     */
+    function media_row_actions($actions, $post) {
+        return $this->get_admin()->media_row_actions($actions, $post);
+    }
+
+
+    /**
+     * @param $current_state
+     * @return bool
+     */
+    function cdn_is_running($current_state) {
+        $admin = $this->get_admin();
+        return $admin->is_running();
+    }
+
+    /**
+     * Change canonical header
+     */
+    function change_canonical_header() {
+        $admin = $this->get_admin();
+        $admin->change_canonical_header();
+    }
+
+    /**
+     * @param $domain_url_regexp
+     * @param $baseurl
+     * @param $upload_info
+     * @param $regexps
+     * @return array
+     */
+    private function make_uploads_regexes($domain_url_regexp, $baseurl, $upload_info, $regexps) {
+        if (preg_match('~' . $domain_url_regexp . '~i', $baseurl)) {
+            $regexps[] = '~(["\'(])\s*((' . $domain_url_regexp . ')?(' . w3_preg_quote($upload_info['baseurlpath']) . '([^"\')>]+)))~';
+        } else {
+            $parsed = @parse_url($baseurl);
+            $upload_url_domain_regexp = isset($parsed['host']) ? w3_get_url_regexp($parsed['scheme'] . '://' . $parsed['host']) : $domain_url_regexp;
+            $baseurlpath = isset($parsed['path']) ? rtrim($parsed['path'], '/') : '';
+            if ($baseurlpath)
+                $regexps[] = '~(["\'])\s*((' . $upload_url_domain_regexp . ')?(' . w3_preg_quote($baseurlpath) . '([^"\'>]+)))~';
+            else
+                $regexps[] = '~(["\'])\s*((' . $upload_url_domain_regexp . ')(([^"\'>]+)))~';
+        }
+        return $regexps;
+    }
 }
+

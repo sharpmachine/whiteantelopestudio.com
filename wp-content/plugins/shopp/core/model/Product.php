@@ -12,10 +12,10 @@
  * @subpackage products
  **/
 
-require("Price.php");
-require("Promotion.php");
+defined( 'WPINC' ) || header( 'HTTP/1.1 403' ) & exit; // Prevent direct access
 
-class Product extends WPShoppObject {
+class ShoppProduct extends WPShoppObject {
+
 	static $table = 'posts';
 	static $_taxonomies = array(
 		'shopp_category' => 'categories',
@@ -23,27 +23,27 @@ class Product extends WPShoppObject {
 	);
 	static $posttype = 'shopp_product';
 
-	var $prices = array();
-	var $pricekey = array();
-	var $priceid = array();
-	var $categories = array();
-	var $tags = array();
-	var $images = array();
-	var $specs = array();
-	var $specnames = array();
-	var $meta = array();
-	var $max = array();
-	var $min = array();
-	var $sale = false;
-	var $outofstock = false;
-	var $excludetax = false;
-	var $variants = 'off';
-	var $addons = 'off';
-	var $freeship = 'off';
-	var $inventory = 'off';
-	var $checksum = false;
-	var $stock = 0;
-	var $options = 0;
+	public $prices = array();
+	public $pricekey = array();
+	public $priceid = array();
+	public $categories = array();
+	public $tags = array();
+	public $images = array();
+	public $specs = array();
+	public $specnames = array();
+	public $meta = array();
+	public $max = array();
+	public $min = array();
+	public $sale = false;
+	public $outofstock = false;
+	public $excludetax = false;
+	public $variants = 'off';
+	public $addons = 'off';
+	public $freeship = 'off';
+	public $inventory = 'off';
+	public $checksum = false;
+	public $stock = 0;
+	public $options = 0;
 
 	protected $_map = array(
 		'id' => 'ID',
@@ -64,6 +64,9 @@ class Product extends WPShoppObject {
 		'pinged' => 'pinged'
 	);
 
+	// Keep track of data load efforts
+	protected $_loaded = array();
+
 	/**
 	 * Product constructor
 	 *
@@ -72,21 +75,23 @@ class Product extends WPShoppObject {
 	 *
 	 * @return void
 	 **/
-	function __construct ($id=false,$key='ID') {
-		if (isset($this->_map[$key])) $key = $this->_map[$key];
-		$this->init(self::$table,$key);
+	public function __construct ( $id = false, $key = 'ID' ) {
+		if ( isset($this->_map[ $key ]) ) $key = $this->_map[ $key ];
+		$this->init(self::$table, $key);
 		$this->type = self::$posttype;
-		$this->load($id,$key);
-		add_action('shopp_save_product',array($this,'savepost'));
+		$this->load($id, $key);
 	}
 
-	function save () {
+	public function save () {
 		if ( ! isset($this->ID) ) $this->ID = $this->id ? $this->id : null;
 		$this->post_content_filtered = $this->to_ping = $this->pinged = '';
+		$this->post_modified = current_time('timestamp');
 		$gmtoffset = get_option( 'gmt_offset' ) * 3600;
 		$this->post_modified_gmt = current_time('timestamp')+$gmtoffset;
 		if (is_null($this->publish)) $this->post_date_gmt = $this->post_modified_gmt;
 		else $this->post_date_gmt = $this->publish+$gmtoffset;
+		if ( false === has_action('shopp_save_product',array($this,'savepost')))
+			add_action('shopp_save_product',array($this,'savepost'));
 		parent::save();
 	}
 
@@ -98,28 +103,34 @@ class Product extends WPShoppObject {
 	 *
 	 * @return void
 	 **/
-	function savepost () {
+	public function savepost () {
 		if ( empty($this->id)) return;
 		do_action('save_post', $this->id, get_post($this->id));
 	}
 
-	static function posttype () {
+	public static function posttype () {
 		return self::$posttype;
 	}
 
-	static function labels () {
+	public static function labels () {
 		return apply_filters( 'shopp_product_labels', array(
-			'name' => __('Products','Shopp'),
-			'singular_name' => __('Product','Shopp'),
-			'edit_item' => __('Edit Product','Shopp'),
-			'new_item' => __('New Product','Shopp')
+			'name' => __('Products', 'Shopp'),
+			'singular_name' => __('Product', 'Shopp'),
+			'edit_item' => __('Edit Product', 'Shopp'),
+			'new_item' => __('New Product', 'Shopp')
 		));
 	}
 
-	static function capabilities () {
+	public static function capabilities () {
 		return apply_filters( 'shopp_product_capabilities', array(
 			'edit_post' => 'shopp_products',
 			'delete_post' => 'shopp_products'
+		) );
+	}
+
+	public static function supports () {
+		return apply_filters( 'shopp_product_supports', array(
+			'title', 'editor', 'excerpt', 'comments'
 		) );
 	}
 
@@ -133,36 +144,47 @@ class Product extends WPShoppObject {
 	 *
 	 * @return void
 	 **/
-	function load_data ($options=array('prices','specs','images','categories','tags','meta','summary'),&$products=array()) {
+	public function load_data ( array $options = array('prices', 'specs', 'images', 'categories', 'tags', 'meta', 'summary'), array &$products = array() ) {
 		// Load summary before prices to ensure summary can be overridden by fresh pricing aggregation
 		$loaders = array(
-		//  'name'      'callback_method'
-			'summary' 	 => 'load_summary',
-			'meta' 		 => 'load_meta',
-			'prices' 	 => 'load_prices',
-			'specs' 	 => 'load_meta',
-			'images' 	 => 'load_meta',
-			'coverimages'=> 'load_coverimages',
-			'categories' => 'load_taxonomies',
-			'tags' 		 => 'load_taxonomies'
+		//  'name'           'callback_method'
+			'summary' 	  => 'load_summary',
+			'meta' 		  => 'load_meta',
+			'prices' 	  => 'load_prices',
+			'specs' 	  => 'load_meta',
+			'images' 	  => 'load_meta',
+			'coverimages' => 'load_coverimages',
+			'categories'  => 'load_taxonomies',
+			'tags' 		  => 'load_taxonomies'
 
 		);
+		// allow case-insensitive options
+		$options = array_map('strtolower', $options);
 
-		$options = array_map('strtolower',$options);
-		$load = array_flip(array_intersect($options,array_keys($loaders)));
-		$loadcalls = array_unique(array_values(array_intersect_key($loaders,$load)));
+		// prevent loading data sets already requested and processed
+		$options = array_diff($options, $this->_loaded);
 
-		if (!empty($products) ) {
-			$ids = join(',',array_keys($products));
+		// Only allow white-listed load operations
+		$load = array_flip(array_intersect($options, array_keys($loaders)));
+
+		// Convert load requests to loading callbacks while preventing duplicate calls
+		$loadcalls = array_unique(array_values(array_intersect_key($loaders, $load)));
+
+		if ( ! empty($products) ) { // Handle loading data across a collection of products
+			$ids = join(',', array_keys($products));
 			$this->products = &$products;
-		} else $ids = $this->id;
+			foreach ( $products as $product )
+				$product->_loaded = array_merge($product->_loaded, $options);
+		} else { // Handle loading data for a single product
+			$ids = $this->id;
+			$this->_loaded = array_unique(array_merge($this->_loaded, $options));
+		}
 
 		if ( empty($ids) ) return;
 
-		foreach ($loadcalls as $loadmethod) {
+		foreach ( $loadcalls as $loadmethod )
 			if ( method_exists($this, $loadmethod) )
-				call_user_func_array(array($this,$loadmethod),array($ids));
-		}
+				call_user_func_array(array($this, $loadmethod), array($ids));
 
 	}
 
@@ -174,10 +196,10 @@ class Product extends WPShoppObject {
 	 *
 	 * @return void
 	 **/
-	function load_summary ($ids) {
+	public function load_summary ($ids) {
 		if ( empty($ids) ) return;
 		$Object = new ProductSummary();
-		DB::query("SELECT *,modified AS summed FROM $Object->_table WHERE product IN ($ids)",'array',array($this,'sumloader'));
+		sDB::query("SELECT *,modified AS summed FROM $Object->_table WHERE product IN ($ids)",'array',array($this,'sumloader'));
 	}
 
 	/**
@@ -188,7 +210,7 @@ class Product extends WPShoppObject {
 	 *
 	 * @return void
 	 **/
-	function load_prices ($ids) {
+	public function load_prices ($ids) {
 		if ( empty($ids) ) return;
 
 		// Reset price property
@@ -200,21 +222,22 @@ class Product extends WPShoppObject {
 			$this->resum();
 		}
 
-		$Object = new Price();
-		DB::query("SELECT * FROM $Object->_table WHERE product IN ($ids) ORDER BY product,optionkey",'array',array($this,'pricing'));
+		// Load product sales counts
+		// Must come before pricing so that the summary updates will include new sold/grossed amounts
+		$this->load_sold($ids);
+
+		$Object = new ShoppPrice();
+		sDB::query("SELECT * FROM $Object->_table WHERE product IN ($ids) ORDER BY product,sortorder", 'array', array($this, 'pricing'));
 
 		// Load price metadata that exists
 		if (!empty($this->priceid)) {
 			$prices = join(',',array_keys($this->priceid));
 			$Object->prices = $this->priceid;
-			$Object->products = ( isset($this->products) && !empty($this->products) )?$this->products:$this;
+			$Object->products = ( isset($this->products) && ! empty($this->products) ) ? $this->products : $this;
 			$ObjectMeta = new ObjectMeta();
 			// Sort by sort order then by the modified timestamp so the most recent changes are last and become the authoritative record
-			DB::query("SELECT * FROM $ObjectMeta->_table WHERE context='price' AND parent IN ($prices) ORDER BY sortorder,modified",'array',array($Object,'metaloader'),'parent','metatype','name',false);
+			sDB::query("SELECT * FROM $ObjectMeta->_table WHERE context='price' AND parent IN ($prices) ORDER BY sortorder,modified", 'array', array($Object, 'metasetloader'), 'parent', 'metatype', 'name', false);
 		}
-
-		// Load product sales counts
-		$this->load_sold($ids);
 
 		if ( isset($this->products) && !empty($this->products) ) {
 			if (!isset($this->_last_product)) $this->_last_product = false;
@@ -234,18 +257,20 @@ class Product extends WPShoppObject {
 	 *
 	 * @return void
 	 **/
-	function load_meta ($ids) {
+	public function load_meta ( $ids ) {
 		if ( empty($ids) ) return;
-		$table = DatabaseObject::tablename(MetaObject::$table);
+		$table = ShoppDatabaseObject::tablename(ShoppMetaObject::$table);
 
 		$imagesort = $this->image_order();
 		$metasort = array('sortorder','sortorder ASC');
-		if (in_array($imagesort,$metasort))
-			DB::query("SELECT * FROM $table WHERE context='product' AND parent IN ($ids) ORDER BY sortorder",'array',array($this,'metaloader'),'parent','metatype','name',false);
+		if ( in_array($imagesort, $metasort) )
+			sDB::query("SELECT * FROM $table WHERE context='product' AND parent IN ($ids) ORDER BY sortorder", 'array', array($this, 'metasetloader'), 'parent', 'metatype', 'name', false);
 		else { // Separate sort order for images
-			DB::query("SELECT * FROM $table WHERE context='product' AND type != 'image' AND parent IN ($ids) ORDER BY sortorder",'array',array($this,'metaloader'),'parent','metatype','name',false);
-			DB::query("SELECT * FROM $table WHERE context='product' AND type = 'image' AND parent IN ($ids) ORDER BY $imagesort",'array',array($this,'metaloader'),'parent','metatype','name',false);
+			sDB::query("SELECT * FROM $table WHERE context='product' AND type != 'image' AND parent IN ($ids) ORDER BY sortorder", 'array', array($this, 'metasetloader'), 'parent', 'metatype', 'name', false);
+			sDB::query("SELECT * FROM $table WHERE context='product' AND type = 'image' AND parent IN ($ids) ORDER BY $imagesort", 'array', array($this, 'metasetloader'), 'parent', 'metatype', 'name', false);
 		}
+
+		do_action('shopp_product_load_meta', $ids, $this);
 	}
 
 	/**
@@ -256,11 +281,11 @@ class Product extends WPShoppObject {
 	 *
 	 * @return void
 	 **/
-	function load_coverimages ($ids) {
+	public function load_coverimages ( $ids ) {
 		if ( empty($ids) ) return;
-		$table = DatabaseObject::tablename(MetaObject::$table);
+		$table = ShoppDatabaseObject::tablename(ShoppMetaObject::$table);
 		$sortorder = $this->image_order();
-		DB::query("SELECT * FROM ( SELECT * FROM $table WHERE context='product' AND type='image' AND parent IN ($ids) ORDER BY $sortorder ) AS img GROUP BY parent",'array',array($this,'metaloader'),'parent','metatype','name',false);
+		sDB::query("SELECT * FROM ( SELECT * FROM $table WHERE context='product' AND type='image' AND parent IN ($ids) ORDER BY $sortorder ) AS img GROUP BY parent",'array',array($this, 'metasetloader'),'parent','metatype','name',false);
 	}
 
 	/**
@@ -271,12 +296,12 @@ class Product extends WPShoppObject {
 	 *
 	 * @return void
 	 **/
-	function load_sold ($ids) {
+	public function load_sold ($ids) {
 		if ( empty($ids) ) return;
-		$purchase = DatabaseObject::tablename(Purchase::$table);
-		$purchased = DatabaseObject::tablename(Purchased::$table);
-		$query = "SELECT p.product as id,sum(p.quantity) AS sold,sum(p.total) AS grossed FROM $purchased as p INNER JOIN $purchase AS o ON p.purchase=o.id WHERE p.product IN ($ids) AND o.txnstatus !='void' GROUP BY p.product";
-		DB::query($query,'array',array($this,'sold'));
+		$purchase = ShoppDatabaseObject::tablename(ShoppPurchase::$table);
+		$purchased = ShoppDatabaseObject::tablename(Purchased::$table);
+		$query = "SELECT p.product as id,sum(p.quantity) AS sold,sum(p.total) AS grossed FROM $purchased as p INNER JOIN $purchase AS o ON p.purchase=o.id WHERE p.product IN ($ids) AND o.txnstatus IN ('authorized','captured') GROUP BY p.product";
+		sDB::query($query, 'array', array($this, 'sold'));
 	}
 
 	/**
@@ -290,7 +315,7 @@ class Product extends WPShoppObject {
 	 *
 	 * @return void
 	 **/
-	function load_taxonomies ($ids) {
+	public function load_taxonomies ($ids) {
 		global $ShoppTaxonomies;
 
 		if ( empty($ids) ) return;
@@ -306,8 +331,8 @@ class Product extends WPShoppObject {
 		foreach ( $terms as $term ) { // Map WP taxonomy data to object meta
 			if ( ! isset($term->term_id) || empty($term->term_id) ) continue; 		// Skip invalid entries
 			if ( ! isset($term->object_id) || empty($term->object_id) ) continue;	// Skip invalid entries
-			if ( isset(Product::$_taxonomies[$term->taxonomy]) ) {
-				$property = Product::$_taxonomies[$term->taxonomy];
+			if ( isset(ShoppProduct::$_taxonomies[$term->taxonomy]) ) {
+				$property = ShoppProduct::$_taxonomies[$term->taxonomy];
 			} else {
 				$property = $term->taxonomy.'s';
 			}
@@ -338,7 +363,7 @@ class Product extends WPShoppObject {
 	 * @param object $record Result record data object
 	 * @return void
 	 **/
-	function loader (&$records,&$record,$DatabaseObject=false,$index='id',$collate=false) {
+	public function loader ( array &$records, &$record, $DatabaseObject = false, $index = 'id', $collate = false ) {
 
 		if (isset($this)) {
 			$index = $this->_key;
@@ -359,10 +384,10 @@ class Product extends WPShoppObject {
 
 		$resum = false;
 		if (isset($record->summed)) { // Loaded from the collection loader
-			$Object->sumloader($records,$record);
+			$Object->sumloader($records, $record);
 
-			$update = DB::mktime(ProductSummary::$_updates);
-			if (DB::mktime($record->summed) == $update) $resum = true; // Forced resum
+			$update = sDB::mktime(ProductSummary::$_updates);
+			if (sDB::mktime($record->summed) == $update) $resum = true; // Forced resum
 
 		} else $resum = true;
 
@@ -371,6 +396,8 @@ class Product extends WPShoppObject {
 			if (!isset($this->resum)) $this->resum = array();
 			$this->resum[$index] = $Object;
 		}
+
+		$Object = apply_filters('shopp_product_loader', $Object, $record);
 
 		if ($collate) {
 			if (!isset($records[$index])) $records[$index] = array();
@@ -386,9 +413,9 @@ class Product extends WPShoppObject {
 	 *
 	 * @return void
 	 **/
-	function metaloader (&$records,&$record,$id='id',$property=false,$collate=true,$merge=false) {
+	public function metasetloader ( &$records, &$record, $id = 'id', $property = false, $collate = true, $merge = false ) {
 
-		if (isset($this->products) && !empty($this->products)) $products = &$this->products;
+		if ( isset($this->products) && ! empty($this->products) ) $products = &$this->products;
 		else $products = array();
 
 		$metamap = array(
@@ -400,7 +427,7 @@ class Product extends WPShoppObject {
 		$metaclass = array(
 			'image' => 'ProductImage',
 			'spec' => 'Spec',
-			'meta' => 'MetaObject'
+			'meta' => 'ShoppMetaObject'
 		);
 
 		if ($property == 'metatype')
@@ -426,21 +453,22 @@ class Product extends WPShoppObject {
 
 		}
 
-		if ('images' == $property) {
+		if ( 'images' == $property ) {
 			// Prevent double-loading images (can occur when images are specifically loaded, then all meta is generically loaded)
-			if (isset($target->$property) && isset($target->{$property}[$record->id])) return;
+			if ( isset($target->$property) && isset($target->{$property}[ $record->id ]) ) return;
 			$collate = 'id';
+			// Prevent extra image queries since we already tried
 		}
 
-		if ('specs' == $property) {
+		if ( 'specs' == $property ) {
 			$property = 'specnames';
-			parent::metaloader($records,$record,$products,$id,$property,$collate,$merge);
+			parent::metaloader($records, $record, $products, $id, $property, $collate, $merge);
 
 			$property = 'specs';
 			$collate = 'id';
 		}
 
-		parent::metaloader($records,$record,$products,$id,$property,$collate,$merge);
+		parent::metaloader($records, $record, $products, $id, $property, $collate, $merge);
 	}
 
 	/**
@@ -451,7 +479,7 @@ class Product extends WPShoppObject {
 	 *
 	 * @return void
 	 **/
-	function sumloader (&$records,&$data) {
+	public function sumloader (&$records,&$data) {
 
 		$Summary = new ProductSummary();
 		$properties = array_keys($Summary->_datatypes);
@@ -491,8 +519,8 @@ class Product extends WPShoppObject {
 		}
 		$this->checksum = md5($this->checksum);
 
-		if (isset($data->summed)) $this->summed = DB::mktime($data->summed);
-		if (shopp_setting_enabled('inventory') && str_true($this->inventory) && $this->stock <= 0) $this->outofstock = true;
+		if (isset($data->summed)) $this->summed = sDB::mktime($data->summed);
+		if (shopp_setting_enabled('inventory') && Shopp::str_true($this->inventory) && $this->stock <= 0) $this->outofstock = true;
 	}
 
 	/**
@@ -504,7 +532,7 @@ class Product extends WPShoppObject {
 	 * @param array $options shopp() tag option list
 	 * @return void
 	 **/
-	function pricing (&$records,&$price,$restat=false) {
+	public function pricing (&$records,&$price,$restat=false) {
 
 		if ( isset($this->products) && !empty($this->products) ) {
 			if ( !isset($this->products[$price->product]) ) return false;
@@ -526,7 +554,7 @@ class Product extends WPShoppObject {
 		} else $target = &$this;
 
 		// Skip calulating variant pricing when variants are not enabled for the product
-		if (!( isset($target->variants) && str_true($target->variants) ) && 'variation' == $price->context) return;
+		if (!( isset($target->variants) && Shopp::str_true($target->variants) ) && 'variation' == $price->context) return;
 
 		$target->prices[] = $price;
 
@@ -534,47 +562,48 @@ class Product extends WPShoppObject {
 		$price->price = (float)$price->price;
 		$price->saleprice = (float)$price->saleprice;
 		$price->shipfee = (float)$price->shipfee;
-		$price->promoprice = (float)str_true($price->sale)?$price->saleprice:$price->price;
+		$price->promoprice = (float)Shopp::str_true($price->sale)?$price->saleprice:$price->price;
 
 		// Build secondary lookup table using the price id as the key
 		$target->priceid[$price->id] = $price;
 
 		// Set promoprice before data aggregation
-		if (str_true($price->sale)) $price->promoprice = $price->saleprice;
+		if (Shopp::str_true($price->sale)) $price->promoprice = $price->saleprice;
 
 		// Do not count disabled price lines or addon price lines in aggregate summary stats
 		if ('N/A' == $price->type || 'addon' ==  $price->context) return;
 
 		// Simple product or variant product is on sale
-		if (str_true($price->sale)) $target->sale = $price->sale;
+		if (Shopp::str_true($price->sale)) $target->sale = $price->sale;
 
 		// Build third lookup table using the combined optionkey
 		$target->pricekey[$price->optionkey] = $price;
 
-		if (str_true($price->inventory)) {
+		if (Shopp::str_true($price->inventory)) {
 			$target->stock += $price->stock;
 			$target->inventory = $price->inventory;
 			$target->lowstock($price->stock,$price->stocked);
 		}
 
 		$freeshipping = false;
-		if (!str_true($price->shipping)) $freeshipping = true;
+		if ( ! Shopp::str_true($price->shipping) && 'Shipped' == $price->type ) $freeshipping = true;
 
 		// Calculate catalog discounts if not already calculated
 		if (!empty($price->discounts)) {
-			$discount = Promotion::pricing($price->promoprice,$price->discounts);
+			$discount = ShoppPromo::pricing($price->promoprice,$price->discounts);
 			if ($discount->freeship) $freeshipping = true;
 			$price->promoprice = $discount->pricetag;
 		}
 
-		if ($price->promoprice < $price->price) $target->sale = 'on';
+		$price->_sale = $price->sale; // Keep a copy of the price record "sale" setting {@see issue #2797}
+		if ($price->promoprice < $price->price) $target->sale = $price->sale = 'on';
 
 		// Grab price and saleprice ranges (minimum - maximum)
 		if (!$price->price) $price->price = 0;
 
 		// Variation range index/properties
 		$varranges = array('price' => 'price','saleprice'=>'promoprice');
-		if (str_true($price->inventory)) $varranges['stock'] = 'stock';
+		if (Shopp::str_true($price->inventory)) $varranges['stock'] = 'stock';
 
 		foreach ($varranges as $name => $prop) {
 			if (!isset($price->$prop)) continue;
@@ -589,7 +618,7 @@ class Product extends WPShoppObject {
 		}
 
 		// Determine savings ranges
-		if (str_true($price->sale)) {
+		if (Shopp::str_true($target->sale)) {
 
 			if ( ! isset($target->min['saved']) || $target->min['saved'] === false ) {
 				$target->min['saved'] = $price->price;
@@ -613,7 +642,7 @@ class Product extends WPShoppObject {
 			}
 		}
 
-		if ( shopp_setting_enabled('inventory') && str_true($target->inventory) ) $target->outofstock = ($target->stock <= 0);
+		if ( shopp_setting_enabled('inventory') && Shopp::str_true($target->inventory) ) $target->outofstock = ($target->stock <= 0);
 		if ( $freeshipping ) $target->freeship = 'on';
 
 	}
@@ -626,27 +655,28 @@ class Product extends WPShoppObject {
 	 *
 	 * @return boolean
 	 **/
-	function published () {
+	public function published () {
 		return ('publish' == $this->status && current_time('timestamp') >= $this->publish);
 	}
 
 	/**
-	 * Returns the number of this product sold
+	 * Adds sold and grossed states to the target record
 	 *
 	 * @author Jonathan Davis
 	 * @since 1.2
 	 *
 	 * @return int
 	 **/
-	function sold (&$records,&$data) {
+	public function sold ( &$records, &$data ) {
 
-		if (isset($this->products) && !empty($this->products)) $products = &$this->products;
+		if ( isset($this->products) && ! empty($this->products) )
+			$products = &$this->products;
 		else $products = array();
 
 		$target = false;
-		if (is_array($products) && isset($products[ $data->id ]))
+		if ( is_array($products) && isset($products[ $data->id ]) )
 			$target = $products[ $data->id ];
-		elseif (isset($this))
+		elseif ( isset($this) )
 			$target = $this;
 
 		$target->sold = $data->sold;
@@ -663,7 +693,7 @@ class Product extends WPShoppObject {
 	 * @param object $Price The price record to calculate against
 	 * @return void
 	 **/
-	function sumprice ($Price) {
+	public function sumprice ($Price) {
 		if ($Price->type == 'N/A' || $Price->context == 'addon') return;
 
 		if ($this->maxprice === false) $this->maxprice = (float)$Price->promoprice;
@@ -672,9 +702,9 @@ class Product extends WPShoppObject {
 		if ($this->minprice === false) $this->minprice = (float)$Price->promoprice;
 		else $this->minprice = min($this->minprice,$Price->promoprice);
 
-		if (str_true($Price->sale)) $this->sale = $Price->sale;
+		if (Shopp::str_true($Price->sale)) $this->sale = $Price->sale;
 
-		if (str_true($Price->inventory)) {
+		if (Shopp::str_true($Price->inventory)) {
 			$this->inventory = $Price->inventory;
 			$this->stock += $Price->stock;
 			$this->lowstock($Price->stock,$Price->stocked);
@@ -690,10 +720,10 @@ class Product extends WPShoppObject {
 	 *
 	 * @return void
 	 **/
-	function resum () {
+	public function resum () {
 		$this->lowstock = 'none';
 		$this->sale = $this->inventory = 'off';
-		$this->stock = $this->stocked = $this->sold = 0;
+		$this->stock = $this->stocked = 0;
 		$this->maxprice = $this->minprice = false;
 		$this->min = $this->max = array();
 		$this->freeship = 'off';
@@ -712,7 +742,7 @@ class Product extends WPShoppObject {
 	 * @param array $stats The stat properties to update
 	 * @return void
 	 **/
-	function sumup () {
+	public function sumup () {
 		if (empty($this->id)) return;
 
 		$Summary = new ProductSummary();
@@ -725,8 +755,8 @@ class Product extends WPShoppObject {
 			if ($property{0} == '_') continue;
 			if (in_array($property,$ignore)) continue;
 			switch ($property) {
-				case 'minprice': $this->minprice = (float)$this->min[ str_true($this->sale)?'saleprice':'price' ]; break;
-				case 'maxprice': $this->maxprice = (float)$this->max[ str_true($this->sale)?'saleprice':'price' ]; break;
+				case 'minprice': $this->minprice = (float)$this->min[ Shopp::str_true($this->sale)?'saleprice':'price' ]; break;
+				case 'maxprice': $this->maxprice = (float)$this->max[ Shopp::str_true($this->sale)?'saleprice':'price' ]; break;
 				case 'ranges':
 					$ranges = array();
 					foreach ($minmax as $m) {
@@ -771,9 +801,9 @@ class Product extends WPShoppObject {
 	 * @author Jonathan Davis
 	 * @since 1.2
 	 *
-	 * @return void Description...
+	 * @return void
 	 **/
-	function lowstock ($stock,$stocked) {
+	public function lowstock ($stock,$stocked) {
 		$lowstock_level = shopp_setting('lowstock_level');
 		if ( false === $lowstock_level ) $lowstock_level = 5;
 		$setting = ( shopp_setting('lowstock_level')/100 );
@@ -802,7 +832,7 @@ class Product extends WPShoppObject {
 	 * @param array option ids
 	 * @return int option key
 	 **/
-	function optionkey ($ids=array(),$deprecated=false) {
+	public function optionkey ($ids=array(),$deprecated=false) {
 		if ($deprecated) $factor = 101;
 		else $factor = 7001;
 		if (empty($ids)) return 0;
@@ -812,7 +842,7 @@ class Product extends WPShoppObject {
 		return $key;
 	}
 
-	function optionmap ( $variant = array(), $menus = array(), $type = 'variant', $return = 'all' ) {
+	public function optionmap ( $variant = array(), $menus = array(), $type = 'variant', $return = 'all' ) {
 		if ( empty($variant) || empty($menus) ) return;
 
 		$selection = array();
@@ -869,10 +899,10 @@ class Product extends WPShoppObject {
 	 * @param array image ids
 	 * @return void
 	 **/
-	function save_imageorder ($ordering) {
-		$table = DatabaseObject::tablename(ProductImage::$table);
+	public function save_imageorder ($ordering) {
+		$table = ShoppDatabaseObject::tablename(ProductImage::$table);
 		foreach ($ordering as $i => $id)
-			DB::query("UPDATE LOW_PRIORITY $table SET sortorder='$i' WHERE (id='$id' AND parent='$this->id' AND context='product' AND type='image')");
+			sDB::query("UPDATE $table SET sortorder='$i' WHERE (id='$id' AND parent='$this->id' AND context='product' AND type='image')");
 	}
 
 	/**
@@ -883,7 +913,7 @@ class Product extends WPShoppObject {
 	 *
 	 * @return string
 	 **/
-	function image_order () {
+	public function image_order () {
 		$orderings = array('ASC','DESC','RAND');
 		$ordering = shopp_setting('product_image_order');
 		if (!in_array($ordering,$orderings)) $ordering = '';
@@ -907,10 +937,10 @@ class Product extends WPShoppObject {
 	 * @param array image record ids
 	 * @return void
 	 **/
-	function link_images ($images) {
+	public function link_images ($images) {
 		if (empty($images)) return;
-		$table = DatabaseObject::tablename(ProductImage::$table);
-		DB::query("UPDATE $table SET parent='$this->id',context='product' WHERE id IN (".join(',',$images).")");
+		$table = ShoppDatabaseObject::tablename(ProductImage::$table);
+		sDB::query("UPDATE $table SET parent='$this->id',context='product' WHERE id IN (".join(',',$images).")");
 	}
 
 	/**
@@ -922,7 +952,7 @@ class Product extends WPShoppObject {
 	 * @param array image record ids
  	 * @return void
 	 **/
-	function update_images ($images) {
+	public function update_images ($images) {
 		if (!is_array($images)) return;
 
 		foreach ($images as $img) {
@@ -946,8 +976,8 @@ class Product extends WPShoppObject {
 
 					$Resized = new ImageProcessor($Image->retrieve(),$Image->width,$Image->height);
 					$scaled = $Image->scaled($width,$height,$scale);
-					$scale = $Cropped->_scaling[$scale];
-					$quality = ($quality === false)?$Cropped->_quality:$quality;
+					$scale = ImageAsset::$defaults['scaling'][$scale];
+					$quality = ($quality === false) ? ImageAsset::$defaults['quality'] : $quality;
 
 					$Resized->scale($scaled['width'],$scaled['height'],$scale,$alpha,$fill,(int)$dx,(int)$dy,(float)$cropscale);
 
@@ -974,16 +1004,15 @@ class Product extends WPShoppObject {
 	 * delete_images()
 	 * Delete provided array of image ids, removing the source image and
 	 * all related images (small and thumbnails) */
-	function delete_images ($images) {
-		$db = &DB::get();
-		$imagetable = DatabaseObject::tablename(ProductImage::$table);
+	public function delete_images ($images) {
+		$imagetable = ShoppDatabaseObject::tablename(ProductImage::$table);
 		$imagesets = "";
 		foreach ($images as $image) {
 			$imagesets .= (!empty($imagesets)?" OR ":"");
 			$imagesets .= "((context='product' AND parent='$this->id' AND id='$image') OR (context='image' AND parent='$image'))";
 		}
 		if (!empty($imagesets))
-			$db->query("DELETE FROM $imagetable WHERE type='image' AND ($imagesets)");
+			sDB::query("DELETE FROM $imagetable WHERE type='image' AND ($imagesets)");
 		return true;
 	}
 
@@ -996,38 +1025,45 @@ class Product extends WPShoppObject {
 	 *
 	 * @return void
 	 **/
-	function delete () {
+	public function delete () {
 		$id = $this->id;
 		if (empty($id)) return false;
 
 		// Delete assignment to taxonomies (categories, tags, custom taxonomies)
-		global $wpdb;
-		$table = $wpdb->term_relationships;
-		DB::query("DELETE LOW_PRIORITY FROM $table WHERE object_id='$id'");
+		wp_delete_object_term_relationships($id, get_object_taxonomies(ShoppProduct::$posttype));
+
+		// Delete product meta (dimensions)
+		$table_meta = ShoppDatabaseObject::tablename(ShoppMetaObject::$table);
+		$table_price = ShoppDatabaseObject::tablename(ShoppPrice::$table);
+		sDB::query("DELETE FROM $table_meta WHERE parent IN ( SELECT id FROM $table_price WHERE product='$id' )");
 
 		// Delete prices
-		$table = DatabaseObject::tablename(Price::$table);
-		DB::query("DELETE LOW_PRIORITY FROM $table WHERE product='$id'");
+		$table = ShoppDatabaseObject::tablename(ShoppPrice::$table);
+		sDB::query("DELETE FROM $table WHERE product='$id'");
 
 		// Delete images/files
-		$table = DatabaseObject::tablename(ProductImage::$table);
+		$table = ShoppDatabaseObject::tablename(ProductImage::$table);
 
 		// Delete images
 		$images = array();
-		$src = DB::query("SELECT id FROM $table WHERE parent='$id' AND context='product' AND type='image'",AS_ARRAY);
+		$src = sDB::query("SELECT id FROM $table WHERE parent='$id' AND context='product' AND type='image'",'array');
 		foreach ($src as $img) $images[] = $img->id;
 		$this->delete_images($images);
 
 		// Delete product meta (specs, images, downloads)
-		$table = DatabaseObject::tablename(MetaObject::$table);
-		DB::query("DELETE LOW_PRIORITY FROM $table WHERE parent='$id' AND context='product'");
+		$table = ShoppDatabaseObject::tablename(ShoppMetaObject::$table);
+		sDB::query("DELETE FROM $table WHERE parent='$id' AND context='product'");
 
 		// Delete product summary
-		$table = DatabaseObject::tablename(ProductSummary::$table);
-		DB::query("DELETE FROM $table WHERE product='$id'");
+		$table = ShoppDatabaseObject::tablename(ProductSummary::$table);
+		sDB::query("DELETE FROM $table WHERE product='$id'");
+
+		// Delete product search index
+		$table = ShoppDatabaseObject::tablename(ContentIndex::$table);
+		sDB::query("DELETE FROM $table WHERE product='$id'");
 
 		// Delete record
-		DB::query("DELETE FROM $this->_table WHERE ID='$id'");
+		sDB::query("DELETE FROM $this->_table WHERE ID='$id'");
 
 		do_action_ref_array('shopp_product_deleted',array($this));
 
@@ -1041,9 +1077,9 @@ class Product extends WPShoppObject {
 	 *
 	 * @return void
 	 **/
-	function trash () {
+	public function trash () {
 		$id = $this->{$this->_key};
-		DB::query("UPDATE $this->_table SET post_status='trash' WHERE ID='$id'");
+		sDB::query("UPDATE $this->_table SET post_status='trash' WHERE ID='$id'");
 	}
 
 	/**
@@ -1055,7 +1091,7 @@ class Product extends WPShoppObject {
 	 *
 	 * @return void
 	 **/
-	function duplicate () {
+	public function duplicate () {
 
 		$original = $this->id;
 
@@ -1063,16 +1099,17 @@ class Product extends WPShoppObject {
 		$this->id = '';
 		$this->name = $this->name.' '.__('copy','Shopp');
 		$slug = sanitize_title_with_dashes($this->name);
-		$this->slug = wp_unique_post_slug($slug, $this->id, $this->status, Product::posttype(), 0);
+		$this->slug = wp_unique_post_slug($slug, $this->id, $this->status, ShoppProduct::posttype(), 0);
 		$this->created = '';
 		$this->modified = '';
+		$this->status = 'draft'; // Set duplicated product to draft status
 
 		$this->save();
 
 		// Copy prices
 		foreach ($this->prices as $price) {
 
-			$Price = new Price();
+			$Price = new ShoppPrice();
 			$Price->copydata($price);
 			$Price->product = $this->id;
 			$Price->save();
@@ -1097,25 +1134,42 @@ class Product extends WPShoppObject {
 			if ( ! isset($term->term_id) || empty($term->term_id) ) continue; 		// Skip invalid entries
 			if ( ! isset($term->taxonomy) || empty($term->taxonomy) ) continue; 	// Skip invalid entries
 
-			if (!isset($terms[$term->taxonomy])) $terms[$term->taxonomy] = array();
-			$terms[$term->taxonomy][] = (int)$term->term_id;
+			if ( ! isset($terms[ $term->taxonomy ]) )
+				$terms[ $term->taxonomy ] = array();
+			$terms[ $term->taxonomy ][] = (int)$term->term_id;
 		}
 		foreach ($terms as $taxonomy => $termlist)
 			wp_set_object_terms( $this->id, $termlist, $taxonomy );
 
 		$metadata = array('specs','images','settings','meta');
-		foreach ($metadata as $metaset) {
-			foreach ($this->$metaset as $meta) {
-				$ObjectClass = get_class($meta);
-				$Meta = new $ObjectClass();
-				$Meta->copydata($meta);
-				$Meta->parent = $this->id;
-				$Meta->save();
+		foreach ( $metadata as $metaset ) {
+			if ( ! is_array($this->$metaset) ) continue;
+			foreach ( $this->$metaset as $metaobjects ) {
+				if ( ! is_array($metaobjects) ) $metaobjects = array($metaobjects);
+				foreach ( $metaobjects as $meta ) {
+					$ObjectClass = get_class($meta);
+					$Meta = new $ObjectClass();
+					$Meta->copydata($meta);
+					$Meta->parent = $this->id;
+					$Meta->save();
+				}
 			}
 		}
 
+		// Duplicate summary (primarily for summary settings data)
+		$Summary = new ProductSummary($original);
+		$Summary->product = $this->id;
+		$Summary->sold = $Summary->grossed = $Summary->stock = 0;
+		$Summary->save();
+
 		// Re-summarize product pricing
 		$this->load_data(array('prices','summary'));
+
+		// Duplicate (WP) post meta data
+		foreach ( get_post_custom( $original ) as $key => $values ) {
+			foreach ( (array) $values as $value )
+				add_post_meta( $this->id, $key, $value );
+		}
 	}
 
 	/**
@@ -1127,7 +1181,7 @@ class Product extends WPShoppObject {
 	 * @param array Conditional rule to match against
 	 * @return boolean Match or no match
 	 **/
-	function taxrule ($rule) {
+	public function taxrule ($rule) {
 		switch ($rule['p']) {
 			case "product-name": return ($rule['v'] == $this->name); break;
 			case "product-tags":
@@ -1151,12 +1205,28 @@ class Product extends WPShoppObject {
 	 * @param string $status The status to set: publish, draft, trash
 	 * @return boolean
 	 **/
-	static function publishset ($ids,$status) {
-		if (empty($ids) || !is_array($ids)) return false;
-		$settings = array('publish','draft','trash');
-		if (!in_array($status,$settings)) return false;
+	static function publishset ( array $ids, $status ) {
+
+		if ( empty($ids) || ! is_array($ids) ) return false;
+		$settings = array('publish', 'draft', 'trash');
+
+		if ( ! in_array($status, $settings) ) return false;
 		$table = WPShoppObject::tablename(self::$table);
-		DB::query("UPDATE $table SET post_status='$status' WHERE ID in (".join(',',$ids).")");
+
+		$time = current_time('timestamp');
+		$post_date_gmt = sDB::mkdatetime($time + (get_option( 'gmt_offset' ) * 3600));
+		$post_date = sDB::mkdatetime($time);
+
+		sDB::query("UPDATE $table SET post_status='$status', post_date='$post_date', post_date_gmt='$post_date_gmt', post_modified='$post_date', post_modified_gmt='$post_date_gmt' WHERE ID in (" . join(',', $ids) . ")");
+
+		foreach ( $ids as $id ) { // Recount taxonomy counts #2968
+			$laststatus = get_post_status($id);
+			$Post = new StdClass;
+			$Post->ID = $id;
+			$Post->post_type = ShoppProduct::$posttype;
+			wp_transition_post_status($status, $laststatus, $Post);
+		}
+
 		return true;
 	}
 
@@ -1184,20 +1254,35 @@ class Product extends WPShoppObject {
 
 } // END class Product
 
-// @todo Document ProductSummary class
-class ProductSummary extends DatabaseObject {
+/**
+ * The ProductSummary records make product collection querying more
+ * efficient by adding a data aggregation and summarization process to
+ * collect all collection-relevant information about a product and
+ * saving it to a single record. This means that in most cases, a
+ * single join is all that is required for product collection queries
+ * providing a massive boost to performance (both speed and memory utilization).
+ *
+ * @author Jonathan Davis
+ * @since 1.2
+ * @package shopp
+ * @subpackage product
+ **/
+class ProductSummary extends ShoppDatabaseObject {
+
+	const RECALCULATE = '0000-00-00 00:00:01';
+
 	static $table = 'summary';
 	static $_ranges = array('price','saleprice','saved','savings','weight');
-	static $_updates = '0000-00-00 00:00:01';
+	static $_updates = self::RECALCULATE;
 
-	function __construct ($id=false,$key='product') {
+	public function __construct ($id=false,$key='product') {
 		$this->init(self::$table);
 		$this->_key = 'product';
 		$this->load($id,$key);
 	}
 
-	function save () {
-		$data = DB::prepare($this,$this->_map);
+	public function save () {
+		$data = sDB::prepare($this,$this->_map);
 
 		$id = $this->{$this->_key};
 		if (!empty($this->_map)) {
@@ -1208,32 +1293,54 @@ class ProductSummary extends DatabaseObject {
 
 		// Insert new record
 		$data['modified'] = "'".current_time('mysql')."'";
-		$dataset = DatabaseObject::dataset($data);
+		$dataset = ShoppDatabaseObject::dataset($data);
 		$query = "INSERT $this->_table SET $dataset ON DUPLICATE KEY UPDATE $dataset";
-		$id = DB::query($query);
+		$id = sDB::query($query);
 		do_action_ref_array('shopp_save_productsummary', array(&$this));
 		return $id;
 
 	}
 
+	/**
+	 * Marks an individual product for summary recalculation
+	 *
+	 * Recalculating t
+	 *
+	 * @author Jonathan Davis
+	 * @since 1.3
+	 *
+	 * @param integer $id The product ID to update
+	 * @return boolean True if successful, false otherwise
+	 **/
+	public static function rebuild ( $id ) {
+		$id = intval($id);
+		$table = ShoppDatabaseObject::tablename(ProductSummary::$table);
+		return sDB::query("UPDATE $table SET modified='" . self::RECALCULATE . "' WHERE product=$id LIMIT 1");
+	}
+
 } // END class ProductSummary
 
-// @todo Document Spec class
-class Spec extends MetaObject {
+/**
+ * Helper class for product specs
+ *
+ * @author Jonathan Davis
+ * @since 1.0
+ * @package shopp
+ * @subpackage product
+ **/
+class Spec extends ShoppMetaObject {
 
-	function __construct ($id=false) {
+	public function __construct ($id=false) {
 		$this->init(self::$table);
 		$this->load($id);
 		$this->context = 'product';
 		$this->type = 'spec';
 	}
 
-	function updates ($data,$ignores=array()) {
-		parent::updates($data,$ignores);
-		if (preg_match('/^.*?(\d+[\.\,\d]*).*$/',$this->value))
-			$this->numeral = preg_replace('/^.*?(\d+[\.\,\d]*).*$/','$1',$this->value);
+	public function updates ( array $data, array $ignores = array() ) {
+		parent::updates($data, $ignores);
+		if ( preg_match('/^.*?(\d+[\.\,\d]*).*$/', $this->value) )
+			$this->numeral = preg_replace('/^.*?(\d+[\.\,\d]*).*$/', '$1', $this->value);
 	}
 
 } // END class Spec
-
-?>

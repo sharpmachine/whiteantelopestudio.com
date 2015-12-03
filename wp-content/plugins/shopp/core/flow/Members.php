@@ -13,7 +13,8 @@
  * @subpackage shopp
  **/
 
-require(SHOPP_MODEL_PATH.'/Membership.php');
+defined( 'WPINC' ) || header( 'HTTP/1.1 403' ) & exit; // Prevent direct access
+
 /**
  * Members
  *
@@ -21,7 +22,7 @@ require(SHOPP_MODEL_PATH.'/Membership.php');
  * @since 1.2
  * @package shopp
  **/
-class Members extends AdminController {
+class Members extends ShoppAdminController {
 
 	/**
 	 * Members constructor
@@ -66,8 +67,7 @@ class Members extends AdminController {
 	 * @return void
 	 **/
 	function memeberships () {
-		global $Shopp;
-		$db = DB::get();
+		$Shopp = Shopp::object();
 
 		$defaults = array(
 			'page' => false,
@@ -154,15 +154,15 @@ class Members extends AdminController {
 
 			// Delete Catalog entries
 			$ContentRemoval = new MemberContent();
-			$db->query("DELETE FROM $ContentRemoval->_table WHERE 0 < FIND_IN_SET(parent,'$stagelist')");
+			sDB::query("DELETE FROM $ContentRemoval->_table WHERE 0 < FIND_IN_SET(parent,'$stagelist')");
 
 			// Delete Access taxonomies
 			$AccessRemoval = new MemberAccess();
-			$db->query("DELETE FROM $AccessRemoval->_table WHERE 0 < FIND_IN_SET(parent,'$stagelist')");
+			sDB::query("DELETE FROM $AccessRemoval->_table WHERE 0 < FIND_IN_SET(parent,'$stagelist')");
 
 			// Remove old stages
 			$StageRemoval = new MemberStage();
-			$db->query("DELETE FROM $StageRemoval->_table WHERE 0 < FIND_IN_SET(id,'$stagelist')");
+			sDB::query("DELETE FROM $StageRemoval->_table WHERE 0 < FIND_IN_SET(id,'$stagelist')");
 
 		}
 
@@ -185,7 +185,7 @@ class Members extends AdminController {
 			$ends = mktime(23,59,59,$month,$day,$year);
 		}
 
-		$membership_table = DatabaseObject::tablename(MemberPlan::$table);
+		$membership_table = ShoppDatabaseObject::tablename(MemberPlan::$table);
 		$MemberPlan = new MemberPlan();
 
 		$where = '';
@@ -214,7 +214,7 @@ class Members extends AdminController {
 		// }
 		// if (!empty($starts) && !empty($ends)) $where .= ((empty($where))?"WHERE ":" AND ").' (UNIX_TIMESTAMP(c.created) >= '.$starts.' AND UNIX_TIMESTAMP(c.created) <= '.$ends.')';
 
-		$count = $db->query("SELECT count(*) as total FROM $MemberPlan->_table AS c $where");
+		$count = sDB::query("SELECT count(*) as total FROM $MemberPlan->_table AS c $where");
 		$query = "SELECT *
 					FROM $MemberPlan->_table
 					WHERE parent='$MemberPlan->parent'
@@ -222,7 +222,7 @@ class Members extends AdminController {
 						AND type='$MemberPlan->type'
 					LIMIT $index,$per_page";
 
-		$MemberPlans = $db->query($query,'array');
+		$MemberPlans = sDB::query($query,'array');
 
 		$num_pages = ceil($count->total / $per_page);
 		$page_links = paginate_links( array(
@@ -261,7 +261,7 @@ class Members extends AdminController {
 	 * Builds the interface layout for the customer editor
 	 *
 	 * @author Jonathan Davis
-	 * @return void Description...
+	 * @return void
 	 **/
 	function layout () {
 		global $Shopp,$ruletypes,$rulegroups;
@@ -299,8 +299,8 @@ class Members extends AdminController {
 	 * @return void
 	 **/
 	function editor () {
-		global $Shopp,$ruletypes,$rulegroups;
-		$db =& DB::get();
+		global $ruletypes, $rulegroups;
+		$Shopp = Shopp::object();
 
 		if ( ! current_user_can('shopp_memberships') )
 			wp_die(__('You do not have sufficient permissions to access this page.'));
@@ -327,5 +327,3 @@ class Members extends AdminController {
 
 
 } // END class Members
-
-?>

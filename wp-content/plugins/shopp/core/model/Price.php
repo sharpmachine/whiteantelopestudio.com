@@ -12,11 +12,14 @@
  * @since 1.0
  * @subpackage products
  **/
-class Price extends DatabaseObject {
 
-	static $table = "price";
+defined( 'WPINC' ) || header( 'HTTP/1.1 403' ) & exit; // Prevent direct access
 
-	function __construct ($id=false,$key=false) {
+class ShoppPrice extends ShoppDatabaseObject {
+
+	static $table = 'price';
+
+	public function __construct ($id=false,$key=false) {
 		$this->init(self::$table);
 		if ($this->load($id,$key)) {
 			$this->load_download();
@@ -28,19 +31,19 @@ class Price extends DatabaseObject {
 
 	}
 
-	function delete () {
+	public function delete () {
 		if ( empty($this->id) ) return;
 
 		$price = $this->id;
 		parent::delete();
 
 		// clean up meta entries for deleted price
-		$metatable = DatabaseObject::tablename('meta');
+		$metatable = ShoppDatabaseObject::tablename('meta');
 		$query = "DELETE FROM $metatable WHERE context='price' and parent=$price";
-		DB::query($query);
+		sDB::query($query);
 	}
 
-	function metaloader (&$records,&$record,$id='id',$property=false,$collate=false,$merge=false) {
+	public function metasetloader ( &$records, &$record, $id = 'id', $property = false, $collate = false, $merge = false ) {
 		if (isset($this->prices) && !empty($this->prices)) $prices = &$this->prices;
 		else $prices = array();
 
@@ -50,7 +53,7 @@ class Price extends DatabaseObject {
 			'settings' => 'settings'
 		);
 		$metaclass = array(
-			'meta' => 'MetaObject'
+			'meta' => 'ShoppMetaObject'
 		);
 
 		if ('metatype' == $property)
@@ -98,7 +101,6 @@ class Price extends DatabaseObject {
 
 		}
 
-
 		parent::metaloader($records,$record,$prices,$id,$property,$collate,$merge);
 	}
 
@@ -110,7 +112,7 @@ class Price extends DatabaseObject {
 	 *
 	 * @return boolean
 	 **/
-	function load_download () {
+	public function load_download () {
 		if ($this->type != "Download") return false;
 		$this->download = new ProductDownload();
 		$this->download->load(array(
@@ -123,7 +125,7 @@ class Price extends DatabaseObject {
 		return true;
 	}
 
-	function load_settings () {
+	public function load_settings () {
 		$settings = shopp_meta ( $this->id, 'price', 'settings');
 		if ( is_array( $settings ) ) {
 			foreach ( $settings as $property => $setting ) {
@@ -140,7 +142,7 @@ class Price extends DatabaseObject {
 	 *
 	 * @return boolean
 	 **/
-	function attach_download ($id) {
+	public function attach_download ($id) {
 		if (!$id) return false;
 
 		$Download = new ProductDownload($id);
@@ -162,8 +164,8 @@ class Price extends DatabaseObject {
 	 * @param array $ignores A list of properties to ignore updating
 	 * @return void
 	 **/
-	function updates($data,$ignores = array()) {
-		parent::updates($data,$ignores);
+	public function updates ( array $data, array $ignores = array() ) {
+		parent::updates($data, $ignores);
 		do_action('shopp_price_updates');
 	}
 
@@ -175,13 +177,17 @@ class Price extends DatabaseObject {
 	 *
 	 * @return boolean True if a discount applies
 	 **/
-	function discounts () {
+	public function discounts () {
 		if (empty($this->discounts)) return false;
-		$pricetag = str_true($this->sale)?$this->saleprice:$this->price;
-		$discount = Promotion::pricing($pricetag,$this->discounts);
+		$pricetag = Shopp::str_true($this->sale)?$this->saleprice:$this->price;
+		$discount = ShoppPromo::pricing($pricetag,$this->discounts);
 		$this->promoprice = $discount->pricetag;
 		if ($discount->freeship) $this->freeship = true;
 		return true;
+	}
+
+	public function disabled () {
+		return ( 'N/A' == $this->type );
 	}
 
 	/**
@@ -194,7 +200,7 @@ class Price extends DatabaseObject {
 	 *
 	 * @return array
 	 **/
-	static function types () {
+	public static function types () {
 		 return array(
 			array('value'=>'Shipped','label'=>__('Shipped','Shopp')),
 			array('value'=>'Virtual','label'=>__('Virtual','Shopp')),
@@ -217,7 +223,7 @@ class Price extends DatabaseObject {
 	 *
 	 * @return array
 	 **/
-	static function periods () {
+	public static function periods () {
 		return array(
 			array(
 				array('value'=>'d','label'=>__('days','Shopp')),
@@ -236,5 +242,3 @@ class Price extends DatabaseObject {
 	}
 
 } // END class Price
-
-?>

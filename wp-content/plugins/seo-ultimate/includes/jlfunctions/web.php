@@ -5,8 +5,8 @@ Copyright (c)2010 John Lamansky
 */
 
 class suweb {
-
-	function is_search_engine_ua($user_agent) {
+	
+	static function is_search_engine_ua($user_agent) {
 		$ua_keywords = array(
 			  'Googlebot' //Google
 			, 'Yahoo', 'Y!' //Yahoo

@@ -12,28 +12,19 @@ $css_levels = array(
 
 $css_level = $this->_config->get_string('minify.csstidy.options.css_level');
 ?>
-<input type="hidden" name="minify.csstidy.options.remove_bslash" value="0" />
-<input type="hidden" name="minify.csstidy.options.compress_colors" value="0" />
-<input type="hidden" name="minify.csstidy.options.compress_font-weight" value="0" />
-<input type="hidden" name="minify.csstidy.options.lowercase_s" value="0" />
-<input type="hidden" name="minify.csstidy.options.remove_last_;" value="0" />
-<input type="hidden" name="minify.csstidy.options.sort_properties" value="0" />
-<input type="hidden" name="minify.csstidy.options.sort_selectors" value="0" />
-<input type="hidden" name="minify.csstidy.options.discard_invalid_properties" value="0" />
-<input type="hidden" name="minify.csstidy.options.preserve_css" value="0" />
-<input type="hidden" name="minify.csstidy.options.timestamp" value="0" />
-<label><input class="css_enabled" type="checkbox" name="minify.csstidy.options.remove_bslash" value="1"<?php checked($this->_config->get_boolean('minify.csstidy.options.remove_bslash'), true); ?> /> Remove unnecessary backslashes</label><br />
-<label><input class="css_enabled" type="checkbox" name="minify.csstidy.options.compress_colors" value="1"<?php checked($this->_config->get_boolean('minify.csstidy.options.compress_colors'), true); ?> /> Compress colors</label><br />
-<label><input class="css_enabled" type="checkbox" name="minify.csstidy.options.compress_font-weight" value="1"<?php checked($this->_config->get_boolean('minify.csstidy.options.compress_font-weight'), true); ?> /> Compress font-weight</label><br />
-<label><input class="css_enabled" type="checkbox" name="minify.csstidy.options.lowercase_s" value="1"<?php checked($this->_config->get_boolean('minify.csstidy.options.lowercase_s'), true); ?> /> Lowercase selectors</label><br />
-<label><input class="css_enabled" type="checkbox" name="minify.csstidy.options.remove_last_;" value="1"<?php checked($this->_config->get_boolean('minify.csstidy.options.remove_last_;'), true); ?> /> Remove last ;</label><br />
-<label><input class="css_enabled" type="checkbox" name="minify.csstidy.options.sort_properties" value="1"<?php checked($this->_config->get_boolean('minify.csstidy.options.sort_properties'), true); ?> /> Sort Properties</label><br />
-<label><input class="css_enabled" type="checkbox" name="minify.csstidy.options.sort_selectors" value="1"<?php checked($this->_config->get_boolean('minify.csstidy.options.sort_selectors'), true); ?> /> Sort Selectors (caution)</label><br />
-<label><input class="css_enabled" type="checkbox" name="minify.csstidy.options.discard_invalid_properties" value="1"<?php checked($this->_config->get_boolean('minify.csstidy.options.discard_invalid_properties'), true); ?> /> Discard invalid properties</label>
-<select class="css_enabled" name="minify.csstidy.options.css_level">
+<?php $this->checkbox('minify.csstidy.options.remove_bslash', false, 'css_') ?> <?php w3_e_config_label('minify.csstidy.options.remove_bslash') ?></label><br />
+<?php $this->checkbox('minify.csstidy.options.compress_colors', false, 'css_') ?> <?php w3_e_config_label('minify.csstidy.options.compress_colors') ?></label><br />
+<?php $this->checkbox('minify.csstidy.options.compress_font-weight', false, 'css_') ?> <?php w3_e_config_label('minify.csstidy.options.compress_font-weight') ?></label><br />
+<?php $this->checkbox('minify.csstidy.options.lowercase_s', false, 'css_') ?> <?php w3_e_config_label('minify.csstidy.options.lowercase_s') ?></label><br />
+<?php $this->checkbox('minify.csstidy.options.remove_last_;', false, 'css_') ?> <?php w3_e_config_label('minify.csstidy.options.remove_last_;') ?></label><br />
+<?php $this->checkbox('minify.csstidy.options.sort_properties', false, 'css_') ?> <?php w3_e_config_label('minify.csstidy.options.sort_properties') ?></label><br />
+<?php $this->checkbox('minify.csstidy.options.sort_selectors', false, 'css_') ?> <?php w3_e_config_label('minify.csstidy.options.sort_selectors') ?></label><br />
+<?php $this->checkbox('minify.csstidy.options.discard_invalid_properties', false, 'css_') ?> <?php w3_e_config_label('minify.csstidy.options.discard_invalid_properties') ?></label>
+<select class="css_enabled" name="minify.csstidy.options.css_level" 
+    <?php $this->sealing_disabled('minify') ?>>
     <?php foreach($css_levels as $_css_level): ?>
-        <option value="<?php echo $_css_level; ?>"<?php selected($css_level, $_css_level); ?>><?php echo $_css_level; ?></option>
+        <option value="<?php echo esc_attr($_css_level); ?>"  <?php selected($css_level, $_css_level); ?>><?php echo $_css_level; ?></option>
     <?php endforeach; ?>
 </select><br />
-<label><input class="css_enabled" type="checkbox" name="minify.csstidy.options.preserve_css" value="1"<?php checked($this->_config->get_boolean('minify.csstidy.options.preserve_css'), true); ?> /> Preserve CSS</label><br />
-<label><input class="css_enabled" type="checkbox" name="minify.csstidy.options.timestamp" value="1"<?php checked($this->_config->get_boolean('minify.csstidy.options.timestamp'), true); ?> /> Add timestamp</label><br />
+<?php $this->checkbox('minify.csstidy.options.preserve_css', false, 'css_') ?> <?php w3_e_config_label('minify.csstidy.options.preserve_css') ?></label><br />
+<?php $this->checkbox('minify.csstidy.options.timestamp', false, 'css_') ?> <?php w3_e_config_label('minify.csstidy.options.timestamp') ?></label><br />

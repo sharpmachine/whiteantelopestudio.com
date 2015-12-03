@@ -1,111 +1,110 @@
 <?php
 
-class acf_Color_picker extends acf_Field
+class acf_field_color_picker extends acf_field
 {
-
-	/*--------------------------------------------------------------------------------------
+	
+	/*
+	*  __construct
 	*
-	*	Constructor
+	*  Set name / label needed for actions / filters
 	*
-	*	@author Elliot Condon
-	*	@since 1.0.0
-	*	@updated 2.2.0
-	* 
-	*-------------------------------------------------------------------------------------*/
+	*  @since	3.6
+	*  @date	23/01/13
+	*/
 	
-	function __construct($parent)
-	{
-    	parent::__construct($parent);
-    	
-    	$this->name = 'color_picker';
-		$this->title = __("Color Picker",'acf');
-		
-   	}
-   	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	admin_print_scripts / admin_print_styles
-	*
-	*	@author Elliot Condon
-	*	@since 3.0.0
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function admin_print_scripts()
-	{
-		wp_enqueue_script(array(
-			'farbtastic'
-		));
-	}
-	
-	function admin_print_styles()
-	{
-		wp_enqueue_style(array(
-			'farbtastic'
-		));
-  
-	}
-	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	create_field
-	*
-	*	@author Elliot Condon
-	*	@since 2.0.5
-	*	@updated 2.2.0
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function create_field($field)
-	{		
-		// html
-		echo '<input type="text" value="' . $field['value'] . '" class="acf_color_picker" name="' . $field['name'] . '" id="' . $field['name'] . '" />';
-
-	}
-	
-	
-	/*--------------------------------------------------------------------------------------
-	*
-	*	create_options
-	*
-	*	@author Elliot Condon
-	*	@since 2.0.6
-	*	@updated 2.2.0
-	* 
-	*-------------------------------------------------------------------------------------*/
-	
-	function create_options($key, $field)
+	function __construct()
 	{
 		// vars
-		$defaults = array(
+		$this->name = 'color_picker';
+		$this->label = __("Color Picker",'acf');
+		$this->category = __("jQuery",'acf');
+		$this->defaults = array(
 			'default_value'	=>	'',
 		);
 		
-		$field = array_merge($defaults, $field);
-
 		
-		?>
-		<tr class="field_option field_option_<?php echo $this->name; ?>">
-			<td class="label">
-				<label><?php _e("Default Value",'acf'); ?></label>
-				<p class="description"><?php _e("eg: #ffffff",'acf'); ?></p>
-			</td>
-			<td>
-				<?php 
-				$this->parent->create_field(array(
-					'type'	=>	'text',
-					'name'	=>	'fields['.$key.'][default_value]',
-					'value'	=>	$field['default_value'],
-				));
-				?>
-			</td>
-		</tr>
-		<?php
+		// do not delete!
+    	parent::__construct();
+    	
 	}
 	
 	
+	/*
+	*  create_field()
+	*
+	*  Create the HTML interface for your field
+	*
+	*  @param	$field - an array holding all the field's data
+	*
+	*  @type	action
+	*  @since	3.6
+	*  @date	23/01/13
+	*/
+	
+	function create_field( $field )
+	{
+		// vars
+		$o = array( 'id', 'class', 'name', 'value' );
+		$e = '';
+		
+		
+		$e .= '<div class="acf-color_picker">';
+		$e .= '<input type="text"';
+		
+		foreach( $o as $k )
+		{
+			$e .= ' ' . $k . '="' . esc_attr( $field[ $k ] ) . '"';	
+		}
+		
+		$e .= ' />';
+		$e .= '</div>';
+		
+		
+		// return
+		echo $e;
+	}
+	
+	
+	/*
+	*  create_options()
+	*
+	*  Create extra options for your field. This is rendered when editing a field.
+	*  The value of $field['name'] can be used (like bellow) to save extra data to the $field
+	*
+	*  @type	action
+	*  @since	3.6
+	*  @date	23/01/13
+	*
+	*  @param	$field	- an array holding all the field's data
+	*/
+	
+	function create_options( $field )
+	{
+		// vars
+		$key = $field['name'];
+		
+		?>
+<tr class="field_option field_option_<?php echo $this->name; ?>">
+	<td class="label">
+		<label><?php _e("Default Value",'acf'); ?></label>
+	</td>
+	<td>
+		<?php 
+		do_action('acf/create_field', array(
+			'type'			=>	'text',
+			'name'			=>	'fields[' .$key.'][default_value]',
+			'value'			=>	$field['default_value'],
+			'placeholder'	=>	'#ffffff'
+		));
+		?>
+	</td>
+</tr>
+		<?php
+		
+	}
+	
 }
+
+new acf_field_color_picker();
 
 ?>

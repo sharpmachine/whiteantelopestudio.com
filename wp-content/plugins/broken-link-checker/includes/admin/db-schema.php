@@ -34,7 +34,7 @@ function blc_get_db_schema(){
 		`link_id` int(10) unsigned NOT NULL,
 		`container_id` int(10) unsigned NOT NULL,
 		`container_type` varchar(40) NOT NULL DEFAULT 'post',
-		`link_text` varchar(250) NOT NULL DEFAULT '',
+		`link_text` text NOT NULL DEFAULT '',
 		`parser_type` varchar(40) NOT NULL DEFAULT 'link',
 		`container_field` varchar(250) NOT NULL DEFAULT '',
 		`link_context` varchar(250) NOT NULL DEFAULT '',
@@ -48,7 +48,7 @@ function blc_get_db_schema(){
 	
 	CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}blc_links` (
 		`link_id` int(20) unsigned NOT NULL AUTO_INCREMENT,
-		`url` text CHARACTER SET latin1 COLLATE latin1_general_cs NOT NULL,
+		`url` text CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
 		`first_failure` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
 		`last_check` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
 		`last_success` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -62,7 +62,8 @@ function blc_get_db_schema(){
 		`status_text` varchar(250) DEFAULT '',
 		`request_duration` float NOT NULL DEFAULT '0',
 		`timeout` tinyint(1) unsigned NOT NULL DEFAULT '0',
-		`broken` tinyint(1) NOT NULL DEFAULT '0',
+		`broken` tinyint(1) unsigned NOT NULL DEFAULT '0',
+		`warning` tinyint(1) unsigned NOT NULL DEFAULT '0',
 		`may_recheck` tinyint(1) NOT NULL DEFAULT '1',
 		`being_checked` tinyint(1) NOT NULL DEFAULT '0',
 
@@ -80,7 +81,7 @@ function blc_get_db_schema(){
 	CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}blc_synch` (
 		`container_id` int(20) unsigned NOT NULL,
 		`container_type` varchar(40) NOT NULL,
-		`synched` tinyint(3) unsigned NOT NULL,
+		`synched` tinyint(2) unsigned NOT NULL,
 		`last_synch` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
 		
 		PRIMARY KEY (`container_type`,`container_id`),
@@ -93,5 +94,3 @@ EOM;
 }
 
 }
-
-?>
